@@ -190,18 +190,18 @@ public class GuiUtils {
         assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/spaces.json", spaceFontBase.toString().getBytes(StandardCharsets.UTF_8));
     }
 
-    private static GuiElementBuilder generateTexture(Identifier path) {
+    public static GuiElementBuilder generateTexture(Identifier path) {
         GuiTextures.ItemGuiTexture texture = new GuiTextures.ItemGuiTexture(path);
         ITEM_GUI_TEXTURES.add(texture);
         ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
         return GuiElementBuilder.from(Items.BARRIER.getDefaultStack()).noDefaults().setMaxCount(1).model(Identifier.of(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Text.of("==NOT SET=="));
     }
 
-    private static GuiElementBuilder head(String texture) {
+    public static GuiElementBuilder head(String texture) {
         return GuiElementBuilder.from(Items.PLAYER_HEAD.getDefaultStack()).noDefaults().setMaxCount(1).setSkullOwner(texture).setItemName(Text.of("==NOT SET=="));
     }
 
-    private static GuiBarTexture generateBarTexture(Identifier path, int ascent, int height1, int width1) {
+    public static GuiBarTexture generateBarTexture(Identifier path, int ascent, int height1, int width1) {
         try {
             ArrayList<GuiBarTexturePart> textures = new ArrayList<>();
             InputStream stream = Lib99j.class.getResourceAsStream("/assets/" + path.getNamespace() + "/textures/gui/" + path.getPath() + ".png");
