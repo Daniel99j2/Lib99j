@@ -18,18 +18,22 @@ import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
 public class ServerParticleManager {
-    private static final EvictingQueue<ServerParticle> particles = EvictingQueue.create(32767*4);
-    private static final ArrayList<ParticleFrame> PARTICLE_TEXTURES = new ArrayList<>();
-    public static ParticleFrame INVISIBLE_FRAME;
     @ApiStatus.Internal
     public static final ArrayList<ServerParticleType> particleTypes = new ArrayList<>();
-
-    private static char currentGuiChar = '*';
+    private static final EvictingQueue<ServerParticle> particles = EvictingQueue.create(32767 * 4);
+    private static final ArrayList<ParticleFrame> PARTICLE_TEXTURES = new ArrayList<>();
     private static final ArrayList<Character> blacklistedChars = new ArrayList<>();
+    public static ParticleFrame INVISIBLE_FRAME;
+    private static char currentGuiChar = '*';
+
+    static {
+        blacklistedChars.add('§');
+        blacklistedChars.add('\\');
+    }
 
     @ApiStatus.Internal
     public static void tick() {
-        for(ServerParticle particle : particles) {
+        for (ServerParticle particle : particles) {
             particle.tick();
         }
 
@@ -57,11 +61,6 @@ public class ServerParticleManager {
         INVISIBLE_FRAME = new ParticleFrame(Identifier.of(Lib99j.MOD_ID, "invisible"), 0, 16, 16);
     }
 
-    static {
-        blacklistedChars.add('§');
-        blacklistedChars.add('\\');
-    }
-
     public static void generateAssets(BiConsumer<String, byte[]> assetWriter) {
         var fontBase = new JsonObject();
         var providers = new JsonArray();
@@ -69,7 +68,7 @@ public class ServerParticleManager {
         PARTICLE_TEXTURES.forEach((entry) -> {
             var bitmap = new JsonObject();
             bitmap.addProperty("type", "bitmap");
-            bitmap.addProperty("file", entry.path.getNamespace()+":particle/"+entry.path.getPath()+".png");
+            bitmap.addProperty("file", entry.path.getNamespace() + ":particle/" + entry.path.getPath() + ".png");
             bitmap.addProperty("ascent", entry.ascent);
             bitmap.addProperty("height", entry.height);
             var chars = new JsonArray();
@@ -80,15 +79,26 @@ public class ServerParticleManager {
 
         fontBase.add("providers", providers);
 
-        assetWriter.accept("assets/"+Lib99j.MOD_ID+"/font/particles.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
+        assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/particles.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     public static ArrayList<ParticleFrame> loadFrames(Identifier base, int frames, int ascent, int height, int width) {
         ArrayList<ParticleFrame> frames1 = new ArrayList<>();
         for (int i = 0; i < frames; i++) {
-            frames1.add(new ParticleFrame(Identifier.of(base.getNamespace(), base.getPath()+"_"+i), ascent, height, width));
+            frames1.add(new ParticleFrame(Identifier.of(base.getNamespace(), base.getPath() + "_" + i), ascent, height, width));
         }
         return frames1;
+    }
+
+    private static char getNextGuiChar() {
+        char c = currentGuiChar++;
+        if (blacklistedChars.contains(c)) getNextGuiChar();
+        return c;
+    }
+
+    @FunctionalInterface
+    public interface QuadFunction<K, V, S, T, R> {
+        R accept(K k, V v, S s, T t);
     }
 
     public static class ParticleFrame {
@@ -112,20 +122,7 @@ public class ServerParticleManager {
         }
     }
 
-    private static char getNextGuiChar() {
-        char c = currentGuiChar++;
-        if(blacklistedChars.contains(c)) getNextGuiChar();
-        return c;
-    }
-
-    public record ServerParticleType(Identifier id, Class<? extends ServerParticle> particleClass, ServerParticleManager.QuadFunction<ServerWorld, Double, Double, Double, ServerParticle> spawner, SepFunction<ServerWorld, Double, Double, Double, Double, Double, Double, ServerParticle> velocitySpawner) {
-    };
-
-    public interface QuadFunction<K, V, S, T, R> {
-        R accept(K k, V v, S s, T t);
-    }
-
-    public interface SepFunction<K, V, S, T, R, A, B, C> {
-        R accept(K k, V v, S s, T t, A a, B b, C c);
+    public record ServerParticleType(Identifier id, Class<? extends ServerParticle> particleClass,
+                                     ServerParticleManager.QuadFunction<ServerWorld, Double, Double, Double, ServerParticle> spawner) {
     }
 }

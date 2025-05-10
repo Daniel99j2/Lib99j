@@ -48,7 +48,7 @@ public class EntityUtils {
      * <p>It will not kill the entity if it is invulnerable to the damage source
      */
     public static void killDamageSource(LivingEntity entity, DamageSource source) {
-        if(!entity.isInvulnerableTo(((ServerWorld) entity.getWorld()), source) && entity.isAlive() && !entity.isRemoved()) {
+        if (!entity.isInvulnerableTo(((ServerWorld) entity.getWorld()), source) && entity.isAlive() && !entity.isRemoved()) {
             entity.damage(((ServerWorld) entity.getWorld()), source, Float.MAX_VALUE);
         }
     }
@@ -97,8 +97,10 @@ public class EntityUtils {
 
         entity.addVelocity(accelerationVector.x, accelerationVector.y, accelerationVector.z);
 
-        if(entity instanceof ServerPlayerEntity player) sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
-        if(entity instanceof VehicleEntity vehicle && vehicle.getControllingPassenger() instanceof ServerPlayerEntity player) sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof ServerPlayerEntity player)
+            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof VehicleEntity vehicle && vehicle.getControllingPassenger() instanceof ServerPlayerEntity player)
+            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
     }
 
     /**
@@ -133,7 +135,8 @@ public class EntityUtils {
 
         entity.addVelocity(accelerationVector.x, accelerationVector.y, accelerationVector.z);
 
-        if(entity instanceof ServerPlayerEntity player) sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof ServerPlayerEntity player)
+            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
     }
 
     /**
@@ -148,27 +151,27 @@ public class EntityUtils {
      * Sets an entities look direction from a Direction
      */
     public static void setRotationFromDirection(Direction direction, Entity entity) {
-        if(direction == Direction.UP) {
+        if (direction == Direction.UP) {
             entity.setPitch(270);
             entity.setYaw(0);
         }
-        if(direction == Direction.DOWN) {
+        if (direction == Direction.DOWN) {
             entity.setPitch(90);
             entity.setYaw(0);
         }
-        if(direction == Direction.NORTH) {
+        if (direction == Direction.NORTH) {
             entity.setPitch(0);
             entity.setYaw(180);
         }
-        if(direction == Direction.SOUTH) {
+        if (direction == Direction.SOUTH) {
             entity.setPitch(0);
             entity.setYaw(0);
         }
-        if(direction == Direction.EAST) {
+        if (direction == Direction.EAST) {
             entity.setPitch(0);
             entity.setYaw(270);
         }
-        if(direction == Direction.WEST) {
+        if (direction == Direction.WEST) {
             entity.setPitch(0);
             entity.setYaw(90);
         }
@@ -178,27 +181,27 @@ public class EntityUtils {
      * Sets an entity element's look direction from a Direction
      */
     public static void setRotationFromDirection(Direction direction, GenericEntityElement entity) {
-        if(direction == Direction.UP) {
+        if (direction == Direction.UP) {
             entity.setPitch(270);
             entity.setYaw(0);
         }
-        if(direction == Direction.DOWN) {
+        if (direction == Direction.DOWN) {
             entity.setPitch(90);
             entity.setYaw(0);
         }
-        if(direction == Direction.NORTH) {
+        if (direction == Direction.NORTH) {
             entity.setPitch(0);
             entity.setYaw(180);
         }
-        if(direction == Direction.SOUTH) {
+        if (direction == Direction.SOUTH) {
             entity.setPitch(0);
             entity.setYaw(0);
         }
-        if(direction == Direction.EAST) {
+        if (direction == Direction.EAST) {
             entity.setPitch(0);
             entity.setYaw(270);
         }
-        if(direction == Direction.WEST) {
+        if (direction == Direction.WEST) {
             entity.setPitch(0);
             entity.setYaw(90);
         }

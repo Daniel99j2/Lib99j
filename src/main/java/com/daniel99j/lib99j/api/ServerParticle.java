@@ -29,20 +29,20 @@ public abstract class ServerParticle {
     private static final Box EMPTY_BOUNDING_BOX = new Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     private static final double MAX_SQUARED_COLLISION_CHECK_DISTANCE = MathHelper.square(100.0);
     protected final ServerWorld world;
+    protected final Random random = Random.create();
+    protected final TextDisplayElement display;
+    private final ElementHolder elementHolder;
     protected double x;
     protected double y;
     protected double z;
     protected double velocityX;
     protected double velocityY;
     protected double velocityZ;
-    private Box boundingBox = EMPTY_BOUNDING_BOX;
     protected boolean onGround;
     protected boolean collidesWithWorld = true;
-    private boolean stopped;
     protected boolean dead;
     protected float spacingXZ = 0.6F;
     protected float spacingY = 1.8F;
-    protected final Random random = Random.create();
     protected int age;
     protected int maxAge;
     protected float gravityStrength;
@@ -52,9 +52,9 @@ public abstract class ServerParticle {
     protected float alpha = 1.0F;
     protected float angle;
     protected float velocityMultiplier = 0.98F;
+    private Box boundingBox = EMPTY_BOUNDING_BOX;
+    private boolean stopped;
 
-    protected final TextDisplayElement display;
-    private final ElementHolder elementHolder;
     /**
      * Children of ServerParticle should have a sprites value
      * <p>{@code private static final ArrayList<ServerParticleManager.ParticleFrame> sprites}
@@ -65,8 +65,9 @@ public abstract class ServerParticle {
         this.elementHolder = new ElementHolder();
         this.setBoundingBoxSpacing(0.2F, 0.2F);
         this.setPos(x, y, z);
-        this.maxAge = (int)(4.0F / (this.random.nextFloat() * 0.9F + 0.1F));
-        this.display = new TextDisplayElement() {};
+        this.maxAge = (int) (4.0F / (this.random.nextFloat() * 0.9F + 0.1F));
+        this.display = new TextDisplayElement() {
+        };
         this.display.setSeeThrough(false);
         this.display.setBackground(26);
         this.display.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
@@ -145,7 +146,7 @@ public abstract class ServerParticle {
     }
 
     public int getCurrentFrame() {
-        return Math.min((int)((float)this.age / this.getMaxAge() * getSprites().size()), getSprites().size() - 1);
+        return Math.min((int) ((float) this.age / this.getMaxAge() * getSprites().size()), getSprites().size() - 1);
     }
 
     public void readNbt(NbtCompound data) {
@@ -165,9 +166,9 @@ public abstract class ServerParticle {
      * @param speed the velocity multiplier to apply to this particle
      */
     public ServerParticle move(float speed) {
-        this.velocityX *= (double)speed;
-        this.velocityY = (this.velocityY - 0.1F) * (double)speed + 0.1F;
-        this.velocityZ *= (double)speed;
+        this.velocityX *= speed;
+        this.velocityY = (this.velocityY - 0.1F) * (double) speed + 0.1F;
+        this.velocityZ *= speed;
         return this;
     }
 
@@ -187,9 +188,8 @@ public abstract class ServerParticle {
     /**
      * Scales the size of this particle by the given {@code scale} amount.
      *
-     * @return this particle
-     *
      * @param scale the amount to scale this particle's size by
+     * @return this particle
      */
     public ServerParticle scale(float scale) {
         this.setBoundingBoxSpacing(0.2F * scale, 0.2F * scale);
@@ -200,9 +200,9 @@ public abstract class ServerParticle {
      * Updates the rendering color of this particle.
      * Each value should be between 0.0 (no channel color) and 1.0 (full channel color).
      *
-     * @param red the target red color to use while rendering
+     * @param red   the target red color to use while rendering
      * @param green the target green color to use while rendering
-     * @param blue the target blue color to use while rendering
+     * @param blue  the target blue color to use while rendering
      */
     public void setColor(float red, float green, float blue) {
         this.red = red;
@@ -227,20 +227,20 @@ public abstract class ServerParticle {
     }
 
     /**
+     * {@return the maximum age, in ticks, of this particle}
+     * If this particle's age exceeds this value, it will be removed from the world.
+     */
+    public int getMaxAge() {
+        return this.maxAge;
+    }
+
+    /**
      * Sets the maximum age, in ticks, that this particle can exist for.
      *
      * @param maxAge the new maximum age of this particle, in ticks
      */
     public void setMaxAge(int maxAge) {
         this.maxAge = maxAge;
-    }
-
-    /**
-     * {@return the maximum age, in ticks, of this particle}
-     * If this particle's age exceeds this value, it will be removed from the world.
-     */
-    public int getMaxAge() {
-        return this.maxAge;
     }
 
     public String toString() {
@@ -275,9 +275,9 @@ public abstract class ServerParticle {
             this.spacingXZ = spacingXZ;
             this.spacingY = spacingY;
             Box box = this.getBoundingBox();
-            double d = (box.minX + box.maxX - (double)spacingXZ) / 2.0;
-            double e = (box.minZ + box.maxZ - (double)spacingXZ) / 2.0;
-            this.setBoundingBox(new Box(d, box.minY, e, d + (double)this.spacingXZ, box.minY + (double)this.spacingY, e + (double)this.spacingXZ));
+            double d = (box.minX + box.maxX - (double) spacingXZ) / 2.0;
+            double e = (box.minZ + box.maxZ - (double) spacingXZ) / 2.0;
+            this.setBoundingBox(new Box(d, box.minY, e, d + (double) this.spacingXZ, box.minY + (double) this.spacingY, e + (double) this.spacingXZ));
         }
     }
 
@@ -294,7 +294,7 @@ public abstract class ServerParticle {
         this.z = z;
         float f = this.spacingXZ / 2.0F;
         float g = this.spacingY;
-        this.setBoundingBox(new Box(x - (double)f, y, z - (double)f, x + (double)f, y + (double)g, z + (double)f));
+        this.setBoundingBox(new Box(x - (double) f, y, z - (double) f, x + (double) f, y + (double) g, z + (double) f));
     }
 
     /**

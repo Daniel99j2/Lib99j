@@ -19,12 +19,12 @@ public class BlockUtils {
 
     public static BlockState directionToMultiProperty(BlockState state, Direction facing) {
         BlockState state1 = state;
-        if(facing == Direction.UP) state1 = state1.with(Properties.UP, true);
-        if(facing == Direction.DOWN) state1 = state1.with(Properties.DOWN, true);
-        if(facing == Direction.NORTH) state1 = state1.with(Properties.NORTH, true);
-        if(facing == Direction.SOUTH) state1 = state1.with(Properties.SOUTH, true);
-        if(facing == Direction.EAST) state1 = state1.with(Properties.EAST, true);
-        if(facing == Direction.WEST) state1 = state1.with(Properties.WEST, true);
+        if (facing == Direction.UP) state1 = state1.with(Properties.UP, true);
+        if (facing == Direction.DOWN) state1 = state1.with(Properties.DOWN, true);
+        if (facing == Direction.NORTH) state1 = state1.with(Properties.NORTH, true);
+        if (facing == Direction.SOUTH) state1 = state1.with(Properties.SOUTH, true);
+        if (facing == Direction.EAST) state1 = state1.with(Properties.EAST, true);
+        if (facing == Direction.WEST) state1 = state1.with(Properties.WEST, true);
         return state1;
     }
 }

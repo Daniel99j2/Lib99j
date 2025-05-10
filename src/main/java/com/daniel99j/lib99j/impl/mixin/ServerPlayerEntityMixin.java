@@ -45,27 +45,26 @@ import java.util.function.Consumer;
 @Mixin(ServerPlayerEntity.class)
 public abstract class ServerPlayerEntityMixin
         extends PlayerEntity implements PolymerEntity, Lib99jPlayerUtilController {
-    @Shadow private @Nullable Entity cameraEntity;
-
-    @Shadow public abstract OptionalInt openHandledScreen(@Nullable NamedScreenHandlerFactory factory);
-
+    @Shadow
+    private @Nullable Entity cameraEntity;
     @Unique
     private ElementHolder holder;
     @Unique
     private SimpleEntityElement horse;
     @Unique
     private DisplayElement cameraPoint;
-
     @Unique
     private ArrayList<String> modTranslationCheckerTranslations = null;
     @Unique
     private ArrayList<Map.Entry<String, String>> requiredModTranslationCheckerTranslations = null;
     @Unique
     private Consumer<ArrayList<String>> modTranslationCheckerOutput = null;
-
     public ServerPlayerEntityMixin(World world, BlockPos pos, float yaw, GameProfile gameProfile) {
         super(world, pos, yaw, gameProfile);
     }
+
+    @Shadow
+    public abstract OptionalInt openHandledScreen(@Nullable NamedScreenHandlerFactory factory);
 
     @Inject(method = "onDeath", at = @At("HEAD"))
     public void deathEvent(DamageSource damageSource, CallbackInfo ci) {
@@ -81,12 +80,12 @@ public abstract class ServerPlayerEntityMixin
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo ci) {
-        if(this.holder == null) {
+        if (this.holder == null) {
             this.holder = new ElementHolder();
             this.holder.setAttachment(new EntityAttachment(this.holder, getPlayer(), true));
             this.holder.startWatching(getPlayer());
         }
-        if(this.horse != null && this.cameraPoint != null) {
+        if (this.horse != null && this.cameraPoint != null) {
             this.horse.setPitch(this.getPitch());
             this.horse.setYaw(this.getYaw());
             this.cameraPoint.setPitch(this.getPitch());
@@ -97,7 +96,7 @@ public abstract class ServerPlayerEntityMixin
     @Override
     public void setYaw(float yaw) {
         super.setYaw(yaw);
-        if(this.horse != null && this.cameraPoint != null) {
+        if (this.horse != null && this.cameraPoint != null) {
             this.horse.setPitch(this.getPitch());
             this.horse.setYaw(this.getYaw());
             this.cameraPoint.setPitch(this.getPitch());
@@ -108,7 +107,7 @@ public abstract class ServerPlayerEntityMixin
     @Override
     public void setPitch(float pitch) {
         super.setPitch(pitch);
-        if(this.horse != null && this.cameraPoint != null) {
+        if (this.horse != null && this.cameraPoint != null) {
             this.horse.setPitch(this.getPitch());
             this.horse.setYaw(this.getYaw());
             this.cameraPoint.setPitch(this.getPitch());
@@ -118,7 +117,7 @@ public abstract class ServerPlayerEntityMixin
 
     @Inject(method = "rotate", at = @At("HEAD"))
     public void rotate(float yaw, float pitch, CallbackInfo ci) {
-        if(this.horse != null && this.cameraPoint != null) {
+        if (this.horse != null && this.cameraPoint != null) {
             this.horse.setPitch(pitch);
             this.horse.setYaw(yaw);
             this.cameraPoint.setPitch(pitch);
@@ -167,7 +166,7 @@ public abstract class ServerPlayerEntityMixin
 
     @Override
     public void lib99j$addModTranslationCheckerTranslation(String entry) {
-        if(this.modTranslationCheckerTranslations == null) this.modTranslationCheckerTranslations = new ArrayList<>();
+        if (this.modTranslationCheckerTranslations == null) this.modTranslationCheckerTranslations = new ArrayList<>();
         this.modTranslationCheckerTranslations.add(entry);
     }
 

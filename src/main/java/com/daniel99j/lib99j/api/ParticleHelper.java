@@ -7,8 +7,8 @@ import net.minecraft.world.World;
 
 public class ParticleHelper {
     public static void spawnParticlesAtPosition(World world, Vec3d position, ParticleEffect particle, int count, double offsetX, double offsetY, double offsetZ, double speed) {
-            if (world instanceof ServerWorld serverWorld) {
-                serverWorld.spawnParticles(particle, position.x, position.y, position.z, count, offsetX, offsetY, offsetZ, speed);
+        if (world instanceof ServerWorld serverWorld) {
+            serverWorld.spawnParticles(particle, position.x, position.y, position.z, count, offsetX, offsetY, offsetZ, speed);
         }
     }
 }

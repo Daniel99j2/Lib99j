@@ -16,17 +16,17 @@ import java.util.UUID;
 public interface PlayerManagerAccessor {
     @Mutable
     @Accessor("players")
-    public List<ServerPlayerEntity> getPlayers();
+    List<ServerPlayerEntity> getPlayers();
 
     @Mutable
     @Accessor("playerMap")
-    public Map<UUID, ServerPlayerEntity> getPlayerMap();
+    Map<UUID, ServerPlayerEntity> getPlayerMap();
 
     @Mutable
     @Accessor("statisticsMap")
-    public Map<UUID, ServerStatHandler> getStatisticsMap();
+    Map<UUID, ServerStatHandler> getStatisticsMap();
 
     @Mutable
     @Accessor("advancementTrackers")
-    public Map<UUID, PlayerAdvancementTracker> getAdvancementTrackers();
+    Map<UUID, PlayerAdvancementTracker> getAdvancementTrackers();
 }

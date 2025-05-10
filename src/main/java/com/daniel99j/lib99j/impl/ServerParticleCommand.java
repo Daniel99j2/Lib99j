@@ -30,9 +30,9 @@ public class ServerParticleCommand {
                                         .then(CommandManager.argument("z", FloatArgumentType.floatArg())
                                                 .then(CommandManager.argument("count", IntegerArgumentType.integer(1, 10000))
                                                         .executes(ServerParticleCommand::spawn)
-                                                .then(CommandManager.argument("nbt", StringArgumentType.greedyString())
+                                                        .then(CommandManager.argument("nbt", StringArgumentType.greedyString())
                                                                 .executes(ServerParticleCommand::spawn)
-                                                )))))
+                                                        )))))
                 ).build();
 
         dispatcher.getRoot().addChild(rootCommand);
@@ -42,8 +42,8 @@ public class ServerParticleCommand {
         ServerCommandSource source = context.getSource();
         String type = StringArgumentType.getString(context, "particle");
         ServerParticle p;
-        for(ServerParticleManager.ServerParticleType argument : ServerParticleManager.particleTypes) {
-            if(argument.id().toString().equals(type)) {
+        for (ServerParticleManager.ServerParticleType argument : ServerParticleManager.particleTypes) {
+            if (argument.id().toString().equals(type)) {
                 for (int i = 0; i < IntegerArgumentType.getInteger(context, "count"); i++) {
                     p = argument.spawner().accept(source.getWorld().toServerWorld(), source.getPosition().getX() + FloatArgumentType.getFloat(context, "x"), source.getPosition().getY() + FloatArgumentType.getFloat(context, "y"), source.getPosition().getZ() + FloatArgumentType.getFloat(context, "z"));
                     try {

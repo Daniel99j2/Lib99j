@@ -9,8 +9,8 @@ public class ClientGuiUtils {
     public static boolean shouldShowCrossHairLike() {
         return
                 shouldShowHungerLike()
-                && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()
-                && !MinecraftClient.getInstance().inGameHud.getDebugHud().shouldShowDebugHud();
+                        && MinecraftClient.getInstance().options.getPerspective().isFirstPerson()
+                        && !MinecraftClient.getInstance().inGameHud.getDebugHud().shouldShowDebugHud();
     }
 
     public static boolean shouldShowHungerLike() {

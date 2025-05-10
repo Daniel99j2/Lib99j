@@ -51,7 +51,7 @@ public class VfxCommand {
         try {
             type = VFXUtils.GENERIC_SCREEN_EFFECT.valueOf(StringArgumentType.getString(context, "type").toUpperCase());
         } catch (Exception ignored) {
-            source.sendError(Text.literal("Could not find screen effect type \""+StringArgumentType.getString(context, "type")+"\""));
+            source.sendError(Text.literal("Could not find screen effect type \"" + StringArgumentType.getString(context, "type") + "\""));
             return 0;
         }
         VFXUtils.addGenericScreenEffect(source.getPlayer(), IntegerArgumentType.getInteger(context, "ticks"), type, Identifier.ofVanilla("command"));

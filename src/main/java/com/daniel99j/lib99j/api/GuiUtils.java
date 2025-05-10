@@ -6,7 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.polymer.core.mixin.block.BlockEntityUpdateS2CPacketAccessor;
-import eu.pb4.polymer.core.mixin.block.packet.BlockEntityUpdateS2CPacketMixin;
 import eu.pb4.polymer.resourcepack.extras.api.ResourcePackExtras;
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.GuiElement;
@@ -21,7 +20,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.recipe.NetworkRecipeId;
 import net.minecraft.recipe.RecipeDisplayEntry;
@@ -44,7 +42,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -52,13 +49,17 @@ public class GuiUtils {
     private static final int SPACES_RANGE = 256;
     private static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
     private static final Map<Integer, Character> SPACES = new HashMap<>();
-    private static char currentGuiChar = '*';
-    private static char currentSpaceChar = '*';
     private static final ArrayList<Character> blacklistedChars = new ArrayList<>();
-
     private static final List<GuiTextures.ItemGuiTexture> ITEM_GUI_TEXTURES = new ArrayList<>();
     private static final List<GuiTextures.GuiTexture> GUI_TEXTURES = new ArrayList<>();
     private static final List<GuiBarTexture> GUI_BAR_TEXTURES = new ArrayList<>();
+    private static char currentGuiChar = '*';
+    private static char currentSpaceChar = '*';
+
+    static {
+        blacklistedChars.add('§');
+        blacklistedChars.add('\\');
+    }
 
     @ApiStatus.Internal
     public static void load() {
@@ -74,11 +75,6 @@ public class GuiUtils {
         GuiTextures.load();
 
         ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(Lib99j.MOD_ID, "gui"));
-    }
-
-    static {
-        blacklistedChars.add('§');
-        blacklistedChars.add('\\');
     }
 
     private static char getNextSpaceChar() {
@@ -112,27 +108,6 @@ public class GuiUtils {
         return (allowed ? GuiTextures.HEAD_PREVIOUS_PAGE : GuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Text.of("Previous Page"));
     }
 
-    public static class BackgroundTexture {
-        final char character = getNextGuiChar();
-        final int width;
-        final Identifier path;
-
-        public BackgroundTexture(Identifier path, int width) {
-            this.width = width;
-            this.path = path;
-            ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
-            FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), 13, 256, new char[][]{new char[]{character}}));
-        }
-
-        public MutableText text() {
-            MutableText text = getSpace(-8, Text.literal(""));
-            text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(Identifier.of(path.getNamespace(), "gui"))));
-            getSpace(8, text);
-            getSpace(-width, text);
-            return text;
-        }
-    }
-
     @ApiStatus.Internal
     public static List<GuiTextures.ItemGuiTexture> getItemGuiTextures() {
         return ITEM_GUI_TEXTURES;
@@ -146,7 +121,7 @@ public class GuiUtils {
         FONT_TEXTURES.forEach((entry) -> {
             var bitmap = new JsonObject();
             bitmap.addProperty("type", "bitmap");
-            bitmap.addProperty("file", entry.path + ".png");
+            bitmap.addProperty("file", entry.path.getNamespace() + "/" + entry.path.getPath() + ".png");
             bitmap.addProperty("ascent", entry.ascent);
             bitmap.addProperty("height", entry.height);
             var chars = new JsonArray();
@@ -165,7 +140,7 @@ public class GuiUtils {
 
         GUI_BAR_TEXTURES.forEach((entry) -> {
             for (GuiBarTexturePart part : entry.textures) {
-                assetWriter.accept("assets/" + Lib99j.MOD_ID + "/textures/gui/" + part.texture.path + ".png", part.imageData());
+                assetWriter.accept("assets/" + part.texture.path.getNamespace() + "/textures/gui/" + part.texture.path.getPath() + ".png", part.imageData());
             }
         });
 
@@ -261,6 +236,125 @@ public class GuiUtils {
         return null;
     }
 
+    public static boolean isNumberKey(ClickType clickType) {
+        return getNumberKeyValue(clickType) != -1;
+    }
+
+    public static int getNumberKeyValue(ClickType clickType) {
+        return switch (clickType) {
+            case ClickType.NUM_KEY_1 -> 1;
+            case ClickType.NUM_KEY_2 -> 2;
+            case ClickType.NUM_KEY_3 -> 3;
+            case ClickType.NUM_KEY_4 -> 4;
+            case ClickType.NUM_KEY_5 -> 5;
+            case ClickType.NUM_KEY_6 -> 6;
+            case ClickType.NUM_KEY_7 -> 7;
+            case ClickType.NUM_KEY_8 -> 8;
+            case ClickType.NUM_KEY_9 -> 9;
+            default -> -1;
+        };
+    }
+
+    /**
+     * Return a list of mods that are on a player's client
+     *
+     * @param modTranslations A Map of modId -> translation to check
+     */
+    public static void doesPlayerHaveMods(ServerPlayerEntity player, Map<String, String> modTranslations, Consumer<ArrayList<String>> output) {
+        ArrayList<Map.Entry<String, String>> entries = new ArrayList<>(modTranslations.entrySet());
+        ((Lib99jPlayerUtilController) player).lib99j$setModCheckerOutput(output);
+        ((Lib99jPlayerUtilController) player).lib99j$setNeededModCheckerTranslations(entries);
+        int total = entries.size();
+        int lines = 3;
+        int count = (int) Math.ceil((double) total / lines);
+        BlockPos pos = new BlockPos(player.getBlockPos().getX(), player.getWorld().getBottomY(), player.getBlockPos().getZ());
+
+        for (int i = 0; i < count; i++) {
+            NbtCompound nbt = new NbtCompound();
+            SignText text = new SignText();
+
+            for (int line = 0; line < lines; line++) {
+                int index = i * lines + line;
+                if (index < total) {
+                    Map.Entry<String, String> entry = entries.get(index);
+                    text = text.withMessage(line, Text.translatable(entry.getValue()).withColor(entries.indexOf(entry)));
+                }
+            }
+
+            if (i == count - 1) text = text.withMessage(3, Text.literal("lib99j$final"));
+            else text = text.withMessage(3, Text.literal("lib99j$checker"));
+
+            DynamicOps<NbtElement> dynamicOps = player.getRegistryManager().getOps(NbtOps.INSTANCE);
+            nbt.put("front_text", SignText.CODEC, dynamicOps, text);
+            nbt.put("back_text", SignText.CODEC, dynamicOps, new SignText());
+            nbt.putBoolean("is_waxed", false);
+
+            player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, Blocks.OAK_SIGN.getDefaultState()));
+            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
+            player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos, true));
+            player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
+        }
+        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, player.getWorld().getBlockState(pos)));
+        if (player.getWorld().getBlockEntity(pos) != null)
+            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacket.create(player.getWorld().getBlockEntity(pos)));
+    }
+
+    public static boolean isGeneric54Screen(ScreenHandlerType screenHandlerType) {
+        return
+                (screenHandlerType == ScreenHandlerType.GENERIC_9X1 ||
+                        screenHandlerType == ScreenHandlerType.GENERIC_9X2 ||
+                        screenHandlerType == ScreenHandlerType.GENERIC_9X3 ||
+                        screenHandlerType == ScreenHandlerType.GENERIC_9X4 ||
+                        screenHandlerType == ScreenHandlerType.GENERIC_9X5 ||
+                        screenHandlerType == ScreenHandlerType.GENERIC_9X6);
+    }
+
+    public static void basicGuiBackground(SimpleGui gui) {
+        basicGuiBackground(gui, false);
+    }
+
+    public static void basicGuiBackground(SimpleGui gui, boolean showSlotIds) {
+        for (int i = 0; i < gui.getSize(); i++) {
+            ItemStack stack;
+            if (showSlotIds) {
+                stack = Items.GLASS_PANE.getDefaultStack();
+                stack.set(DataComponentTypes.MAX_DAMAGE, gui.getSize());
+                stack.set(DataComponentTypes.DAMAGE, gui.getSize() - i);
+            } else {
+                stack = GuiUtils.GuiTextures.INVISIBLE.getItemStack();
+            }
+            if (gui.getSlot(i) == null) gui.setSlot(i, stack);
+        }
+    }
+
+    public static void toast(ServerPlayerEntity player, ItemStack item) {
+        ArrayList<RecipeBookAddS2CPacket.Entry> entries = new ArrayList<>();
+        entries.add(new RecipeBookAddS2CPacket.Entry(new RecipeDisplayEntry(new NetworkRecipeId(-5957), new ShapelessCraftingRecipeDisplay(List.of(SlotDisplay.EmptySlotDisplay.INSTANCE), new SlotDisplay.StackSlotDisplay(item), SlotDisplay.EmptySlotDisplay.INSTANCE), OptionalInt.empty(), RecipeBookCategories.CRAFTING_MISC, Optional.empty()), true, false));
+        player.networkHandler.sendPacket(new RecipeBookAddS2CPacket(entries, false));
+        player.networkHandler.sendPacket(new RecipeBookRemoveS2CPacket(List.of(new NetworkRecipeId(-5957))));
+    }
+
+    public static class BackgroundTexture {
+        final char character = getNextGuiChar();
+        final int width;
+        final Identifier path;
+
+        public BackgroundTexture(Identifier path, int width) {
+            this.width = width;
+            this.path = path;
+            ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
+            FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), 13, 256, new char[][]{new char[]{character}}));
+        }
+
+        public MutableText text() {
+            MutableText text = getSpace(-8, Text.literal(""));
+            text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(Identifier.of(path.getNamespace(), "gui"))));
+            getSpace(8, text);
+            getSpace(-width, text);
+            return text;
+        }
+    }
+
     public record FontTexture(Identifier path, int ascent, int height, char[][] chars) {
 
     }
@@ -310,102 +404,5 @@ public class GuiUtils {
                 return text;
             }
         }
-    }
-
-    public static boolean isNumberKey(ClickType clickType) {
-        return getNumberKeyValue(clickType) != -1;
-    }
-
-    public static int getNumberKeyValue(ClickType clickType) {
-        return switch (clickType) {
-            case ClickType.NUM_KEY_1 -> 1;
-            case ClickType.NUM_KEY_2 -> 2;
-            case ClickType.NUM_KEY_3 -> 3;
-            case ClickType.NUM_KEY_4 -> 4;
-            case ClickType.NUM_KEY_5 -> 5;
-            case ClickType.NUM_KEY_6 -> 6;
-            case ClickType.NUM_KEY_7 -> 7;
-            case ClickType.NUM_KEY_8 -> 8;
-            case ClickType.NUM_KEY_9 -> 9;
-            default -> -1;
-        };
-    }
-
-    /**
-     * Return a list of mods that are on a player's client
-     * @param modTranslations A Map of modId -> translation to check
-     */
-    public static void doesPlayerHaveMods(ServerPlayerEntity player, Map<String, String> modTranslations, Consumer<ArrayList<String>> output) {
-        ArrayList<Map.Entry<String, String>> entries = new ArrayList<>(modTranslations.entrySet());
-        ((Lib99jPlayerUtilController) player).lib99j$setModCheckerOutput(output);
-        ((Lib99jPlayerUtilController) player).lib99j$setNeededModCheckerTranslations(entries);
-        int total = entries.size();
-        int lines = 3;
-        int count = (int) Math.ceil((double) total / lines);
-        BlockPos pos = new BlockPos(player.getBlockPos().getX(), player.getWorld().getBottomY(), player.getBlockPos().getZ());
-
-        for (int i = 0; i < count; i++) {
-            NbtCompound nbt = new NbtCompound();
-            SignText text = new SignText();
-
-            for (int line = 0; line < lines; line++) {
-                int index = i * lines + line;
-                if (index < total) {
-                    Map.Entry<String, String> entry = entries.get(index);
-                    text = text.withMessage(line, Text.translatable(entry.getValue()).withColor(entries.indexOf(entry)));
-                }
-            }
-
-            if(i == count-1) text = text.withMessage(3, Text.literal("lib99j$final"));
-            else text = text.withMessage(3, Text.literal("lib99j$checker"));
-
-            DynamicOps<NbtElement> dynamicOps = player.getRegistryManager().getOps(NbtOps.INSTANCE);
-            nbt.put("front_text", SignText.CODEC, dynamicOps, text);
-            nbt.put("back_text", SignText.CODEC, dynamicOps, new SignText());
-            nbt.putBoolean("is_waxed", false);
-
-            player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, Blocks.OAK_SIGN.getDefaultState()));
-            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
-            player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos, true));
-            player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
-        }
-        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, player.getWorld().getBlockState(pos)));
-        if(player.getWorld().getBlockEntity(pos) != null) player.networkHandler.sendPacket(BlockEntityUpdateS2CPacket.create(player.getWorld().getBlockEntity(pos)));
-    }
-
-
-    public static boolean isGeneric54Screen(ScreenHandlerType screenHandlerType) {
-        return
-                (screenHandlerType == ScreenHandlerType.GENERIC_9X1 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X2 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X3 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X4 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X5 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X6);
-    }
-
-    public static void basicGuiBackground(SimpleGui gui) {
-        basicGuiBackground(gui, false);
-    }
-
-    public static void basicGuiBackground(SimpleGui gui, boolean showSlotIds) {
-        for (int i = 0; i < gui.getSize(); i++) {
-            ItemStack stack;
-            if (showSlotIds) {
-                stack = Items.GLASS_PANE.getDefaultStack();
-                stack.set(DataComponentTypes.MAX_DAMAGE, gui.getSize());
-                stack.set(DataComponentTypes.DAMAGE, gui.getSize() - i);
-            } else {
-                stack = GuiUtils.GuiTextures.INVISIBLE.getItemStack();
-            }
-            if (gui.getSlot(i) == null) gui.setSlot(i, stack);
-        }
-    }
-
-    public static void toast(ServerPlayerEntity player, ItemStack item) {
-        ArrayList<RecipeBookAddS2CPacket.Entry> entries = new ArrayList<>();
-        entries.add(new RecipeBookAddS2CPacket.Entry(new RecipeDisplayEntry(new NetworkRecipeId(-5957), new ShapelessCraftingRecipeDisplay(List.of(SlotDisplay.EmptySlotDisplay.INSTANCE), new SlotDisplay.StackSlotDisplay(item), SlotDisplay.EmptySlotDisplay.INSTANCE), OptionalInt.empty(), RecipeBookCategories.CRAFTING_MISC, Optional.empty()), true, false));
-        player.networkHandler.sendPacket(new RecipeBookAddS2CPacket(entries, false));
-        player.networkHandler.sendPacket(new RecipeBookRemoveS2CPacket(List.of(new NetworkRecipeId(-5957))));
     }
 }

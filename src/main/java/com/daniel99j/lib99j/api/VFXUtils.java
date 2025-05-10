@@ -80,54 +80,6 @@ public class VFXUtils {
         }
     }
 
-    public static class CameraShakeInstance {
-        ServerPlayerEntity player;
-        int ticks;
-        float strength;
-        int remainingTicks;
-        Identifier source;
-        float lastYaw;
-        float lastPitch;
-
-        private CameraShakeInstance(ServerPlayerEntity player, int ticks, float strength, Identifier source) {
-            this.ticks = ticks;
-            this.remainingTicks = ticks;
-            this.player = player;
-            this.strength = strength;
-            this.source = source;
-        }
-    }
-
-    public static class GenericScreenEffectInstance {
-        ServerPlayerEntity player;
-        int ticks;
-        int remainingTicks;
-        GENERIC_SCREEN_EFFECT effect;
-        Identifier source;
-        List<Packet<ClientPlayPacketListener>> queuedPackets = new ArrayList<>();
-
-        private GenericScreenEffectInstance(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
-            this.ticks = ticks;
-            this.remainingTicks = ticks;
-            this.player = player;
-            this.effect = effect;
-            this.source = source;
-            initGenericScreenEffect(this);
-        }
-
-        public ServerPlayerEntity getPlayer() {
-            return player;
-        }
-
-        public GENERIC_SCREEN_EFFECT getEffect() {
-            return effect;
-        }
-
-        public List<Packet<ClientPlayPacketListener>> getQueuedPackets() {
-            return queuedPackets;
-        }
-    }
-
     public static void shake(ServerPlayerEntity player, int ticks, float strength, Identifier source) {
         CameraShakeInstance instance = new CameraShakeInstance(player, ticks, strength, source);
         cameraShakeInstances.add(instance);
@@ -136,7 +88,6 @@ public class VFXUtils {
     public static void stopShaking(ServerPlayerEntity player, Identifier source) {
         cameraShakeInstances.removeIf(instance -> instance.player == player && instance.source == source);
     }
-
 
     public static void stopAllShaking(ServerPlayerEntity player) {
         cameraShakeInstances.removeIf(instance -> instance.player == player);
@@ -243,26 +194,14 @@ public class VFXUtils {
         }
     }
 
-    public enum GENERIC_SCREEN_EFFECT {
-        RED_TINT,
-        SNOW,
-        FIRE,
-        NAUSEA,
-        BLACK_HEARTS,
-        GREEN_HEARTS,
-        GREEN_HUNGER,
-        BLINDNESS,
-        NIGHT_VISION,
-        LOCK_CAMERA_AND_POS
-    }
-
     public static void addGenericScreenEffect(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
         GenericScreenEffectInstance instance = new GenericScreenEffectInstance(player, ticks, effect, source);
         genericScreenEffectInstances.add(instance);
     }
 
     public static void addGenericScreenEffectUnlessExists(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
-        if(!hasGenericScreenEffectSource(player, effect, source)) addGenericScreenEffect(player, ticks, effect, source);
+        if (!hasGenericScreenEffectSource(player, effect, source))
+            addGenericScreenEffect(player, ticks, effect, source);
     }
 
     public static void removeGenericScreenEffect(ServerPlayerEntity player, Identifier source) {
@@ -274,7 +213,6 @@ public class VFXUtils {
             return false;
         });
     }
-
 
     public static void clearGenericScreenEffects(ServerPlayerEntity player) {
         genericScreenEffectInstances.removeIf(instance -> {
@@ -295,7 +233,7 @@ public class VFXUtils {
                         instance.effect == GENERIC_SCREEN_EFFECT.GREEN_HEARTS ||
                         instance.effect == GENERIC_SCREEN_EFFECT.GREEN_HUNGER ||
                         instance.effect == GENERIC_SCREEN_EFFECT.NAUSEA
-                ));
+        ));
     }
 
     public static boolean hasGenericScreenEffect(ServerPlayerEntity player, GENERIC_SCREEN_EFFECT effect) {
@@ -309,7 +247,6 @@ public class VFXUtils {
     public static List<GenericScreenEffectInstance> getGenericScreenEffectInstances() {
         return genericScreenEffectInstances;
     }
-
 
     public static void clientSideExplode(
             ArrayList<ServerPlayerEntity> players,
@@ -331,7 +268,7 @@ public class VFXUtils {
 
         for (ServerPlayerEntity serverPlayerEntity : players) {
             if (serverPlayerEntity.squaredDistanceTo(vec3d) < 4096.0) {
-                Optional<Vec3d> optional = Optional.ofNullable((Vec3d) explosionImpl.getKnockbackByPlayer().get(serverPlayerEntity));
+                Optional<Vec3d> optional = Optional.ofNullable(explosionImpl.getKnockbackByPlayer().get(serverPlayerEntity));
                 serverPlayerEntity.networkHandler.sendPacket(new ExplosionS2CPacket(vec3d, optional, particleEffect, soundEvent));
             }
         }
@@ -370,8 +307,70 @@ public class VFXUtils {
         holder.destroy();
     }
 
+    public enum GENERIC_SCREEN_EFFECT {
+        RED_TINT,
+        SNOW,
+        FIRE,
+        NAUSEA,
+        BLACK_HEARTS,
+        GREEN_HEARTS,
+        GREEN_HUNGER,
+        BLINDNESS,
+        NIGHT_VISION,
+        LOCK_CAMERA_AND_POS
+    }
+
+    public static class CameraShakeInstance {
+        ServerPlayerEntity player;
+        int ticks;
+        float strength;
+        int remainingTicks;
+        Identifier source;
+        float lastYaw;
+        float lastPitch;
+
+        private CameraShakeInstance(ServerPlayerEntity player, int ticks, float strength, Identifier source) {
+            this.ticks = ticks;
+            this.remainingTicks = ticks;
+            this.player = player;
+            this.strength = strength;
+            this.source = source;
+        }
+    }
+
+    public static class GenericScreenEffectInstance {
+        ServerPlayerEntity player;
+        int ticks;
+        int remainingTicks;
+        GENERIC_SCREEN_EFFECT effect;
+        Identifier source;
+        List<Packet<ClientPlayPacketListener>> queuedPackets = new ArrayList<>();
+
+        private GenericScreenEffectInstance(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
+            this.ticks = ticks;
+            this.remainingTicks = ticks;
+            this.player = player;
+            this.effect = effect;
+            this.source = source;
+            initGenericScreenEffect(this);
+        }
+
+        public ServerPlayerEntity getPlayer() {
+            return player;
+        }
+
+        public GENERIC_SCREEN_EFFECT getEffect() {
+            return effect;
+        }
+
+        public List<Packet<ClientPlayPacketListener>> getQueuedPackets() {
+            return queuedPackets;
+        }
+    }
+
     private static class FakeExplosionImpl extends ExplosionImpl {
         ArrayList<ServerPlayerEntity> players;
+
         public FakeExplosionImpl(ArrayList<ServerPlayerEntity> players, ServerWorld world, @Nullable ExplosionBehavior behavior, Vec3d pos, float power, boolean createFire, DestructionType destructionType, boolean ignoreResistance) {
             super(world, null, null, new ExplosionBehavior() {
                 @Override

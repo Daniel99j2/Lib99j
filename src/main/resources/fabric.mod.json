@@ -1,41 +1,43 @@
 {
-	"schemaVersion": 1,
-	"id": "lib99j",
-	"version": "${version}",
-	"name": "Lib99j",
-	"description": "A library for all of Daniel99j's mods",
-	"authors": [
-		"Daniel99j"
-	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/lib99j/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"com.daniel99j.lib99j.Lib99j"
-		],
-		"fabric-datagen": [
-			"com.daniel99j.lib99j.impl.datagen.Lib99jDataGenerator"
-		]
-	},
-	"mixins": [
-		"lib99j.mixins.json"
-	],
-	"depends": {
-		"fabricloader": ">=0.16.14",
-		"minecraft": "~1.21.5",
-		"java": ">=21",
-		"fabric-api": "*"
-	},
-	"custom": {
-		"modmenu": {
-			"badges": [ "library"],
-			"update_checker": false
-		}
-	},
-	"accessWidener": "lib99j.accesswidener"
+  "schemaVersion": 1,
+  "id": "lib99j",
+  "version": "${version}",
+  "name": "Lib99j",
+  "description": "A library for all of Daniel99j's mods",
+  "authors": [
+    "Daniel99j"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/lib99j/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.daniel99j.lib99j.Lib99j"
+    ],
+    "fabric-datagen": [
+      "com.daniel99j.lib99j.impl.datagen.Lib99jDataGenerator"
+    ]
+  },
+  "mixins": [
+    "lib99j.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.21.5",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [
+        "library"
+      ],
+      "update_checker": false
+    }
+  },
+  "accessWidener": "lib99j.accesswidener"
 }

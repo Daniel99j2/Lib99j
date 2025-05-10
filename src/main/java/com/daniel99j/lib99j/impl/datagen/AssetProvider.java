@@ -16,8 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public class AssetProvider implements DataProvider {
-    private final DataOutput output;
-
     private static final String BASIC_ITEM_TEMPLATE = """
             {
               "parent": "%BASE%",
@@ -26,6 +24,7 @@ public class AssetProvider implements DataProvider {
               }
             }
             """.replace(" ", "").replace("\n", "");
+    private final DataOutput output;
 
     public AssetProvider(FabricDataOutput output) {
         this.output = output;
@@ -36,7 +35,7 @@ public class AssetProvider implements DataProvider {
 
         for (GuiUtils.GuiTextures.ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
             assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/gui/" + texture.path().getPath() + ".json",
-                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of(texture.path().getNamespace(), "gui/"+texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of(texture.path().getNamespace(), "gui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
         }
 
         ServerParticleManager.generateAssets(assetWriter);

@@ -33,9 +33,9 @@ public class ItemUtils {
     }
 
     private static ItemStack setModel(ItemStack stack, Identifier model, boolean bridged) {
-        Identifier identifier = Identifier.of(model.getNamespace(), bridged ? "-/"+model.getPath() : model.getPath());
-        if(identifier.getPath().contains("blocks/")) throw new IllegalArgumentException("Use block/ not blocks/");
-        if(identifier.getPath().contains("items/")) throw new IllegalArgumentException("Use item/ not items/");
+        Identifier identifier = Identifier.of(model.getNamespace(), bridged ? "-/" + model.getPath() : model.getPath());
+        if (identifier.getPath().contains("blocks/")) throw new IllegalArgumentException("Use block/ not blocks/");
+        if (identifier.getPath().contains("items/")) throw new IllegalArgumentException("Use item/ not items/");
         stack.set(DataComponentTypes.ITEM_MODEL, identifier);
         return stack;
     }
@@ -90,7 +90,7 @@ public class ItemUtils {
     }
 
     public static Item getRandomItem() {
-        return Registries.ITEM.stream().toList().get(NumberUtils.getRandomInt(1, Registries.ITEM.stream().toList().size())-1);
+        return Registries.ITEM.stream().toList().get(NumberUtils.getRandomInt(1, Registries.ITEM.stream().toList().size()) - 1);
     }
 
     public static Item getBasicModelItem() {
