@@ -107,7 +107,8 @@ jar {
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
+			groupId = "com.daniel99j"
+			artifactId = "lib99j"
 			from components.java
 		}
 	}
