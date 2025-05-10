@@ -10,12 +10,33 @@ base {
 	archivesName = project.archives_base_name
 }
 
+loom {
+	accessWidenerPath = file("src/main/resources/lib99j.accesswidener")
+}
+
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven { url "https://maven.tomalbrc.de" }
+	maven { url 'https://maven.nucleoid.xyz' }
+	maven { url 'https://kneelawk.com/maven' }
+	maven { url "https://maven.alexiil.uk/" }
+	maven { url "https://api.modrinth.com/maven/" }
+	maven { url = "https://jitpack.io" }
+	maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+	mavenLocal()
+	maven { url = 'https://maven.ladysnake.org/releases' }
+	maven { url "https://maven.tomalbrc.de" }
+	maven { url "https://maven.shedaniel.me/" }
+	maven { url "https://maven.terraformersmc.com/releases/" }
+
+	maven {
+		name = "Terraformers"
+		url = "https://maven.terraformersmc.com/"
+	}
 }
 
 fabricApi {
@@ -25,14 +46,31 @@ fabricApi {
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	
+
+	modImplementation include("me.lucko:fabric-permissions-api:0.3.3")
+
+	modImplementation include ("eu.pb4:polymer-core:${polymer_version}")
+	modImplementation include ("eu.pb4:polymer-blocks:${polymer_version}")
+	modImplementation include ("eu.pb4:polymer-resource-pack:${polymer_version}")
+	modImplementation include ("eu.pb4:polymer-resource-pack-extras:${polymer_version}")
+	modImplementation include ("eu.pb4:polymer-autohost:${polymer_version}")
+	modImplementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
+	modImplementation include('eu.pb4:map-canvas-api:0.5.0+1.21.3')
+	modImplementation include('eu.pb4:sidebar-api:0.5.1+1.21.1')
+	modImplementation include('eu.pb4:sgui:1.9.0+1.21.5')
+	modImplementation include('eu.pb4:factorytools:0.6.0+1.21.5')
+	modImplementation include("eu.pb4:common-protection-api:1.0.0")
+
+	modImplementation include("me.shedaniel.cloth:cloth-config-fabric:18.0.145")
+
+	modImplementation include("com.terraformersmc:modmenu:14.0.0-rc.2")
+
+	modImplementation include("de.tomalbrc:blockbench-import-library:1.2.4+1.21.5-rc1")
 }
 
 processResources {

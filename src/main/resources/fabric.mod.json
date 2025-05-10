@@ -3,9 +3,9 @@
 	"id": "lib99j",
 	"version": "${version}",
 	"name": "Lib99j",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "A library for all of Daniel99j's mods",
 	"authors": [
-		"Me!"
+		"Daniel99j"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -19,7 +19,7 @@
 			"com.daniel99j.lib99j.Lib99j"
 		],
 		"fabric-datagen": [
-			"com.daniel99j.lib99j.Lib99jDataGenerator"
+			"com.daniel99j.lib99j.impl.datagen.Lib99jDataGenerator"
 		]
 	},
 	"mixins": [
@@ -31,7 +31,11 @@
 		"java": ">=21",
 		"fabric-api": "*"
 	},
-	"suggests": {
-		"another-mod": "*"
-	}
+	"custom": {
+		"modmenu": {
+			"badges": [ "library"],
+			"update_checker": false
+		}
+	},
+	"accessWidener": "lib99j.accesswidener"
 }

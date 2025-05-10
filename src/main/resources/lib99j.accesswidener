@@ -1,0 +1,28 @@
+accessWidener	v2	named
+accessible class net/minecraft/server/world/ServerChunkLoadingManager$EntityTracker
+accessible class net/minecraft/entity/Entity
+accessible field net/minecraft/entity/attribute/AttributeContainer fallback Lnet/minecraft/entity/attribute/DefaultAttributeContainer;
+accessible field net/minecraft/entity/Entity world Lnet/minecraft/world/World;
+accessible field net/minecraft/entity/LivingEntity lastDamageSource Lnet/minecraft/entity/damage/DamageSource;
+accessible field net/minecraft/entity/Entity velocity Lnet/minecraft/util/math/Vec3d;
+accessible field net/minecraft/entity/projectile/FireworkRocketEntity ITEM Lnet/minecraft/entity/data/TrackedData;
+accessible field net/minecraft/entity/projectile/FireworkRocketEntity SHOT_AT_ANGLE Lnet/minecraft/entity/data/TrackedData;
+accessible field net/minecraft/entity/LivingEntity jumping Z
+accessible field net/minecraft/client/gui/screen/ingame/RecipeBookScreen recipeBook Lnet/minecraft/client/gui/screen/recipebook/RecipeBookWidget;
+accessible field net/minecraft/client/gui/screen/SplashTextRenderer TEXT_X I
+accessible field net/minecraft/client/gui/screen/SplashTextRenderer TEXT_Y I
+accessible field net/minecraft/client/Mouse rightButtonClicked Z
+accessible method net/minecraft/world/dimension/NetherPortal <init> (Lnet/minecraft/util/math/Direction$Axis;ILnet/minecraft/util/math/Direction;Lnet/minecraft/util/math/BlockPos;II)V
+accessible field net/minecraft/world/dimension/NetherPortal foundPortalBlocks I
+accessible method net/minecraft/world/explosion/ExplosionImpl getBlocksToDestroy ()Ljava/util/List;
+accessible method net/minecraft/world/explosion/ExplosionImpl shouldDestroyBlocks ()Z
+accessible field net/minecraft/world/explosion/ExplosionImpl createFire Z
+accessible field net/minecraft/block/AbstractBlock$AbstractBlockState shapeCache Lnet/minecraft/block/AbstractBlock$AbstractBlockState$ShapeCache;
+accessible class net/minecraft/block/AbstractBlock$AbstractBlockState$ShapeCache
+accessible field net/minecraft/client/render/model/BakedModelManager bakedItemModels Ljava/util/Map;
+accessible method net/minecraft/item/GoatHornItem getInstrument (Lnet/minecraft/item/ItemStack;Lnet/minecraft/registry/RegistryWrapper$WrapperLookup;)Ljava/util/Optional;
+accessible field net/minecraft/block/AbstractBlock$Settings registryKey Lnet/minecraft/registry/RegistryKey;
+accessible field net/minecraft/server/world/ServerChunkLoadingManager playerChunkWatchingManager Lnet/minecraft/server/world/PlayerChunkWatchingManager;
+accessible field net/minecraft/world/explosion/ExplosionImpl behavior Lnet/minecraft/world/explosion/ExplosionBehavior;
+accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/List;
+accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
