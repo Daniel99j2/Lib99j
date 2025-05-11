@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "com.daniel99j.lib99j.Lib99j"
+    ],
+    "client": [
+      "com.daniel99j.lib99j.Lib99jClient"
     ]
   },
   "mixins": [
