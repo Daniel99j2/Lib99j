@@ -15,6 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
+/**
+ * This is executed through polymer's resource pack generator, not the traditional data generator
+ * <p>This is so that it will not break other mods datagen
+ */
 public class AssetProvider implements DataProvider {
     private static final String BASIC_ITEM_TEMPLATE = """
             {

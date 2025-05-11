@@ -57,7 +57,6 @@ public class Lib99j implements ModInitializer {
         GuiUtils.load();
 
         ServerLifecycleEvents.SERVER_STARTED.register((server1) -> server = server1);
-        ServerLifecycleEvents.SERVER_STOPPED.register((server1) -> server = null);
 
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             ClientLifecycleEvents.CLIENT_STARTED.register((client) -> {
@@ -70,6 +69,7 @@ public class Lib99j implements ModInitializer {
         }
 
         PolymerResourcePackUtils.markAsRequired();
+        PolymerResourcePackUtils.addModAssets(MOD_ID);
         PolymerResourcePackUtils.RESOURCE_PACK_CREATION_EVENT.register((builder -> AssetProvider.runWriters(builder::addData)));
 
         ServerTickEvents.END_SERVER_TICK.register((server) -> {
@@ -79,6 +79,7 @@ public class Lib99j implements ModInitializer {
 
         ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
             ServerParticleManager.clearParticles();
+            Lib99j.server = null;
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
