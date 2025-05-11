@@ -13,6 +13,7 @@ import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 public class ServerParticleCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -40,10 +41,10 @@ public class ServerParticleCommand {
 
     private static int spawn(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        String type = StringArgumentType.getString(context, "particle");
+        Identifier type = IdentifierArgumentType.getIdentifier(context, "particle");
         ServerParticle p;
         for (ServerParticleManager.ServerParticleType argument : ServerParticleManager.particleTypes) {
-            if (argument.id().toString().equals(type)) {
+            if (argument.id().equals(type)) {
                 for (int i = 0; i < IntegerArgumentType.getInteger(context, "count"); i++) {
                     p = argument.spawner().accept(source.getWorld().toServerWorld(), source.getPosition().getX() + FloatArgumentType.getFloat(context, "x"), source.getPosition().getY() + FloatArgumentType.getFloat(context, "y"), source.getPosition().getZ() + FloatArgumentType.getFloat(context, "z"));
                     try {
