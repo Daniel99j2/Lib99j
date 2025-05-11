@@ -10,5 +10,6 @@ public class Lib99jDataGenerator implements DataGeneratorEntrypoint {
         CustomEvents.GAME_LOADED.invoke();
         var pack = fabricDataGenerator.createPack();
         pack.addProvider(AssetProvider::new);
+        CustomEvents.DATAGEN_RUN.invoke(fabricDataGenerator);
     }
 }

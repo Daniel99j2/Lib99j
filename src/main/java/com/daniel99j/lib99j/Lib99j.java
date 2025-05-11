@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.CustomEvents;
+import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.GuiUtils;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.ServerParticleCommand;
@@ -12,6 +13,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -20,6 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class Lib99j implements ModInitializer {
     public static final String MOD_ID = "lib99j";
@@ -39,6 +45,16 @@ public class Lib99j implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("Ready to rumble!");
+        String[] list = FabricLoader.getInstance().getLaunchArguments(true);
+        for (int i = 0; i < list.length; i++) {
+            if(Objects.equals(list[i], "--gameDir") && list[i+1].endsWith("\\build\\datagen")) {
+                GameProperties.runningDataGen = true;
+                break;
+            };
+        }
+
+        ServerParticleManager.load();
+        GuiUtils.load();
 
         ServerLifecycleEvents.SERVER_STARTED.register((server1) -> server = server1);
         ServerLifecycleEvents.SERVER_STOPPED.register((server1) -> server = null);
@@ -55,11 +71,6 @@ public class Lib99j implements ModInitializer {
 
         PolymerResourcePackUtils.markAsRequired();
         PolymerResourcePackUtils.RESOURCE_PACK_CREATION_EVENT.register((builder -> AssetProvider.runWriters(builder::addData)));
-
-        CustomEvents.GAME_LOADED.register(() -> {
-            ServerParticleManager.load();
-            GuiUtils.load();
-        });
 
         ServerTickEvents.END_SERVER_TICK.register((server) -> {
             ServerParticleManager.tick();

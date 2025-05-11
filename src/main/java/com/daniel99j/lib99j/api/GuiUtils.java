@@ -148,7 +148,6 @@ public class GuiUtils {
 
         assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/gui.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
 
-
         var spaceFontBase = new JsonObject();
         var spaceProviders = new JsonArray();
 
