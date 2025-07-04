@@ -4,6 +4,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 
+@SuppressWarnings({"unused"})
 @Environment(EnvType.CLIENT)
 public class ClientGuiUtils {
     public static boolean shouldShowCrossHairLike() {

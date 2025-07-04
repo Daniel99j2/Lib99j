@@ -5,6 +5,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+@SuppressWarnings({"unused"})
 public class ParticleHelper {
     public static void spawnParticlesAtPosition(World world, Vec3d position, ParticleEffect particle, int count, double offsetX, double offsetY, double offsetZ, double speed) {
         if (world instanceof ServerWorld serverWorld) {

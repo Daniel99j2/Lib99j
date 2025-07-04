@@ -4,8 +4,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.Direction;
 
+@SuppressWarnings({"unused"})
 public class BlockUtils {
-
     public static BlockState resetMultiProperty(BlockState state) {
         BlockState state1 = state;
         state1 = state1.with(Properties.UP, false);

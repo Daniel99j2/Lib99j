@@ -5,6 +5,7 @@ import de.tomalbrc.bil.api.Animator;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.Vec3d;
 
+@SuppressWarnings({"unused"})
 public class AnimationUtils {
     //most of this is from Tom's Mobs https://github.com/tomalbrc/toms-mobs/blob/1.21.5/src/main/java/de/tomalbrc/toms_mobs/util/AnimationHelper.java
     //it has been copied for porting

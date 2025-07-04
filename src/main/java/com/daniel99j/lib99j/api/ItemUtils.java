@@ -2,8 +2,10 @@ package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.block.BarrelBlock;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.DyedColorComponent;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -12,24 +14,18 @@ import net.minecraft.nbt.NbtException;
 import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.Registries;
+import net.minecraft.storage.ReadView;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+@SuppressWarnings({"unused"})
 public class ItemUtils {
     public static ItemStack setModel(ItemStack stack, Identifier model) {
         return setModel(stack, model, true);
     }
 
-    public static ItemStack setModel(ItemStack stack, String model) {
-        return setModel(stack, Identifier.of(Lib99j.MOD_ID, model), true);
-    }
-
     public static ItemStack setModelUnBridged(ItemStack stack, Identifier model) {
         return setModel(stack, model, false);
-    }
-
-    public static ItemStack setModelUnBridged(ItemStack stack, String model) {
-        return setModel(stack, Identifier.of(Lib99j.MOD_ID, model), false);
     }
 
     private static ItemStack setModel(ItemStack stack, Identifier model, boolean bridged) {
@@ -60,33 +56,6 @@ public class ItemUtils {
 
     public static boolean hasCustomName(ItemStack stack) {
         return stack.get(DataComponentTypes.CUSTOM_NAME) != null;
-    }
-
-    /**
-     * Creates an ItemStack from a string
-     * <p>(For example) '{id:tnt,components:{},count:5}'
-     */
-    public static ItemStack fromString(DynamicRegistryManager manager, String stack) {
-        try {
-            NbtElement out = null;
-            try {
-                out = StringNbtReader.readCompound(stack);
-            } catch (NbtException e) {
-                e.printStackTrace();
-            } catch (CommandSyntaxException e) {
-                throw new RuntimeException(e);
-            }
-            if (out != null) {
-                if (ItemStack.fromNbt(manager, out).isPresent()) {
-                    return ItemStack.fromNbt(manager, out).get();
-                }
-            }
-        } catch (Exception e) {
-            Lib99j.LOGGER.error("Error loading item from string:");
-            Lib99j.LOGGER.error(stack);
-            Lib99j.LOGGER.error(String.valueOf(e));
-        }
-        return ItemStack.EMPTY;
     }
 
     public static Item getRandomItem() {

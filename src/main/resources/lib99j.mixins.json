@@ -3,6 +3,7 @@
   "package": "com.daniel99j.lib99j.impl.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "DamageSourceMixin",
     "PlayerManagerAccessor",
     "ServerCommonNetworkHandlerMixin",
     "ServerPlayerEntityMixin",

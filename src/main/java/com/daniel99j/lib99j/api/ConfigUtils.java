@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+@SuppressWarnings({"unused"})
 public class ConfigUtils {
     public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     public static final Gson GSON_PRETTY = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();

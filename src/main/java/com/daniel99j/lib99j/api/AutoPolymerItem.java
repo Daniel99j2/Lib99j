@@ -5,6 +5,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import xyz.nucleoid.packettweaker.PacketContext;
 
+@SuppressWarnings({"unused"})
 public class AutoPolymerItem extends Item implements PolymerItem {
     public AutoPolymerItem(Settings settings) {
         super(settings);

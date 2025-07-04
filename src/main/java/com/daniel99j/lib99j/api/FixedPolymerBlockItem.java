@@ -12,6 +12,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Vec3d;
 import xyz.nucleoid.packettweaker.PacketContext;
 
+@SuppressWarnings({"unused"})
 public class FixedPolymerBlockItem extends PolymerBlockItem {
     public FixedPolymerBlockItem(Block block, Settings settings) {
         this(block, settings, ItemUtils.getBasicModelItem(), true);

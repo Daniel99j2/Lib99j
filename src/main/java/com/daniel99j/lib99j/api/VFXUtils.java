@@ -41,10 +41,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+@SuppressWarnings({"unused"})
 public class VFXUtils {
     private static final List<CameraShakeInstance> cameraShakeInstances = new ArrayList<>();
     private static final List<GenericScreenEffectInstance> genericScreenEffectInstances = new ArrayList<>();
-    private static boolean tempAllowPackets = false;
 
     @ApiStatus.Internal
     public static void tick() {
@@ -96,11 +96,9 @@ public class VFXUtils {
     private static void initGenericScreenEffect(GenericScreenEffectInstance instance) {
         switch (instance.effect) {
             case RED_TINT -> {
-                tempAllowPackets = true;
                 WorldBorder customWorldBorder = new WorldBorder();
                 customWorldBorder.setWarningBlocks(1000000000);
                 instance.player.networkHandler.sendPacket(new WorldBorderWarningBlocksChangedS2CPacket(customWorldBorder));
-                tempAllowPackets = false;
             }
             case SNOW ->
                     instance.player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(instance.player.getId(), List.of(DataTracker.SerializedEntry.of(Entity.FROZEN_TICKS, 2147483646))));
@@ -136,9 +134,7 @@ public class VFXUtils {
         if (isFinal) {
             switch (instance.effect) {
                 case RED_TINT -> {
-                    tempAllowPackets = true;
                     instance.player.networkHandler.sendPacket(new WorldBorderWarningBlocksChangedS2CPacket(instance.getPlayer().getWorld().getWorldBorder()));
-                    tempAllowPackets = false;
                 }
                 case SNOW ->
                         instance.player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(instance.player.getId(), List.of(DataTracker.SerializedEntry.of(Entity.FROZEN_TICKS, 0))));

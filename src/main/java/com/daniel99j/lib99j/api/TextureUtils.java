@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
+@SuppressWarnings({"unused"})
 public class TextureUtils {
     public static BufferedImage getMissingTexture() {
         int size = 16; // 16x16 texture

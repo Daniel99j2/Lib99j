@@ -71,11 +71,9 @@ public abstract class ServerParticle {
         this.display.setSeeThrough(false);
         this.display.setBackground(26);
         this.display.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
-        this.display.setText(getSprites().get(0).text());
         this.display.setInterpolationDuration(1);
         this.display.setTeleportDuration(1);
         this.display.setInvisible(true);
-//        this.display.setTranslation(new Vector3f(((float) getSprites().get(0).width /2/16), ((float) getSprites().get(0).height /2/16), 0));
         this.elementHolder.addElement(this.display);
         ServerParticleManager.addParticle(this);
         ChunkAttachment.ofTicking(this.elementHolder, this.world, this.getPos());
@@ -97,6 +95,16 @@ public abstract class ServerParticle {
      * This is in place to prevent all ServerParticles from having the same sprite.
      */
     public abstract ArrayList<ServerParticleManager.ParticleFrame> getSprites();
+
+    /**
+     * Updates the particle's frame
+     * <p>Run this when changing color etc
+     */
+    public void updateFrame() {
+        this.display.setOverridePos(new Vec3d(this.x, this.y, this.z));
+        this.display.setText(getSprites().get(getCurrentFrame()).text().withColor(ColorHelper.fromFloats(this.alpha, this.red, this.green, this.blue)));
+        this.display.startInterpolation();
+    }
 
     public Vec3d getPos() {
         return new Vec3d(this.x, this.y, this.z);
@@ -129,9 +137,7 @@ public abstract class ServerParticle {
             if (this.dead) this.elementHolder.destroy();
             else {
                 customTick();
-                this.display.setOverridePos(new Vec3d(this.x, this.y, this.z));
-                this.display.setText(getSprites().get(getCurrentFrame()).text().withColor(ColorHelper.fromFloats(this.alpha, this.red, this.green, this.blue)));
-                this.display.startInterpolation();
+                updateFrame();
                 this.elementHolder.tick();
             }
         } catch (Exception e) {

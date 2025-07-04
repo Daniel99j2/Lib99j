@@ -45,6 +45,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@SuppressWarnings({"unused"})
 public class GuiUtils {
     private static final int SPACES_RANGE = 256;
     private static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
@@ -121,7 +122,7 @@ public class GuiUtils {
         FONT_TEXTURES.forEach((entry) -> {
             var bitmap = new JsonObject();
             bitmap.addProperty("type", "bitmap");
-            bitmap.addProperty("file", entry.path.getNamespace() + "/" + entry.path.getPath() + ".png");
+            bitmap.addProperty("file", entry.path + ".png");
             bitmap.addProperty("ascent", entry.ascent);
             bitmap.addProperty("height", entry.height);
             var chars = new JsonArray();

@@ -29,6 +29,8 @@ import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.Arm;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -38,10 +40,12 @@ import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings({"unused"})
 public class EntityUtils {
     /**
      * Kills an entity from a damage source.
@@ -71,12 +75,12 @@ public class EntityUtils {
             }
 
             @Override
-            protected void readCustomDataFromNbt(NbtCompound nbt) {
+            protected void readCustomData(ReadView view) {
 
             }
 
             @Override
-            protected void writeCustomDataToNbt(NbtCompound nbt) {
+            protected void writeCustomData(WriteView view) {
 
             }
         };
@@ -211,7 +215,7 @@ public class EntityUtils {
      * Creates a fake player
      */
     public static PlayerEntity fakePlayer(World world, BlockPos pos) {
-        return new PlayerEntity(world, pos, 0, new GameProfile(UUID.fromString("58067007-10db-47f1-8844-b142275b76f15"), "LIB99j FAKE PLAYER")) {
+        return new PlayerEntity(world, new GameProfile(UUID.fromString("58067007-10db-47f1-8844-b142275b76f15"), "LIB99j FAKE PLAYER")) {
             @Override
             public @NotNull GameMode getGameMode() {
                 return GameMode.CREATIVE;
@@ -269,7 +273,7 @@ public class EntityUtils {
      * Gets the players who are receiving packets for an entity
      */
     public static List<ServerPlayerEntity> getWatching(ServerWorld world, ChunkPos pos) {
-        return world.getChunkManager().chunkLoadingManager.getPlayersWatchingChunk(pos);
+        return new ArrayList<>(world.getChunkManager().chunkLoadingManager.getPlayersWatchingChunk(pos));
     }
 
     /**

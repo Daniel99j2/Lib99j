@@ -12,6 +12,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import xyz.nucleoid.packettweaker.PacketContext;
 
+@SuppressWarnings({"unused"})
 public class PolymerSpawnEgg extends SpawnEggItem implements PolymerItem {
     public PolymerSpawnEgg(EntityType<? extends MobEntity> type, Settings settings) {
         super(type, settings);

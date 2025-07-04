@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
+@SuppressWarnings({"unused"})
 public class TimeUtils {
     public static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
     public static final LocalDateTime startOfTimeLocal = LocalDateTime.of(0, Month.JANUARY, 1, 0, 0);

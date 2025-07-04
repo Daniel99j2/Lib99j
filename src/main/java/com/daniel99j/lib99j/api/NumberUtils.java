@@ -2,6 +2,7 @@ package com.daniel99j.lib99j.api;
 
 import java.util.Random;
 
+@SuppressWarnings({"unused"})
 public class NumberUtils {
     public static int getRandomInt(int min, int max) {
         Random random = new Random();

@@ -7,15 +7,21 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.storage.NbtWriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,8 +44,15 @@ public class Lib99jClient implements ClientModInitializer {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.OPERATOR).register(entries -> {
             for(Block block : blocksWithoutBlockItem.stream().sorted(Comparator.comparing(block -> block.getSettings().registryKey.getValue().toString())).toList()) {
                 if(!block.getDefaultState().isAir()) {
-                    ItemStack stack = ItemUtils.fromString(PolymerCommonUtils.getFakeWorld().getRegistryManager(), "{components: {\"minecraft:block_entity_data\": {id:\"minecraft:command_block\", auto: 1b, Command: \"setblock ~ ~ ~ "+ Registries.BLOCK.getId(block).getNamespace() + ":" + Registries.BLOCK.getId(block).getPath()+ "\", SuccessCount: 0, TrackOutput: 1b, UpdateLastExecution: 1b}, \"minecraft:item_model\": \"minecraft:jigsaw\"}, count: 1, id: \"minecraft:command_block\"}");
+                    ItemStack stack = Items.REPEATING_COMMAND_BLOCK.getDefaultStack();
                     stack.set(DataComponentTypes.ITEM_NAME, block.getName());
+                    CommandBlockBlockEntity be = new CommandBlockBlockEntity(BlockPos.ORIGIN, Blocks.REPEATING_COMMAND_BLOCK.getDefaultState());
+                    be.setAuto(true);
+                    be.setPowered(true);
+                    be.getCommandExecutor().setCommand("setblock ~ ~ ~ " + block.getSettings().registryKey.getValue());
+                    NbtWriteView view = NbtWriteView.create(null);
+                    be.writeFullData(view);
+                    stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, NbtComponent.of(view.getNbt()));
                     entries.add(stack);
                 }
             }
