@@ -26,3 +26,4 @@ accessible field net/minecraft/server/world/ServerChunkLoadingManager playerChun
 accessible field net/minecraft/world/explosion/ExplosionImpl behavior Lnet/minecraft/world/explosion/ExplosionBehavior;
 accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/List;
 accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
+accessible field net/minecraft/block/entity/CommandBlockBlockEntity conditionMet Z

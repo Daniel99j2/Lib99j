@@ -49,7 +49,7 @@ public class Lib99jClient implements ClientModInitializer {
                     CommandBlockBlockEntity be = new CommandBlockBlockEntity(BlockPos.ORIGIN, Blocks.REPEATING_COMMAND_BLOCK.getDefaultState());
                     be.setAuto(true);
                     be.setPowered(true);
-                    be.updateConditionMet();
+                    be.conditionMet = true;
                     be.getCommandExecutor().setCommand("setblock ~ ~ ~ " + block.getSettings().registryKey.getValue());
                     NbtWriteView view = NbtWriteView.create(null);
                     be.writeFullData(view);
