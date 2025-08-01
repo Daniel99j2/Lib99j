@@ -63,14 +63,14 @@ dependencies {
 	modImplementation include('eu.pb4:map-canvas-api:0.5.0+1.21.3')
 	modImplementation include('eu.pb4:sidebar-api:0.5.1+1.21.1')
 	modImplementation include('eu.pb4:sgui:1.9.0+1.21.5')
-	modImplementation include('eu.pb4:factorytools:0.6.0+1.21.5')
+	modImplementation include('eu.pb4:factorytools:0.7.5+1.21.8')
 	modImplementation include("eu.pb4:common-protection-api:1.0.0")
 
 	modImplementation include("me.shedaniel.cloth:cloth-config-fabric:18.0.145")
 
 	modImplementation include("com.terraformersmc:modmenu:15.0.0-beta.3")
 
-	modImplementation include("de.tomalbrc:blockbench-import-library:1.4.2+1.21.6")
+	modImplementation include("de.tomalbrc:blockbench-import-library:1.5.0+1.21.6")
 }
 
 processResources {
