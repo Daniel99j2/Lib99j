@@ -1,7 +1,6 @@
 accessWidener	v2	named
 accessible class net/minecraft/server/world/ServerChunkLoadingManager$EntityTracker
 accessible class net/minecraft/entity/Entity
-accessible field net/minecraft/entity/attribute/AttributeContainer fallback Lnet/minecraft/entity/attribute/DefaultAttributeContainer;
 accessible field net/minecraft/entity/Entity world Lnet/minecraft/world/World;
 accessible field net/minecraft/entity/LivingEntity lastDamageSource Lnet/minecraft/entity/damage/DamageSource;
 accessible field net/minecraft/entity/Entity velocity Lnet/minecraft/util/math/Vec3d;
@@ -27,3 +26,4 @@ accessible field net/minecraft/world/explosion/ExplosionImpl behavior Lnet/minec
 accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/List;
 accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
 accessible field net/minecraft/block/entity/CommandBlockBlockEntity conditionMet Z
+accessible method net/minecraft/registry/entry/RegistryEntry$Reference setRegistryKey (Lnet/minecraft/registry/RegistryKey;)V

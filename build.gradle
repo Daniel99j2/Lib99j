@@ -52,7 +52,7 @@ dependencies {
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation include("me.lucko:fabric-permissions-api:0.3.3")
+	modImplementation include("me.lucko:fabric-permissions-api:0.4.0")
 
 	modImplementation include ("eu.pb4:polymer-core:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-blocks:${polymer_version}")

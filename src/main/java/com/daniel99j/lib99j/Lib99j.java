@@ -17,8 +17,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -92,9 +97,5 @@ public class Lib99j implements ModInitializer {
             if (!ServerParticleManager.particleTypes.isEmpty()) ServerParticleCommand.register(dispatcher);
             VfxCommand.register(dispatcher);
         });
-
-        List<Item> tests = Registries.ITEM.stream().toList();
-        int a = 1;
-        a++;
     }
 }

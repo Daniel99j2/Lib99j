@@ -3,12 +3,14 @@ package com.daniel99j.lib99j.api;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.mixin.PlayerManagerAccessor;
 import com.mojang.authlib.GameProfile;
+import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import eu.pb4.polymer.virtualentity.mixin.accessors.EntityAccessor;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.decoration.ArmorStandEntity;
@@ -248,7 +250,7 @@ public class EntityUtils {
                 return false;
             }
         };
-        world.removePlayer(player, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
+        world.removePlayer(player, Entity.RemovalReason.DISCARDED);
         player.getAdvancementTracker().clearCriteria();
         PlayerManagerAccessor playerManagerAccessor = ((PlayerManagerAccessor) Lib99j.getServerOrThrow().getPlayerManager());
         playerManagerAccessor.getPlayers().remove(player);
@@ -273,7 +275,7 @@ public class EntityUtils {
      * Gets the players who are receiving packets for an entity
      */
     public static List<ServerPlayerEntity> getWatching(ServerWorld world, ChunkPos pos) {
-        return new ArrayList<>(world.getChunkManager().chunkLoadingManager.getPlayersWatchingChunk(pos));
+        return new ArrayList<>(world.getChunkManager().chunkLoadingManager.playerChunkWatchingManager.getPlayersWatchingChunk());
     }
 
     /**
@@ -283,5 +285,9 @@ public class EntityUtils {
         data.add(DataTracker.SerializedEntry.of(EntityTrackedData.FLAGS, (byte) (1 << EntityTrackedData.INVISIBLE_FLAG_INDEX)));
         data.add(new DataTracker.SerializedEntry<>(EntityAccessor.getNO_GRAVITY().id(), EntityAccessor.getNO_GRAVITY().dataType(), true));
         data.add(DataTracker.SerializedEntry.of(ArmorStandEntity.ARMOR_STAND_FLAGS, (byte) (ArmorStandEntity.SMALL_FLAG | ArmorStandEntity.MARKER_FLAG)));
+    }
+
+    public static Entity getEntityFromType(EntityType<?> entityType) {
+        return entityType.create(PolymerCommonUtils.getFakeWorld(), SpawnReason.COMMAND);
     }
 }
