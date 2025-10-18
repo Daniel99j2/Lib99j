@@ -34,7 +34,7 @@ public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonNetworkH
 
     @Inject(method = "onPlayerMove", at = @At("HEAD"), cancellable = true, order = 10000)
     private void disablePlayerMove(PlayerMoveC2SPacket packet, CallbackInfo ci) {
-        NetworkThreadUtils.forceMainThread(packet, (ServerPlayPacketListener) this, this.server);
+        NetworkThreadUtils.forceMainThread(packet, (ServerPlayPacketListener) this, this.server.getPacketApplyBatcher());
         if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
             ci.cancel();
         }
@@ -42,7 +42,7 @@ public abstract class ServerPlayNetworkHandlerMixin extends ServerCommonNetworkH
 
     @Inject(method = "onSignUpdate", at = @At("HEAD"), cancellable = true)
     private void onSignUpdate(UpdateSignC2SPacket packet, List<FilteredMessage> signText, CallbackInfo ci) {
-        if ((Objects.equals(packet.getText()[3], "lib99j$checker") || Objects.equals(packet.getText()[3], "lib99j$final")) && !(player.getWorld().getBlockEntity(packet.getPos()) instanceof SignBlockEntity)) {
+        if ((Objects.equals(packet.getText()[3], "lib99j$checker") || Objects.equals(packet.getText()[3], "lib99j$final")) && !(player.getEntityWorld().getBlockEntity(packet.getPos()) instanceof SignBlockEntity)) {
             for (int i = 0; i < 3; i++) {
                 ((Lib99jPlayerUtilController) player).lib99j$addModTranslationCheckerTranslation(packet.getText()[i]);
             }

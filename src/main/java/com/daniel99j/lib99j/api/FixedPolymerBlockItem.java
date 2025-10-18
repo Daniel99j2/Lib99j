@@ -37,7 +37,7 @@ public class FixedPolymerBlockItem extends PolymerBlockItem {
         if (x == ActionResult.SUCCESS) {
             if (context.getPlayer() instanceof ServerPlayerEntity player) {
                 var blockSoundGroup = this.getBlock().getDefaultState().getSoundGroup();
-                SoundUtils.playSoundAtPosition(((ServerWorld) player.getWorld()), Vec3d.of(context.getBlockPos()), this.getPlaceSound(this.getBlock().getDefaultState()), SoundCategory.BLOCKS, (blockSoundGroup.getVolume() + 1.0F) / 2.0F, blockSoundGroup.getPitch() * 0.8F);
+                SoundUtils.playSoundAtPosition(((ServerWorld) player.getEntityWorld()), Vec3d.of(context.getBlockPos()), this.getPlaceSound(this.getBlock().getDefaultState()), SoundCategory.BLOCKS, (blockSoundGroup.getVolume() + 1.0F) / 2.0F, blockSoundGroup.getPitch() * 0.8F);
             }
             return ActionResult.SUCCESS_SERVER;
         }

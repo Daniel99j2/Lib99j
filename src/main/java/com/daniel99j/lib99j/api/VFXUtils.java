@@ -29,6 +29,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
@@ -53,10 +54,10 @@ public class VFXUtils {
             while (iterator.hasNext()) {
                 CameraShakeInstance instance = iterator.next();
                 ServerPlayerEntity player = instance.player;
-                player.rotate(-instance.lastYaw + player.getYaw(), -instance.lastPitch + player.getPitch());
+                player.rotate(-instance.lastYaw, true, -instance.lastPitch, true);
                 instance.lastYaw = NumberUtils.getRandomFloat(-instance.strength, instance.strength);
                 instance.lastPitch = NumberUtils.getRandomFloat(-instance.strength, instance.strength);
-                player.rotate(instance.lastYaw + player.getYaw(), instance.lastPitch + player.getPitch());
+                player.rotate(instance.lastYaw, true, instance.lastPitch, true);
                 instance.remainingTicks--;
 
                 if (instance.remainingTicks == 0) {
@@ -134,7 +135,7 @@ public class VFXUtils {
         if (isFinal) {
             switch (instance.effect) {
                 case RED_TINT -> {
-                    instance.player.networkHandler.sendPacket(new WorldBorderWarningBlocksChangedS2CPacket(instance.getPlayer().getWorld().getWorldBorder()));
+                    instance.player.networkHandler.sendPacket(new WorldBorderWarningBlocksChangedS2CPacket(instance.getPlayer().getEntityWorld().getWorldBorder()));
                 }
                 case SNOW ->
                         instance.player.networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(instance.player.getId(), List.of(DataTracker.SerializedEntry.of(Entity.FROZEN_TICKS, 0))));
@@ -258,14 +259,14 @@ public class VFXUtils {
             boolean ignoreResistance) {
         Explosion.DestructionType destructionType = Explosion.DestructionType.DESTROY;
         Vec3d vec3d = new Vec3d(x, y, z);
-        FakeExplosionImpl explosionImpl = new FakeExplosionImpl(players, (ServerWorld) players.get(0).getWorld(), behavior, vec3d, power, createFire, destructionType, ignoreResistance);
+        FakeExplosionImpl explosionImpl = new FakeExplosionImpl(players, (ServerWorld) players.get(0).getEntityWorld(), behavior, vec3d, power, createFire, destructionType, ignoreResistance);
         explosionImpl.explode();
         ParticleEffect particleEffect = explosionImpl.isSmall() ? smallParticle : largeParticle;
 
         for (ServerPlayerEntity serverPlayerEntity : players) {
             if (serverPlayerEntity.squaredDistanceTo(vec3d) < 4096.0) {
                 Optional<Vec3d> optional = Optional.ofNullable(explosionImpl.getKnockbackByPlayer().get(serverPlayerEntity));
-                serverPlayerEntity.networkHandler.sendPacket(new ExplosionS2CPacket(vec3d, optional, particleEffect, soundEvent));
+                serverPlayerEntity.networkHandler.sendPacket(new ExplosionS2CPacket(vec3d, 1, 0, optional, particleEffect, soundEvent, Pool.empty()));
             }
         }
     }
@@ -377,7 +378,7 @@ public class VFXUtils {
         }
 
         @Override
-        public void explode() {
+        public int explode() {
             List<BlockPos> list = this.getBlocksToDestroy();
             for (BlockPos blockPos : list) {
                 if (this.shouldDestroyBlocks()) {
@@ -392,6 +393,7 @@ public class VFXUtils {
                     }
                 }
             }
+            return 0;
         }
     }
 }

@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -118,7 +119,7 @@ public class ServerParticleManager {
         }
 
         public MutableText text() {
-            return Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(Identifier.of(Lib99j.MOD_ID, "particles")));
+            return Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(Lib99j.MOD_ID, "particles"))));
         }
     }
 

@@ -34,6 +34,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
 import net.minecraft.util.Arm;
+import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
@@ -54,8 +55,8 @@ public class EntityUtils {
      * <p>It will not kill the entity if it is invulnerable to the damage source
      */
     public static void killDamageSource(LivingEntity entity, DamageSource source) {
-        if (!entity.isInvulnerableTo(((ServerWorld) entity.getWorld()), source) && entity.isAlive() && !entity.isRemoved()) {
-            entity.damage(((ServerWorld) entity.getWorld()), source, Float.MAX_VALUE);
+        if (!entity.isInvulnerableTo(((ServerWorld) entity.getEntityWorld()), source) && entity.isAlive() && !entity.isRemoved()) {
+            entity.damage(((ServerWorld) entity.getEntityWorld()), source, Float.MAX_VALUE);
         }
     }
 
@@ -96,7 +97,7 @@ public class EntityUtils {
     public static void accelerateTowards(Entity entity, double targetX, double targetY, double targetZ, double acceleration) {
         Vec3d startVelocity = entity.getVelocity();
 
-        Vec3d currentPos = entity.getPos();
+        Vec3d currentPos = entity.getEntityPos();
         Vec3d targetPos = new Vec3d(targetX, targetY, targetZ);
         Vec3d direction = targetPos.subtract(currentPos).normalize();
         Vec3d accelerationVector = direction.multiply(acceleration);
@@ -150,7 +151,7 @@ public class EntityUtils {
      * <p>To do this, it creates a fake client-side explosion for the player
      */
     public static void sendVelocityDelta(@NotNull ServerPlayerEntity player, Vec3d delta) {
-        player.networkHandler.sendPacket(new ExplosionS2CPacket(new Vec3d(player.getX(), player.getY() - 9999, player.getZ()), Optional.of(delta), ParticleTypes.BUBBLE, Registries.SOUND_EVENT.getEntry(SoundEvents.INTENTIONALLY_EMPTY)));
+        player.networkHandler.sendPacket(new ExplosionS2CPacket(new Vec3d(player.getX(), player.getY() - 9999, player.getZ()), 1, 0, Optional.of(delta), ParticleTypes.BUBBLE, Registries.SOUND_EVENT.getEntry(SoundEvents.INTENTIONALLY_EMPTY), Pool.empty()));
     }
 
     /**
@@ -268,7 +269,7 @@ public class EntityUtils {
      * Gets the players who are receiving packets for an entity
      */
     public static List<ServerPlayerEntity> getWatching(Entity entity) {
-        return getWatching(((ServerWorld) entity.getWorld()), entity.getChunkPos());
+        return getWatching(((ServerWorld) entity.getEntityWorld()), entity.getChunkPos());
     }
 
     /**

@@ -30,6 +30,7 @@ import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -97,7 +98,7 @@ public class GuiUtils {
     public static MutableText getSpace(int pixels, MutableText text) {
         if (pixels > SPACES_RANGE || pixels < -SPACES_RANGE)
             throw new IndexOutOfBoundsException("Pixels must be between -" + SPACES_RANGE + " and " + SPACES_RANGE);
-        text.append(Text.of(Character.toString(SPACES.get(pixels))).copy().fillStyle(Style.EMPTY.withFont(Identifier.of(Lib99j.MOD_ID, "spaces"))));
+        text.append(Text.of(Character.toString(SPACES.get(pixels))).copy().fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(Lib99j.MOD_ID, "spaces")))));
         return text;
     }
 
@@ -267,7 +268,7 @@ public class GuiUtils {
         int total = entries.size();
         int lines = 3;
         int count = (int) Math.ceil((double) total / lines);
-        BlockPos pos = new BlockPos(player.getBlockPos().getX(), player.getWorld().getBottomY(), player.getBlockPos().getZ());
+        BlockPos pos = new BlockPos(player.getBlockPos().getX(), player.getEntityWorld().getBottomY(), player.getBlockPos().getZ());
 
         for (int i = 0; i < count; i++) {
             NbtCompound nbt = new NbtCompound();
@@ -294,9 +295,9 @@ public class GuiUtils {
             player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos, true));
             player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
         }
-        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, player.getWorld().getBlockState(pos)));
-        if (player.getWorld().getBlockEntity(pos) != null)
-            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacket.create(player.getWorld().getBlockEntity(pos)));
+        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, player.getEntityWorld().getBlockState(pos)));
+        if (player.getEntityWorld().getBlockEntity(pos) != null)
+            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacket.create(player.getEntityWorld().getBlockEntity(pos)));
     }
 
     public static boolean isGeneric54Screen(ScreenHandlerType screenHandlerType) {
@@ -348,7 +349,7 @@ public class GuiUtils {
 
         public MutableText text() {
             MutableText text = getSpace(-8, Text.literal(""));
-            text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(Identifier.of(path.getNamespace(), "gui"))));
+            text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(path.getNamespace(), "gui")))));
             getSpace(8, text);
             getSpace(-width, text);
             return text;
@@ -399,7 +400,7 @@ public class GuiUtils {
             }
 
             public MutableText text() {
-                MutableText text = Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(Identifier.of(path.getNamespace(), "gui")));
+                MutableText text = Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(path.getNamespace(), "gui"))));
                 getSpace(-width, text);
                 return text;
             }

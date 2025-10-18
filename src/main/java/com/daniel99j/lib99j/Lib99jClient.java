@@ -9,12 +9,14 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.TypedEntityData;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
@@ -68,7 +70,7 @@ public class Lib99jClient implements ClientModInitializer {
                             be.getCommandExecutor().setCommand("setblock ~ ~ ~ " + block.getSettings().registryKey.getValue());
                             NbtWriteView view = NbtWriteView.create(null);
                             be.writeFullData(view);
-                            stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, NbtComponent.of(view.getNbt()));
+                            stack.set(DataComponentTypes.BLOCK_ENTITY_DATA, TypedEntityData.create(BlockEntityType.COMMAND_BLOCK, NbtComponent.of(view.getNbt()).copyNbt()));
                             entries.add(stack);
                         }
                     }
@@ -84,9 +86,7 @@ public class Lib99jClient implements ClientModInitializer {
                         Entity entity = EntityUtils.getEntityFromType(e);
                         if(!(entity instanceof MobEntity) || (entity instanceof MobEntity && SpawnEggItem.forEntity(e) == null)) {
                             ItemStack i = Items.CHICKEN_SPAWN_EGG.getDefaultStack();
-                            NbtCompound nbt = new NbtCompound();
-                            nbt.putString("id", EntityType.getId(e).toString());
-                            i.set(DataComponentTypes.ENTITY_DATA, NbtComponent.of(nbt));
+                            i.set(DataComponentTypes.ENTITY_DATA, TypedEntityData.create(e, NbtComponent.DEFAULT.copyNbt()));
                             i.set(DataComponentTypes.ITEM_NAME, e.getName().copy().append(" Spawn Egg"));
                             entries.add(i, ItemGroup.StackVisibility.PARENT_AND_SEARCH_TABS);
                         }

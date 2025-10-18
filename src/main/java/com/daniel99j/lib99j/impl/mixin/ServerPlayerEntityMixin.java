@@ -14,6 +14,7 @@ import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
+import net.minecraft.entity.EntityPosition;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageType;
@@ -22,6 +23,7 @@ import net.minecraft.entity.passive.HorseEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.network.packet.s2c.play.SetCameraEntityS2CPacket;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -38,10 +40,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.function.Consumer;
 
 @Mixin(ServerPlayerEntity.class)
@@ -119,12 +118,14 @@ public abstract class ServerPlayerEntityMixin
     }
 
     @Inject(method = "rotate", at = @At("HEAD"))
-    public void rotate(float yaw, float pitch, CallbackInfo ci) {
+    public void rotate(float yaw, boolean relativeYaw, float pitch, boolean relativePitch, CallbackInfo ci) {
         if (this.lib99j$horse != null && this.lib99j$cameraPoint != null) {
-            this.lib99j$horse.setPitch(pitch);
-            this.lib99j$horse.setYaw(yaw);
-            this.lib99j$cameraPoint.setPitch(pitch);
-            this.lib99j$cameraPoint.setYaw(yaw);
+            Set<PositionFlag> set = PositionFlag.ofRot(relativeYaw, relativePitch);
+            EntityPosition entityPosition = EntityPosition.fromEntity(this);
+            EntityPosition entityPosition2 = entityPosition.withRotation(yaw, pitch);
+            EntityPosition entityPosition3 = EntityPosition.apply(entityPosition, entityPosition2, set);
+            this.lib99j$horse.setYaw(entityPosition3.yaw());
+            this.lib99j$horse.setPitch(entityPosition3.pitch());
         }
     }
 
@@ -142,9 +143,9 @@ public abstract class ServerPlayerEntityMixin
         this.lib99j$horse = new SimpleEntityElement(EntityType.HORSE) {
 
         };
-        HorseEntity testEntity = new HorseEntity(EntityType.HORSE, getPlayer().getWorld());
+        HorseEntity testEntity = new HorseEntity(EntityType.HORSE, getPlayer().getEntityWorld());
         this.lib99j$horse.setInvisible(true);
-        this.lib99j$horse.setOffset(new Vec3d(0, getPlayer().getStandingEyeHeight(), 0).subtract(testEntity.getPassengerRidingPos(getPlayer()).getY()).subtract(testEntity.getPos()));
+        this.lib99j$horse.setOffset(new Vec3d(0, getPlayer().getStandingEyeHeight(), 0).subtract(testEntity.getPassengerRidingPos(getPlayer()).getY()).subtract(testEntity.getEntityPos()));
         this.lib99j$horse.setYaw(yaw);
         this.lib99j$horse.setPitch(pitch);
         this.lib99j$holder.addElement(lib99j$horse);
