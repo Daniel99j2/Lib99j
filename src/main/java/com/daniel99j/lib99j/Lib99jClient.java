@@ -83,8 +83,7 @@ public class Lib99jClient implements ClientModInitializer {
                 .displayName(Text.literal("Entities"))
                 .entries(((displayContext, entries) -> {
                     for(EntityType<?> e : Registries.ENTITY_TYPE) {
-                        Entity entity = EntityUtils.getEntityFromType(e);
-                        if(!(entity instanceof MobEntity) || (entity instanceof MobEntity && SpawnEggItem.forEntity(e) == null)) {
+                        if(SpawnEggItem.forEntity(e) == null) {
                             ItemStack i = Items.CHICKEN_SPAWN_EGG.getDefaultStack();
                             i.set(DataComponentTypes.ENTITY_DATA, TypedEntityData.create(e, NbtComponent.DEFAULT.copyNbt()));
                             i.set(DataComponentTypes.ITEM_NAME, e.getName().copy().append(" Spawn Egg"));
