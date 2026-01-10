@@ -1,11 +1,13 @@
 package com.daniel99j.lib99j;
 
-import com.daniel99j.lib99j.api.*;
+import com.daniel99j.lib99j.api.CustomEvents;
+import com.daniel99j.lib99j.api.GameProperties;
+import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.ServerParticleCommand;
 import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.daniel99j.lib99j.impl.VfxCommand;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
-import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -14,22 +16,12 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.PigEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Objects;
 
 /**

@@ -1,16 +1,17 @@
-package com.daniel99j.lib99j.api;
+package com.daniel99j.lib99j.api.gui;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DynamicOps;
-import eu.pb4.polymer.core.mixin.block.BlockEntityUpdateS2CPacketAccessor;
+import eu.pb4.polymer.core.mixin.block.ClientboundBlockEntityDataPacketAccessor;
 import eu.pb4.polymer.resourcepack.extras.api.ResourcePackExtras;
 import eu.pb4.sgui.api.ClickType;
-import eu.pb4.sgui.api.elements.GuiElement;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
+import net.minecraft.advancement.*;
+import net.minecraft.advancement.criterion.TickCriterion;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.SignText;
@@ -21,18 +22,13 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.recipe.NetworkRecipeId;
-import net.minecraft.recipe.RecipeDisplayEntry;
-import net.minecraft.recipe.book.RecipeBookCategories;
-import net.minecraft.recipe.display.ShapelessCraftingRecipeDisplay;
-import net.minecraft.recipe.display.SlotDisplay;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.util.AssetInfo;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.ApiStatus;
@@ -49,11 +45,11 @@ import java.util.function.Consumer;
 @SuppressWarnings({"unused"})
 public class GuiUtils {
     private static final int SPACES_RANGE = 256;
-    private static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
+    protected static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
     private static final Map<Integer, Character> SPACES = new HashMap<>();
     private static final ArrayList<Character> blacklistedChars = new ArrayList<>();
-    private static final List<GuiTextures.ItemGuiTexture> ITEM_GUI_TEXTURES = new ArrayList<>();
-    private static final List<GuiTextures.GuiTexture> GUI_TEXTURES = new ArrayList<>();
+    private static final List<ItemGuiTexture> ITEM_GUI_TEXTURES = new ArrayList<>();
+    private static final List<GuiTexture> GUI_TEXTURES = new ArrayList<>();
     private static final List<GuiBarTexture> GUI_BAR_TEXTURES = new ArrayList<>();
     private static char currentGuiChar = '*';
     private static char currentSpaceChar = '*';
@@ -74,7 +70,7 @@ public class GuiUtils {
         for (int i = -SPACES_RANGE; i <= SPACES_RANGE; i++) {
             SPACES.put(i, getNextSpaceChar());
         }
-        GuiTextures.load();
+        DefaultGuiTextures.load();
 
         ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(Lib99j.MOD_ID, "gui"));
     }
@@ -85,7 +81,7 @@ public class GuiUtils {
         return c;
     }
 
-    private static char getNextGuiChar() {
+    static char getNextGuiChar() {
         char c = currentGuiChar++;
         if (blacklistedChars.contains(c)) c = getNextGuiChar();
         return c;
@@ -103,15 +99,15 @@ public class GuiUtils {
     }
 
     public static GuiElementBuilder nextPage(boolean allowed) {
-        return (allowed ? GuiTextures.HEAD_NEXT_PAGE : GuiTextures.HEAD_NEXT_PAGE_BLOCKED).setName(Text.of("Next Page"));
+        return (allowed ? DefaultGuiTextures.HEAD_NEXT_PAGE : DefaultGuiTextures.HEAD_NEXT_PAGE_BLOCKED).setName(Text.of("Next Page"));
     }
 
     public static GuiElementBuilder previousPage(boolean allowed) {
-        return (allowed ? GuiTextures.HEAD_PREVIOUS_PAGE : GuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Text.of("Previous Page"));
+        return (allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Text.of("Previous Page"));
     }
 
     @ApiStatus.Internal
-    public static List<GuiTextures.ItemGuiTexture> getItemGuiTextures() {
+    public static List<ItemGuiTexture> getItemGuiTextures() {
         return ITEM_GUI_TEXTURES;
     }
 
@@ -123,12 +119,12 @@ public class GuiUtils {
         FONT_TEXTURES.forEach((entry) -> {
             var bitmap = new JsonObject();
             bitmap.addProperty("type", "bitmap");
-            bitmap.addProperty("file", entry.path + ".png");
-            bitmap.addProperty("ascent", entry.ascent);
-            bitmap.addProperty("height", entry.height);
+            bitmap.addProperty("file", entry.path() + ".png");
+            bitmap.addProperty("ascent", entry.ascent());
+            bitmap.addProperty("height", entry.height());
             var chars = new JsonArray();
 
-            for (var a : entry.chars) {
+            for (var a : entry.chars()) {
                 var builder = new StringBuilder();
                 for (var b : a) {
                     builder.append(b);
@@ -141,8 +137,8 @@ public class GuiUtils {
         });
 
         GUI_BAR_TEXTURES.forEach((entry) -> {
-            for (GuiBarTexturePart part : entry.textures) {
-                assetWriter.accept("assets/" + part.texture.path.getNamespace() + "/textures/gui/" + part.texture.path.getPath() + ".png", part.imageData());
+            for (GuiBarTexturePart part : entry.textures()) {
+                assetWriter.accept("assets/" + part.texture().path.getNamespace() + "/textures/gui/" + part.texture().path.getPath() + ".png", part.imageData());
             }
         });
 
@@ -167,7 +163,7 @@ public class GuiUtils {
     }
 
     public static GuiElementBuilder generateTexture(Identifier path) {
-        GuiTextures.ItemGuiTexture texture = new GuiTextures.ItemGuiTexture(path);
+        ItemGuiTexture texture = new ItemGuiTexture(path);
         ITEM_GUI_TEXTURES.add(texture);
         ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
         return GuiElementBuilder.from(Items.BARRIER.getDefaultStack()).noDefaults().setMaxCount(1).model(Identifier.of(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Text.of("==NOT SET=="));
@@ -217,7 +213,7 @@ public class GuiUtils {
 
                 String outputPath = path.getPath() + "_gen_" + i;
 
-                GuiTextures.GuiTexture texture = new GuiTextures.GuiTexture(Identifier.of(path.getNamespace(), outputPath), ascent, height1, width1);
+                GuiTexture texture = new GuiTexture(Identifier.of(path.getNamespace(), outputPath), ascent, height1, width1);
                 textures.add(new GuiBarTexturePart(texture, imageData));
                 GUI_TEXTURES.add(texture);
                 i2++;
@@ -291,7 +287,7 @@ public class GuiUtils {
             nbt.putBoolean("is_waxed", false);
 
             player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, Blocks.OAK_SIGN.getDefaultState()));
-            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
+            player.networkHandler.sendPacket(ClientboundBlockEntityDataPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
             player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos, true));
             player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
         }
@@ -322,88 +318,21 @@ public class GuiUtils {
                 stack.set(DataComponentTypes.MAX_DAMAGE, gui.getSize());
                 stack.set(DataComponentTypes.DAMAGE, gui.getSize() - i);
             } else {
-                stack = GuiUtils.GuiTextures.INVISIBLE.getItemStack();
-            }
-            if (gui.getSlot(i) == null) gui.setSlot(i, stack);
-        }
-    }
-
-    public static void toast(ServerPlayerEntity player, ItemStack item) {
-        ArrayList<RecipeBookAddS2CPacket.Entry> entries = new ArrayList<>();
-        entries.add(new RecipeBookAddS2CPacket.Entry(new RecipeDisplayEntry(new NetworkRecipeId(-5957), new ShapelessCraftingRecipeDisplay(List.of(SlotDisplay.EmptySlotDisplay.INSTANCE), new SlotDisplay.StackSlotDisplay(item), SlotDisplay.EmptySlotDisplay.INSTANCE), OptionalInt.empty(), RecipeBookCategories.CRAFTING_MISC, Optional.empty()), true, false));
-        player.networkHandler.sendPacket(new RecipeBookAddS2CPacket(entries, false));
-        player.networkHandler.sendPacket(new RecipeBookRemoveS2CPacket(List.of(new NetworkRecipeId(-5957))));
-    }
-
-    public static class BackgroundTexture {
-        final char character = getNextGuiChar();
-        final int width;
-        final Identifier path;
-
-        public BackgroundTexture(Identifier path, int width) {
-            this.width = width;
-            this.path = path;
-            ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
-            FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), 13, 256, new char[][]{new char[]{character}}));
-        }
-
-        public MutableText text() {
-            MutableText text = getSpace(-8, Text.literal(""));
-            text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(path.getNamespace(), "gui")))));
-            getSpace(8, text);
-            getSpace(-width, text);
-            return text;
-        }
-    }
-
-    public record FontTexture(Identifier path, int ascent, int height, char[][] chars) {
-
-    }
-
-    public record GuiBarTexture(ArrayList<GuiBarTexturePart> textures, int ascent, int height) {
-    }
-
-    public record GuiBarTexturePart(GuiTextures.GuiTexture texture, byte[] imageData) {
-    }
-
-    public static class GuiTextures {
-        public static final GuiElement INVISIBLE = generateTexture(Identifier.of(Lib99j.MOD_ID, "empty_slot")).setItemName(Text.of("")).hideTooltip().build();
-
-        //textures from polydex
-        public static final GuiElementBuilder HEAD_PREVIOUS_PAGE = head("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzEwODI5OGZmMmIyNjk1MWQ2ODNlNWFkZTQ2YTQyZTkwYzJmN2M3ZGQ0MWJhYTkwOGJjNTg1MmY4YzMyZTU4MyJ9fX0");
-        public static final GuiElementBuilder HEAD_PREVIOUS_PAGE_BLOCKED = head("ewogICJ0aW1lc3RhbXAiIDogMTY0MDYxNjE5MjE0MiwKICAicHJvZmlsZUlkIiA6ICJmMjc0YzRkNjI1MDQ0ZTQxOGVmYmYwNmM3NWIyMDIxMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJIeXBpZ3NlbCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS81MDgyMGY3NmUzZTA0MWM3NWY3NmQwZjMwMTIzMmJkZjQ4MzIxYjUzNGZlNmE4NTljY2I4NzNkMjk4MWE5NjIzIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-        public static final GuiElementBuilder HEAD_NEXT_PAGE = head("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzg2MTg1YjFkNTE5YWRlNTg1ZjE4NGMzNGYzZjNlMjBiYjY0MWRlYjg3OWU4MTM3OGU0ZWFmMjA5Mjg3In19fQ");
-        public static final GuiElementBuilder HEAD_NEXT_PAGE_BLOCKED = head("ewogICJ0aW1lc3RhbXAiIDogMTY0MDYxNjExMDQ4OCwKICAicHJvZmlsZUlkIiA6ICIxZjEyNTNhYTVkYTQ0ZjU5YWU1YWI1NmFhZjRlNTYxNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJOb3RNaUt5IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzdlNTc3MjBhNDg3OGM4YmNhYjBlOWM5YzQ3ZDllNTUxMjhjY2Q3N2JhMzQ0NWE1NGE5MWUzZTFlMWEyNzM1NmUiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==");
-        public static final GuiElementBuilder HEAD_ADD = head("ewogICJ0aW1lc3RhbXAiIDogMTY0MjM2Mzc1NDQxMCwKICAicHJvZmlsZUlkIiA6ICJkODAwZDI4MDlmNTE0ZjkxODk4YTU4MWYzODE0Yzc5OSIsCiAgInByb2ZpbGVOYW1lIiA6ICJ0aGVCTFJ4eCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS80OTQ0YTI5ZjY4Yzg4NmNmYWY2N2UxNTI1YmQyYWNjMmEzZDRlNDBjMDE3NzVjNzIyMTQwZjA4YjY5ZDVkNjliIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-
-
-        private static void load() {
-        }
-
-        public record ItemGuiTexture(Identifier path) {
-        }
-
-        public static class GuiTexture {
-            public final Identifier path;
-            public final int ascent;
-            public final int height;
-            public final int width;
-            final char character;
-
-            public GuiTexture(Identifier path, int ascent, int height, int width) {
-                this.ascent = ascent;
-                this.path = path;
-                this.height = height;
-                this.width = width;
-                this.character = getNextGuiChar();
-                FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
+                stack = DefaultGuiTextures.INVISIBLE.getItemStack();
             }
 
-            public MutableText text() {
-                MutableText text = Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(path.getNamespace(), "gui"))));
-                getSpace(-width, text);
-                return text;
-            }
+            if (gui.getSlotRedirect(i) != null) continue;
+            if (gui.getSlot(i) != null && gui.getSlot(i).getItemStack() != null && !gui.getSlot(i).getItemStack().isEmpty()) continue;
+            gui.setSlot(i, stack);
         }
+    }
+
+    public static void toast(ServerPlayerEntity player, ItemStack icon, Text title, Text description, Identifier background) {
+        AdvancementProgress progress = new AdvancementProgress();
+        progress.init(AdvancementRequirements.allOf(Set.of("toast")));
+        progress.obtain("toast");
+        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(new AdvancementEntry(Identifier.of("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new AdvancementDisplay(icon, title, description, Optional.of(new AssetInfo.TextureAssetInfo(background)), AdvancementFrame.TASK, true, false, false)), AdvancementRewards.NONE, Map.of("toast", TickCriterion.Conditions.createTick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
+        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(), Set.of(), Map.of(Identifier.of("lib99j", "toast"), progress), true));
+        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(), Set.of(Identifier.of("lib99j", "toast")), Map.of(), false));
     }
 }

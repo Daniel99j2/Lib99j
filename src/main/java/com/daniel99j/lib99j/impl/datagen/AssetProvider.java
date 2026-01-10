@@ -1,8 +1,9 @@
 package com.daniel99j.lib99j.impl.datagen;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.GuiUtils;
 import com.daniel99j.lib99j.api.SoundUtils;
+import com.daniel99j.lib99j.api.gui.GuiUtils;
+import com.daniel99j.lib99j.api.gui.ItemGuiTexture;
 import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.google.common.hash.HashCode;
 import com.google.gson.JsonArray;
@@ -41,7 +42,7 @@ public class AssetProvider implements DataProvider {
     public static void runWriters(BiConsumer<String, byte[]> assetWriter) {
         GuiUtils.generateAssets(assetWriter);
 
-        for (GuiUtils.GuiTextures.ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
+        for (ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
             assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/gui/" + texture.path().getPath() + ".json",
                     BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of(texture.path().getNamespace(), "gui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
         }

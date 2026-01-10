@@ -16,7 +16,6 @@ import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.VehicleEntity;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.message.ChatVisibility;
@@ -284,7 +283,7 @@ public class EntityUtils {
      */
     public static void dummyArmorStandData(List<DataTracker.SerializedEntry<?>> data) {
         data.add(DataTracker.SerializedEntry.of(EntityTrackedData.FLAGS, (byte) (1 << EntityTrackedData.INVISIBLE_FLAG_INDEX)));
-        data.add(new DataTracker.SerializedEntry<>(EntityAccessor.getNO_GRAVITY().id(), EntityAccessor.getNO_GRAVITY().dataType(), true));
+        data.add(new DataTracker.SerializedEntry<>(EntityAccessor.getDATA_NO_GRAVITY().id(), EntityAccessor.getDATA_NO_GRAVITY().dataType(), true));
         data.add(DataTracker.SerializedEntry.of(ArmorStandEntity.ARMOR_STAND_FLAGS, (byte) (ArmorStandEntity.SMALL_FLAG | ArmorStandEntity.MARKER_FLAG)));
     }
 
