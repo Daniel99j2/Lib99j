@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.impl;
 
+import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;

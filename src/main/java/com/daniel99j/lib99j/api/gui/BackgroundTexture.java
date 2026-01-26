@@ -12,19 +12,25 @@ public class BackgroundTexture {
     final char character = GuiUtils.getNextGuiChar();
     final int width;
     final Identifier path;
+    final int offset;
 
     public BackgroundTexture(Identifier path, int width) {
+        this(path, width, 13, 256, 8);
+    }
+
+    public BackgroundTexture(Identifier path, int width, int ascent, int height, int offset) {
         this.width = width;
         this.path = path;
+        this.offset = offset;
         ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
-        GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), 13, 256, new char[][]{new char[]{character}}));
+        GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.of(path.getNamespace(), "gui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
     }
 
     public MutableText text() {
-        MutableText text = GuiUtils.getSpace(-8, Text.literal(""));
+        MutableText text = GuiUtils.appendSpace(-offset, Text.empty());
         text.append(Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of("lib99j", "gui")))));
-        GuiUtils.getSpace(8, text);
-        GuiUtils.getSpace(-width, text);
+        GuiUtils.appendSpace(offset, text);
+        GuiUtils.appendSpace(-width, text);
         return text;
     }
 }

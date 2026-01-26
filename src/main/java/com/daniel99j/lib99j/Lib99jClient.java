@@ -5,13 +5,17 @@ import com.daniel99j.lib99j.api.ItemUtils;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.core.api.item.PolymerItemGroupUtils;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.toast.SystemToast;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.Entity;
@@ -101,6 +105,17 @@ public class Lib99jClient implements ClientModInitializer {
                 i.set(DataComponentTypes.ITEM_NAME, Text.literal(id.toString()).formatted(Formatting.YELLOW));
                 entries.add(i, ItemGroup.StackVisibility.PARENT_TAB_ONLY);
             });
+        });
+
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if(client.getWindow().isFullscreen() && FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                client.getWindow().toggleFullscreen();
+                int x = client.getWindow().getMonitor().getViewportX();
+                int y = client.getWindow().getMonitor().getViewportY();
+                if(x <= 0 || y <= 0) return;
+                client.getWindow().setWindowedSize(x, y);
+                client.getToastManager().add(new SystemToast(SystemToast.Type.PERIODIC_NOTIFICATION, Text.of("Fullscreen disabled"), Text.of("Fullscreen will cause freezes at breakpoints")));
+            }
         });
     }
 }

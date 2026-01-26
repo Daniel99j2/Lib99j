@@ -29,7 +29,7 @@ public abstract class DamageSourceMixin {
         lib99j$damageSourceTimers.forEach((type, timer) -> {
             timer.add(-1);
         });
-        lib99j$damageSourceTimers.entrySet().removeIf(entry -> entry.getValue().getValue() <= 0);
+        lib99j$damageSourceTimers.entrySet().removeIf(entry -> entry.getValue().intValue() <= 0);
     }
 
     @Redirect(
@@ -59,9 +59,7 @@ public abstract class DamageSourceMixin {
         if (timer == null) {
             lib99j$damageSourceTimers.put(entry, new MutableInt(20));
             return true;
-        }
-
-        if (timer.getValue() == 20) {
+        } else if (timer.intValue() == 20) {
             return true;
         }
 

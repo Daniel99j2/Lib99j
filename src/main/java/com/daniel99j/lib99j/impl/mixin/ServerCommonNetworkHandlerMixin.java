@@ -1,6 +1,9 @@
 package com.daniel99j.lib99j.impl.mixin;
 
+import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.PlayPacketUtils;
 import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import io.netty.channel.ChannelFutureListener;
 import net.minecraft.entity.Entity;
@@ -9,15 +12,19 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.PacketCallbacks;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.EntityStatusEffectS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.RemoveEntityStatusEffectS2CPacket;
-import net.minecraft.network.packet.s2c.play.WorldBorderWarningBlocksChangedS2CPacket;
+import net.minecraft.network.packet.s2c.config.DynamicRegistriesS2CPacket;
+import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.PlayerAssociatedNetworkHandler;
 import net.minecraft.server.network.ServerCommonNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.BiomeKeys;
+import net.minecraft.world.biome.BuiltinBiomes;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,13 +33,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.ArrayList;
 
 @Mixin(ServerCommonNetworkHandler.class)
-public class ServerCommonNetworkHandlerMixin {
+public abstract class ServerCommonNetworkHandlerMixin {
+
+    @Shadow public abstract void enableFlush();
+
+    @Shadow public abstract void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener);
+
+    @Shadow public abstract void sendPacket(Packet<?> packet);
 
     @Unique
-    private boolean lib99j$fromThis;
+    private volatile boolean lib99j$fromThis; //volatile makes it so all the threads have the same value
 
-    @Inject(method = "send", at = @At("HEAD"), cancellable = true, order = 1001)
-    private void cancelVFXPackets(Packet<?> packet, ChannelFutureListener channelFutureListener, CallbackInfo ci) {
+    @Inject(method = "sendPacket", at = @At("HEAD"), cancellable = true, order = 1001)
+    private void cancelUnwantedPackets(Packet<?> packet, CallbackInfo ci) {
         if (this instanceof PlayerAssociatedNetworkHandler networkHandler && !lib99j$fromThis) {
             ServerPlayerEntity player = networkHandler.getPlayer();
             if (packet instanceof WorldBorderWarningBlocksChangedS2CPacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.RED_TINT))
@@ -69,6 +82,21 @@ public class ServerCommonNetworkHandlerMixin {
                 sendFromThis(new EntityTrackerUpdateS2CPacket(trackerUpdateS2CPacket.id(), out));
             } else if (packet instanceof WorldBorderWarningBlocksChangedS2CPacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.RED_TINT))
                 ci.cancel();
+            else if (packet instanceof SetCameraEntityS2CPacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS))
+                ci.cancel();
+
+
+
+            if (packet instanceof Lib99j.BypassPacket(Packet<?> packet1)) {
+                ci.cancel();
+                send(packet1, null);
+            } else if(PonderManager.isPondering(player)) {
+                PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
+                //dont send world packets, but update display entities so that vfx still works!
+                if (info != null && info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT) && !info.hasTag(PlayPacketUtils.PacketTag.ENTITY)) {
+                    ci.cancel();
+                }
+            }
         }
     }
 

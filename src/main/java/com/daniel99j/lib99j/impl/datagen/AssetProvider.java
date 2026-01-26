@@ -8,6 +8,9 @@ import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.google.common.hash.HashCode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.model.BasicItemModel;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTintSource;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.minecraft.data.DataOutput;
 import net.minecraft.data.DataProvider;
@@ -17,6 +20,7 @@ import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -48,6 +52,11 @@ public class AssetProvider implements DataProvider {
         }
 
         ServerParticleManager.generateAssets(assetWriter);
+
+        assetWriter.accept("assets/lib99j/models/gui/solid_colour.json",
+                BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of("lib99j", "gui/solid_colour").toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+
+        assetWriter.accept("assets/lib99j/items/gui/solid_colour.json", new ItemAsset(new BasicItemModel(Identifier.of(Lib99j.MOD_ID, "gui/solid_colour"), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
 
 
         var sounds = new JsonObject();

@@ -27,3 +27,15 @@ accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/Lis
 accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
 accessible field net/minecraft/block/entity/CommandBlockBlockEntity conditionMet Z
 accessible method net/minecraft/registry/entry/RegistryEntry$Reference setRegistryKey (Lnet/minecraft/registry/RegistryKey;)V
+accessible field net/minecraft/server/MinecraftServer workerExecutor Ljava/util/concurrent/Executor;
+accessible field net/minecraft/server/MinecraftServer session Lnet/minecraft/world/level/storage/LevelStorage$Session;
+accessible field net/minecraft/server/network/ServerCommonNetworkHandler connection Lnet/minecraft/network/ClientConnection;
+accessible field net/minecraft/network/ClientConnection channel Lio/netty/channel/Channel;
+accessible method net/minecraft/server/world/ServerChunkLoadingManager sendWatchPackets (Lnet/minecraft/server/network/ServerPlayerEntity;)V
+accessible field net/minecraft/server/MinecraftServer worlds Ljava/util/Map;
+accessible field net/minecraft/server/PlayerManager players Ljava/util/List;
+accessible field net/minecraft/server/PlayerManager playerMap Ljava/util/Map;
+accessible method net/minecraft/server/world/ServerWorld addPlayer (Lnet/minecraft/server/network/ServerPlayerEntity;)V
+accessible method net/minecraft/server/network/ServerCommonNetworkHandler createClientData (Lnet/minecraft/network/packet/c2s/common/SyncedClientOptions;)Lnet/minecraft/server/network/ConnectedClientData;
+accessible class io/netty/channel/DefaultChannelPipeline
+accessible class io/netty/channel/local/LocalChannel$State

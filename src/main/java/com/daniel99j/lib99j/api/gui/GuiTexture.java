@@ -25,7 +25,7 @@ public class GuiTexture {
 
     public MutableText text() {
         MutableText text = Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of("lib99j", "gui"))));
-        GuiUtils.getSpace(-width, text);
+        GuiUtils.appendSpace(-width, text);
         return text;
     }
 }

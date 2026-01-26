@@ -125,14 +125,8 @@ public class VFXUtils {
     }
 
     private static void endGenericScreenEffect(GenericScreenEffectInstance instance) {
-        boolean isFinal = true;
-        for (GenericScreenEffectInstance instance1 : genericScreenEffectInstances) {
-            if (instance1.getEffect() == instance.getEffect() && instance1 != instance) {
-                isFinal = false;
-                break;
-            }
-        }
-        if (isFinal) {
+        instance.markFinished();
+        if (!hasGenericScreenEffect(instance.player, instance.effect)) {
             switch (instance.effect) {
                 case RED_TINT -> {
                     instance.player.networkHandler.sendPacket(new WorldBorderWarningBlocksChangedS2CPacket(instance.getPlayer().getEntityWorld().getWorldBorder()));
@@ -196,6 +190,21 @@ public class VFXUtils {
         genericScreenEffectInstances.add(instance);
     }
 
+    public static void setCameraPos(ServerPlayerEntity player, Vec3d pos) {
+        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        ((Lib99jPlayerUtilController) player).lib99j$setCameraPos(pos);
+    }
+
+    public static void setCameraPitch(ServerPlayerEntity player, float pitch) {
+        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        ((Lib99jPlayerUtilController) player).lib99j$setCameraPitch(pitch);
+    }
+
+    public static void setCameraYaw(ServerPlayerEntity player, float yaw) {
+        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        ((Lib99jPlayerUtilController) player).lib99j$setCameraYaw(yaw);
+    }
+
     public static void addGenericScreenEffectUnlessExists(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
         if (!hasGenericScreenEffectSource(player, effect, source))
             addGenericScreenEffect(player, ticks, effect, source);
@@ -223,7 +232,7 @@ public class VFXUtils {
 
     @ApiStatus.Internal
     public static boolean hasEffectEffect(ServerPlayerEntity player) {
-        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && (
+        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player  && !instance.isFinished() && (
                 instance.effect == GENERIC_SCREEN_EFFECT.NIGHT_VISION ||
                         instance.effect == GENERIC_SCREEN_EFFECT.BLINDNESS ||
                         instance.effect == GENERIC_SCREEN_EFFECT.BLACK_HEARTS ||
@@ -234,11 +243,11 @@ public class VFXUtils {
     }
 
     public static boolean hasGenericScreenEffect(ServerPlayerEntity player, GENERIC_SCREEN_EFFECT effect) {
-        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect);
+        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && !instance.isFinished());
     }
 
     public static boolean hasGenericScreenEffectSource(ServerPlayerEntity player, GENERIC_SCREEN_EFFECT effect, Identifier source) {
-        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && instance.source == source);
+        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && instance.source == source && !instance.isFinished());
     }
 
     public static List<GenericScreenEffectInstance> getGenericScreenEffectInstances() {
@@ -259,7 +268,7 @@ public class VFXUtils {
             boolean ignoreResistance) {
         Explosion.DestructionType destructionType = Explosion.DestructionType.DESTROY;
         Vec3d vec3d = new Vec3d(x, y, z);
-        FakeExplosionImpl explosionImpl = new FakeExplosionImpl(players, (ServerWorld) players.get(0).getEntityWorld(), behavior, vec3d, power, createFire, destructionType, ignoreResistance);
+        FakeExplosionImpl explosionImpl = new FakeExplosionImpl(players, (ServerWorld) players.getFirst().getEntityWorld(), behavior, vec3d, power, createFire, destructionType, ignoreResistance);
         explosionImpl.explode();
         ParticleEffect particleEffect = explosionImpl.isSmall() ? smallParticle : largeParticle;
 
@@ -342,6 +351,7 @@ public class VFXUtils {
         GENERIC_SCREEN_EFFECT effect;
         Identifier source;
         List<Packet<ClientPlayPacketListener>> queuedPackets = new ArrayList<>();
+        boolean finished;
 
         private GenericScreenEffectInstance(ServerPlayerEntity player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
             this.ticks = ticks;
@@ -363,6 +373,14 @@ public class VFXUtils {
         public List<Packet<ClientPlayPacketListener>> getQueuedPackets() {
             return queuedPackets;
         }
+
+        public void markFinished() {
+            this.finished = true;
+        }
+
+        public boolean isFinished() {
+            return finished;
+        }
     }
 
     private static class FakeExplosionImpl extends ExplosionImpl {
@@ -375,6 +393,7 @@ public class VFXUtils {
                     return ignoreResistance ? Optional.of(0f) : super.getBlastResistance(explosion, world, pos, blockState, fluidState);
                 }
             }, pos, power, createFire, destructionType);
+            this.players = players;
         }
 
         @Override

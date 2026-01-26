@@ -21,6 +21,7 @@ import net.minecraft.network.NetworkSide;
 import net.minecraft.network.message.ChatVisibility;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
+import net.minecraft.network.packet.c2s.play.PlayerLoadedC2SPacket;
 import net.minecraft.network.packet.s2c.play.ExplosionS2CPacket;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.ParticlesMode;
@@ -33,6 +34,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
 import net.minecraft.util.Arm;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -40,6 +42,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -49,6 +52,9 @@ import java.util.UUID;
 
 @SuppressWarnings({"unused"})
 public class EntityUtils {
+    @ApiStatus.Internal
+    private static int playerIdPrefix = 0;
+
     /**
      * Kills an entity from a damage source.
      * <p>It will not kill the entity if it is invulnerable to the damage source
@@ -229,12 +235,34 @@ public class EntityUtils {
      * Creates a fake server-player
      */
     public static ServerPlayerEntity fakeServerPlayer(ServerWorld world, BlockPos pos) {
-        ServerPlayerEntity player = new ServerPlayerEntity(Lib99j.getServerOrThrow(), world, new GameProfile(UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER"), new SyncedClientOptions("bot", 0, ChatVisibility.HIDDEN, false, 0, Arm.RIGHT, false, false, ParticlesMode.MINIMAL)) {
-            @Override
-            public @NotNull GameMode getGameMode() {
-                return GameMode.CREATIVE;
-            }
-        };
+        return fakeServerPlayerInternal(world, pos, GameMode.SURVIVAL, UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER", true, true);
+    }
+
+    /**
+     * Creates a fake server-player
+     * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
+     */
+    public static ServerPlayerEntity fakeServerPlayer(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name, boolean autoEditName) {
+        return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, true, autoEditName);
+    }
+
+    /**
+     * Creates a fake server-player, but does NOT delete the entity from the world.
+     * <p>Only use this if you know what you are doing, as the player will stay loaded in memory.
+     * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
+     */
+    public static ServerPlayerEntity fakeServerPlayerAddToWorld(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name, boolean autoEditName) {
+        return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, false, autoEditName);
+    }
+
+    @ApiStatus.Internal
+    private static ServerPlayerEntity fakeServerPlayerInternal(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name1, boolean remove, boolean autoEditName) {
+        String name = autoEditName ? name1 + playerIdPrefix++ : name1;
+        if(name.length() > 16) throw new IllegalStateException("Player name is too long");
+        if(Lib99j.getServer() != null && Lib99j.getServer().getPlayerManager().getPlayer(name) != null) {
+            throw new IllegalStateException("Player name is already taken");
+        }
+        ServerPlayerEntity player = new ServerPlayerEntity(Lib99j.getServerOrThrow(), world, new GameProfile(uuid, name), new SyncedClientOptions("bot", 0, ChatVisibility.HIDDEN, false, 0, Arm.RIGHT, false, false, ParticlesMode.MINIMAL));
         player.networkHandler = new ServerPlayNetworkHandler(Lib99j.getServerOrThrow(),
                 new ClientConnection(NetworkSide.CLIENTBOUND),
                 player,
@@ -250,17 +278,23 @@ public class EntityUtils {
                 return false;
             }
         };
-        world.removePlayer(player, Entity.RemovalReason.DISCARDED);
+        if(!remove) world.onPlayerConnected(player);
+        if(remove) world.removePlayer(player, Entity.RemovalReason.DISCARDED);
+        player.interactionManager.changeGameMode(gameMode);
         player.getAdvancementTracker().clearCriteria();
         PlayerManagerAccessor playerManagerAccessor = ((PlayerManagerAccessor) Lib99j.getServerOrThrow().getPlayerManager());
-        playerManagerAccessor.getPlayers().remove(player);
+        if(remove) playerManagerAccessor.getPlayers().remove(player);
+        else playerManagerAccessor.getPlayers().add(player);
         UUID uUID = player.getUuid();
         ServerPlayerEntity serverPlayerEntity = playerManagerAccessor.getPlayerMap().get(uUID);
         if (serverPlayerEntity == player) {
-            playerManagerAccessor.getPlayerMap().remove(uUID);
+            if(remove) playerManagerAccessor.getPlayerMap().remove(uUID);
+            else playerManagerAccessor.getPlayerMap().put(uUID, player);
             playerManagerAccessor.getStatisticsMap().remove(uUID);
             playerManagerAccessor.getAdvancementTrackers().remove(uUID);
         }
+        player.networkHandler.enableFlush();
+        player.networkHandler.onPlayerLoaded(new PlayerLoadedC2SPacket());
         return player;
     }
 
@@ -272,7 +306,7 @@ public class EntityUtils {
     }
 
     /**
-     * Gets the players who are receiving packets for an entity
+     * Gets the players who are receiving packets for a chunk
      */
     public static List<ServerPlayerEntity> getWatching(ServerWorld world, ChunkPos pos) {
         return new ArrayList<>(world.getChunkManager().chunkLoadingManager.playerChunkWatchingManager.getPlayersWatchingChunk());
@@ -290,4 +324,26 @@ public class EntityUtils {
     public static Entity getEntityFromType(EntityType<?> entityType) {
         return entityType.create(PolymerCommonUtils.getFakeWorld(), SpawnReason.COMMAND);
     }
+
+    public static BlockPos getFarPos(Entity entity) {
+        int far = 1000;
+        BlockPos[] corners = {
+                new BlockPos( far, 0,  far),
+                new BlockPos(-far, 0,  far),
+                new BlockPos( far, 0, -far),
+                new BlockPos(-far, 0, -far)
+        };
+
+        BlockPos furthest = BlockPos.ORIGIN;
+        double furthestDistance = 0;
+
+        for (int i = 0; i < corners.length; i++) {
+            double distance = entity.getBlockPos().getSquaredDistance(corners[i].getX(), corners[i].getY(), corners[i].getZ());
+            if (distance > furthestDistance) {
+                furthestDistance = distance;
+                furthest = corners[i];
+            }
+        }
+        return furthest;
+    };
 }
