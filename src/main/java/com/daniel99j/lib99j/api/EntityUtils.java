@@ -34,7 +34,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
 import net.minecraft.util.Arm;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.Pool;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -346,4 +345,8 @@ public class EntityUtils {
         }
         return furthest;
     };
+
+    public static boolean exists(Entity e) {
+        return !(e == null || e.isRemoved() || e.isRegionUnloaded());
+    }
 }

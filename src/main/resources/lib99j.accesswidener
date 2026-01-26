@@ -27,6 +27,8 @@ accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/Lis
 accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
 accessible field net/minecraft/block/entity/CommandBlockBlockEntity conditionMet Z
 accessible method net/minecraft/registry/entry/RegistryEntry$Reference setRegistryKey (Lnet/minecraft/registry/RegistryKey;)V
+accessible field net/minecraft/network/state/NetworkStateBuilder packetTypes Ljava/util/List;
+accessible field net/minecraft/network/state/NetworkStateBuilder$PacketType codec Lnet/minecraft/network/codec/PacketCodec;
 accessible field net/minecraft/server/MinecraftServer workerExecutor Ljava/util/concurrent/Executor;
 accessible field net/minecraft/server/MinecraftServer session Lnet/minecraft/world/level/storage/LevelStorage$Session;
 accessible field net/minecraft/server/network/ServerCommonNetworkHandler connection Lnet/minecraft/network/ClientConnection;
