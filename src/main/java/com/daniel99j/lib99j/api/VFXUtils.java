@@ -1,9 +1,7 @@
 package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
-import eu.pb4.polymer.virtualentity.api.ElementHolder;
-import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
-import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
+import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -11,7 +9,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.FireworkExplosionComponent;
 import net.minecraft.component.type.FireworksComponent;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityStatuses;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -280,37 +277,31 @@ public class VFXUtils {
         }
     }
 
-    public static void fireworkExplode(ServerPlayerEntity player, List<FireworkExplosionComponent> explosions, Vec3d pos, Vec3d velocity) {
-        double x = velocity.x;
-        double y = velocity.y;
-        double z = velocity.z;
-        double horizontalMagnitude = Math.sqrt(x * x + z * z);
-        float pitch = (float) -(Math.toDegrees(Math.atan2(y, horizontalMagnitude)));
-        float yaw = (float) (Math.toDegrees(Math.atan2(x, z)));
-        GenericEntityElement element = new GenericEntityElement() {
-            @Override
-            protected EntityType<? extends Entity> getEntityType() {
-                return EntityType.FIREWORK_ROCKET;
-            }
-        };
-        element.setPitch(pitch);
-        element.setYaw(yaw);
-        element.setInvisible(true);
-        element.setSilent(true);
-        element.setNoGravity(true);
-        element.setOverridePos(pos);
-        ItemStack firework = Items.FIREWORK_ROCKET.getDefaultStack();
-        firework.set(DataComponentTypes.FIREWORKS, new FireworksComponent(-128, explosions));
-        element.getDataTracker().set(FireworkRocketEntity.ITEM, firework);
-        element.getDataTracker().set(FireworkRocketEntity.SHOT_AT_ANGLE, true);
-        ElementHolder holder = new ElementHolder();
-        holder.addElement(element);
-        holder.setAttachment(new EntityAttachment(holder, player, true));
+    public static void fireworkExplode(List<ServerPlayerEntity> players, List<FireworkExplosionComponent> explosions, Vec3d pos, Vec3d velocity) {
+        fireworkExplode(players, explosions, pos, velocity, 123456, 0);
+    }
 
-        EntityStatusS2CPacket packet = new EntityStatusS2CPacket(EntityUtils.fakeEntityFromId(element.getEntityId()), EntityStatuses.EXPLODE_FIREWORK_CLIENT);
-        player.networkHandler.sendPacket(packet);
-        holder.removeElement(element);
-        holder.destroy();
+    public static void fireworkExplode(List<ServerPlayerEntity> players, List<FireworkExplosionComponent> explosions, Vec3d pos, Vec3d velocity, float pitch, float yaw) {
+        boolean angle = pitch != 123456;
+        ItemStack fireworkStack = Items.FIREWORK_ROCKET.getDefaultStack();
+        fireworkStack.set(DataComponentTypes.FIREWORKS, new FireworksComponent(1, explosions));
+        fireworkStack.set(DataComponentTypes.ITEM_MODEL, Identifier.ofVanilla("air"));
+
+        int id = VirtualEntityUtils.requestEntityId();
+        BundleS2CPacket bundle = new BundleS2CPacket(List.of(new EntitySpawnS2CPacket(id, UUID.randomUUID(),
+                        pos.x, pos.y, pos.z, angle ? pitch : 0,  angle ? yaw : 0,
+                        EntityType.FIREWORK_ROCKET, 0, Vec3d.ZERO, 0d),
+                new EntityTrackerUpdateS2CPacket(id, List.of(
+                        DataTracker.SerializedEntry.of(FireworkRocketEntity.ITEM, fireworkStack),
+                        DataTracker.SerializedEntry.of(FireworkRocketEntity.SHOT_AT_ANGLE, angle)
+                )),
+                new EntityStatusS2CPacket(EntityUtils.fakeEntityFromId(id), (byte)17),
+                new EntitiesDestroyS2CPacket(id)
+        ));
+
+        for(ServerPlayerEntity player : players) {
+            player.networkHandler.sendPacket(bundle);
+        };
     }
 
     public enum GENERIC_SCREEN_EFFECT {

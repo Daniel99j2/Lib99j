@@ -39,5 +39,3 @@ accessible field net/minecraft/server/PlayerManager players Ljava/util/List;
 accessible field net/minecraft/server/PlayerManager playerMap Ljava/util/Map;
 accessible method net/minecraft/server/world/ServerWorld addPlayer (Lnet/minecraft/server/network/ServerPlayerEntity;)V
 accessible method net/minecraft/server/network/ServerCommonNetworkHandler createClientData (Lnet/minecraft/network/packet/c2s/common/SyncedClientOptions;)Lnet/minecraft/server/network/ConnectedClientData;
-accessible class io/netty/channel/DefaultChannelPipeline
-accessible class io/netty/channel/local/LocalChannel$State
