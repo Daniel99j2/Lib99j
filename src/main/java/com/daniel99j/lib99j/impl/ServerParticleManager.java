@@ -5,13 +5,13 @@ import com.daniel99j.lib99j.api.ServerParticle;
 import com.google.common.collect.EvictingQueue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.charset.StandardCharsets;
@@ -59,7 +59,7 @@ public class ServerParticleManager {
         blacklistedChars.clear();
         blacklistedChars.add('§');
         blacklistedChars.add('\\');
-        INVISIBLE_FRAME = new ParticleFrame(Identifier.of(Lib99j.MOD_ID, "invisible"), 0, 16, 16);
+        INVISIBLE_FRAME = new ParticleFrame(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "invisible"), 0, 16, 16);
     }
 
     public static void generateAssets(BiConsumer<String, byte[]> assetWriter) {
@@ -86,7 +86,7 @@ public class ServerParticleManager {
     public static ArrayList<ParticleFrame> loadFrames(Identifier base, int frames, int ascent, int height, int width) {
         ArrayList<ParticleFrame> frames1 = new ArrayList<>();
         for (int i = 0; i < frames; i++) {
-            frames1.add(new ParticleFrame(Identifier.of(base.getNamespace(), base.getPath() + "_" + i), ascent, height, width));
+            frames1.add(new ParticleFrame(Identifier.fromNamespaceAndPath(base.getNamespace(), base.getPath() + "_" + i), ascent, height, width));
         }
         return frames1;
     }
@@ -118,12 +118,12 @@ public class ServerParticleManager {
             PARTICLE_TEXTURES.add(this);
         }
 
-        public MutableText text() {
-            return Text.literal(Character.toString(character)).formatted(Formatting.WHITE).fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(Lib99j.MOD_ID, "particles"))));
+        public MutableComponent text() {
+            return Component.literal(Character.toString(character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "particles"))));
         }
     }
 
     public record ServerParticleType(Identifier id, Class<? extends ServerParticle> particleClass,
-                                     ServerParticleManager.QuadFunction<ServerWorld, Double, Double, Double, ServerParticle> spawner) {
+                                     ServerParticleManager.QuadFunction<ServerLevel, Double, Double, Double, ServerParticle> spawner) {
     }
 }

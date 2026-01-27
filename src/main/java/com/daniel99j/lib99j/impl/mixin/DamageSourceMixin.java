@@ -1,14 +1,14 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.DamageTypeTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.entity.LivingEntity;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -17,12 +17,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Mixin(LivingEntity.class)
 public abstract class DamageSourceMixin {
     @Unique
-    private final Map<RegistryEntry<DamageType>, MutableInt> lib99j$damageSourceTimers = new HashMap<>();
+    private final Map<Holder<DamageType>, MutableInt> lib99j$damageSourceTimers = new HashMap<>();
 
     @Inject(method = "tick", at = @At("TAIL"))
     public void lib99j$tickMultiTickDamage(CallbackInfo ci) {
@@ -33,27 +34,27 @@ public abstract class DamageSourceMixin {
     }
 
     @Redirect(
-            method = "damage(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/damage/DamageSource;F)Z",
+            method = "hurtServer(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;F)Z",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/entity/damage/DamageSource;isIn(Lnet/minecraft/registry/tag/TagKey;)Z",
+                    target = "Lnet/minecraft/world/damagesource/DamageSource;is(Lnet/minecraft/tags/TagKey;)Z",
                     ordinal = 3
             )
     )
     private boolean lib99j$multiTickDamage(DamageSource source, TagKey<DamageType> tag) {
         if (tag == DamageTypeTags.BYPASSES_COOLDOWN) {
-            return source.isIn(tag) || lib99j$checkMultiTick(source);
+            return source.is(tag) || lib99j$checkMultiTick(source);
         }
         throw new IllegalStateException("Lib99j MultiTickDamage mixin targeting the wrong method!");
     }
 
     @Unique
     private boolean lib99j$checkMultiTick(DamageSource source) {
-        if (!source.isIn(TagKey.of(RegistryKeys.DAMAGE_TYPE, Identifier.of(Lib99j.MOD_ID, "multi_tick_damage")))) {
+        if (!source.is(TagKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "multi_tick_damage")))) {
             return false;
         }
 
-        var entry = source.getTypeRegistryEntry();
+        var entry = source.typeHolder();
         MutableInt timer = lib99j$damageSourceTimers.get(entry);
 
         if (timer == null) {

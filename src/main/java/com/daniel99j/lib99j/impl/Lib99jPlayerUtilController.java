@@ -1,10 +1,9 @@
 package com.daniel99j.lib99j.impl;
 
 import com.daniel99j.lib99j.api.gui.GuiUtils;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -14,7 +13,9 @@ public interface Lib99jPlayerUtilController {
 
     void lib99j$unlockCamera();
 
-    void lib99j$setCameraPos(Vec3d pos);
+    void lib99j$unlockCameraInternals();
+
+    void lib99j$setCameraPos(Vec3 pos);
 
     void lib99j$setCameraPitch(float pitch);
 
@@ -28,5 +29,5 @@ public interface Lib99jPlayerUtilController {
 
     boolean lib99j$isModCheckerRunning();
 
-    Vec3d lib99j$getCameraWorldPos();
+    Vec3 lib99j$getCameraWorldPos();
 }

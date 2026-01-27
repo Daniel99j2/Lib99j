@@ -1,11 +1,11 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 
-public record PonderStep(Text title, Text desc, ArrayList<PonderInstruction> instructions) implements Cloneable {
+public record PonderStep(Component title, Component desc, ArrayList<PonderInstruction> instructions) implements Cloneable {
     public PonderStep clone() {
         try {
             PonderStep clone = (PonderStep) super.clone();

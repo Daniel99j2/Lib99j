@@ -4,33 +4,24 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.serialization.DynamicOps;
-import eu.pb4.polymer.core.mixin.block.ClientboundBlockEntityDataPacketAccessor;
 import eu.pb4.polymer.resourcepack.extras.api.ResourcePackExtras;
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
-import net.minecraft.advancement.*;
-import net.minecraft.advancement.criterion.TickCriterion;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.SignText;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.AssetInfo;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.advancements.*;
+import net.minecraft.advancements.criterion.PlayerTrigger;
+import net.minecraft.core.ClientAsset;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -74,7 +65,7 @@ public class GuiUtils {
         }
         DefaultGuiTextures.load();
 
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(Lib99j.MOD_ID, "gui"));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "gui"));
     }
 
     private static char getNextSpaceChar() {
@@ -89,38 +80,38 @@ public class GuiUtils {
         return c;
     }
 
-    public static MutableText getSpace(int pixels) {
+    public static MutableComponent getSpace(int pixels) {
         return appendSpace(pixels, null);
     }
 
-    public static MutableText appendSpace(int pixels, MutableText text) {
+    public static MutableComponent appendSpace(int pixels, MutableComponent text) {
         int repeats = Math.floorDiv(pixels, SPACES_RANGE);
         int extra = pixels % SPACES_RANGE;
         for (int i = 0; i < repeats; i++) {
-            MutableText space = getSpaceThrows(256);
+            MutableComponent space = getSpaceThrows(256);
             if(text == null) text = space;
             else text.append(space);
         }
 
-        MutableText space = getSpaceThrows(extra);
+        MutableComponent space = getSpaceThrows(extra);
         if(text == null) text = space;
         else text.append(space);
         return text;
     }
 
-    private static MutableText getSpaceThrows(int pixels) {
+    private static MutableComponent getSpaceThrows(int pixels) {
         if (pixels > SPACES_RANGE || pixels < -SPACES_RANGE)
             throw new IndexOutOfBoundsException("Pixels must be between -" + SPACES_RANGE + " and " + SPACES_RANGE);
-        if(pixels == 0) return Text.empty();
-        return Text.of(Character.toString(SPACES.get(pixels))).copy().fillStyle(Style.EMPTY.withFont(new StyleSpriteSource.Font(Identifier.of(Lib99j.MOD_ID, "spaces"))));
+        if(pixels == 0) return Component.empty();
+        return Component.nullToEmpty(Character.toString(SPACES.get(pixels))).copy().withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "spaces"))));
     }
 
     public static GuiElementBuilder nextPage(boolean allowed) {
-        return (allowed ? DefaultGuiTextures.HEAD_NEXT_PAGE : DefaultGuiTextures.HEAD_NEXT_PAGE_BLOCKED).setName(Text.of("Next Page"));
+        return (allowed ? DefaultGuiTextures.HEAD_NEXT_PAGE : DefaultGuiTextures.HEAD_NEXT_PAGE_BLOCKED).setName(Component.nullToEmpty("Next Page"));
     }
 
     public static GuiElementBuilder previousPage(boolean allowed) {
-        return (allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Text.of("Previous Page"));
+        return (allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Component.nullToEmpty("Previous Page"));
     }
 
     @ApiStatus.Internal
@@ -182,23 +173,34 @@ public class GuiUtils {
     public static GuiElementBuilder generateTexture(Identifier path) {
         ItemGuiTexture texture = new ItemGuiTexture(path);
         ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
-        return blank().model(Identifier.of(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Text.of("==NOT SET=="));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "gui"));
+        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     public static GuiElementBuilder generateColourableTexture(Identifier path) {
         ItemGuiTexture texture = new ItemGuiTexture(path);
         //ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.of(path.getNamespace(), "gui"));
-        return blank().model(Identifier.of(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Text.of("==NOT SET=="));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "gui"));
+        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+    }
+
+    public static MutableComponent colourText(MutableComponent texts, int colour) {
+        MutableComponent newText = Component.empty();
+        for (Component text : texts.getSiblings()) {
+            MutableComponent text1 = null;
+            if(text instanceof MutableComponent) text1 = (MutableComponent) text;
+            else text1 = Component.literal(text1.getString()).withStyle(text1.getStyle());
+            newText.append(text1.withColor(colour));
+        }
+        return newText;
     }
 
     public static GuiElementBuilder blank() {
-        return GuiElementBuilder.from(Items.BARRIER.getDefaultStack()).noDefaults().setMaxCount(1);
+        return GuiElementBuilder.from(Items.BARRIER.getDefaultInstance()).noDefaults().setMaxCount(1);
     }
 
     public static GuiElementBuilder head(String texture) {
-        return GuiElementBuilder.from(Items.PLAYER_HEAD.getDefaultStack()).noDefaults().setMaxCount(1).setSkullOwner(texture).setItemName(Text.of("==NOT SET=="));
+        return GuiElementBuilder.from(Items.PLAYER_HEAD.getDefaultInstance()).noDefaults().setMaxCount(1).setSkullOwner(texture).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     public static GuiBarTexture generateBarTexture(Identifier path, int ascent, int height1, int width1) {
@@ -241,7 +243,7 @@ public class GuiUtils {
 
                 String outputPath = path.getPath() + "_gen_" + i;
 
-                GuiTexture texture = new GuiTexture(Identifier.of(path.getNamespace(), outputPath), ascent, height1, width1);
+                GuiTexture texture = new GuiTexture(Identifier.fromNamespaceAndPath(path.getNamespace(), outputPath), ascent, height1, width1);
                 textures.add(new GuiBarTexturePart(texture, imageData));
                 GUI_TEXTURES.add(texture);
                 i2++;
@@ -288,18 +290,18 @@ public class GuiUtils {
      * @param modTranslations A Map of modId -> translation to check
      * @param output A consumer of PlayerTranslationsResponse. This contains mods that were on the client, weren't on the client, if the check was not blocked by the client's mods (eg, hacks can disable this as it can expose them), and if the check failed over 5 times (the client never responded...)
      */
-    public static void doesPlayerHaveMods(ServerPlayerEntity player, Map<String, String> modTranslations, Consumer<PlayerTranslationsResponse> output) {
+    public static void doesPlayerHaveMods(ServerPlayer player, Map<String, String> modTranslations, Consumer<PlayerTranslationsResponse> output) {
         ((Lib99jPlayerUtilController) player).lib99j$addTranslationChecker(modTranslations, output);
     }
 
-    public static boolean isGeneric54Screen(ScreenHandlerType screenHandlerType) {
+    public static boolean isGeneric54Screen(MenuType screenHandlerType) {
         return
-                (screenHandlerType == ScreenHandlerType.GENERIC_9X1 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X2 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X3 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X4 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X5 ||
-                        screenHandlerType == ScreenHandlerType.GENERIC_9X6);
+                (screenHandlerType == MenuType.GENERIC_9x1 ||
+                        screenHandlerType == MenuType.GENERIC_9x2 ||
+                        screenHandlerType == MenuType.GENERIC_9x3 ||
+                        screenHandlerType == MenuType.GENERIC_9x4 ||
+                        screenHandlerType == MenuType.GENERIC_9x5 ||
+                        screenHandlerType == MenuType.GENERIC_9x6);
     }
 
     public static void basicGuiBackground(SimpleGui gui) {
@@ -310,9 +312,9 @@ public class GuiUtils {
         for (int i = 0; i < gui.getSize(); i++) {
             ItemStack stack;
             if (showSlotIds) {
-                stack = Items.GLASS_PANE.getDefaultStack();
-                stack.set(DataComponentTypes.MAX_DAMAGE, gui.getSize());
-                stack.set(DataComponentTypes.DAMAGE, gui.getSize() - i);
+                stack = Items.GLASS_PANE.getDefaultInstance();
+                stack.set(DataComponents.MAX_DAMAGE, gui.getSize());
+                stack.set(DataComponents.DAMAGE, gui.getSize() - i);
             } else {
                 stack = DefaultGuiTextures.INVISIBLE.getItemStack();
             }
@@ -323,13 +325,13 @@ public class GuiUtils {
         }
     }
 
-    public static void toast(ServerPlayerEntity player, ItemStack icon, Text title, Text description, Identifier background) {
+    public static void toast(ServerPlayer player, ItemStack icon, Component title, Component description, Identifier background) {
         AdvancementProgress progress = new AdvancementProgress();
-        progress.init(AdvancementRequirements.allOf(Set.of("toast")));
-        progress.obtain("toast");
-        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(new AdvancementEntry(Identifier.of("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new AdvancementDisplay(icon, title, description, Optional.of(new AssetInfo.TextureAssetInfo(background)), AdvancementFrame.TASK, true, false, false)), AdvancementRewards.NONE, Map.of("toast", TickCriterion.Conditions.createTick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
-        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(), Set.of(), Map.of(Identifier.of("lib99j", "toast"), progress), true));
-        player.networkHandler.sendPacket(new AdvancementUpdateS2CPacket(false, Set.of(), Set.of(Identifier.of("lib99j", "toast")), Map.of(), false));
+        progress.update(AdvancementRequirements.allOf(Set.of("toast")));
+        progress.grantProgress("toast");
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(icon, title, description, Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "toast"), progress), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "toast")), Map.of(), false));
     }
 
     public record PlayerTranslationsResponse(boolean translationCheckBlocked, boolean checkFailed, ArrayList<String> matches, ArrayList<String> misses) {

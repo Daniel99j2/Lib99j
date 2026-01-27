@@ -4,7 +4,6 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
-import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.polymer.core.api.entity.PolymerEntity;
@@ -15,24 +14,24 @@ import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.DisplayElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.SignText;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -45,11 +44,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 import java.util.function.Consumer;
 
-@Mixin(ServerPlayerEntity.class)
-public abstract class ServerPlayerEntityMixin
-        extends PlayerEntity implements PolymerEntity, Lib99jPlayerUtilController {
+@Mixin(ServerPlayer.class)
+public abstract class ServerPlayerMixin
+        extends Player implements PolymerEntity, Lib99jPlayerUtilController {
     @Shadow
-    private @Nullable Entity cameraEntity;
+    private @Nullable Entity camera;
     @Unique
     private ElementHolder lib99j$holder;
     @Unique
@@ -59,23 +58,23 @@ public abstract class ServerPlayerEntityMixin
     @Unique
     private int lib99j$modTranslationCheckerTimeout = 0;
 
-    public ServerPlayerEntityMixin(World world, GameProfile gameProfile) {
+    public ServerPlayerMixin(Level world, GameProfile gameProfile) {
         super(world, gameProfile);
     }
 
     @Shadow
-    public abstract OptionalInt openHandledScreen(@Nullable NamedScreenHandlerFactory factory);
+    public abstract OptionalInt openMenu(@Nullable MenuProvider factory);
 
-    @Inject(method = "onDeath", at = @At("TAIL"))
+    @Inject(method = "die", at = @At("TAIL"))
     public void deathEvent(DamageSource damageSource, CallbackInfo ci) {
         VFXUtils.stopAllShaking(getPlayer());
         VFXUtils.clearGenericScreenEffects(getPlayer());
     }
 
     @Unique
-    private ServerPlayerEntity getPlayer() {
-        PlayerEntity player = this;
-        return (ServerPlayerEntity) player;
+    private ServerPlayer getPlayer() {
+        Player player = this;
+        return (ServerPlayer) player;
     }
 
     @Inject(method = "tick", at = @At("HEAD"))
@@ -107,26 +106,26 @@ public abstract class ServerPlayerEntityMixin
 
     @Override
     public void lib99j$lockCamera() {
-        float yaw = getPlayer().getYaw();
-        float pitch = getPlayer().getPitch();
+        float yaw = getPlayer().getYRot();
+        float pitch = getPlayer().getXRot();
         this.lib99j$cameraPoint = new BlockDisplayElement() {
             @Override
-            public Vec3d getOffset() {
-                return super.getOffset().subtract(getPlayer().getEntityPos());
+            public Vec3 getOffset() {
+                return super.getOffset().subtract(getPlayer().position());
             }
         };
         this.lib99j$cameraPoint.setYaw(yaw);
         this.lib99j$cameraPoint.setPitch(pitch);
-        this.lib99j$cameraPoint.setOffset(new Vec3d(0, getPlayer().getStandingEyeHeight(), 0));
+        this.lib99j$cameraPoint.setOffset(new Vec3(0, getPlayer().getEyeHeight(), 0));
         this.lib99j$cameraPoint.setInvisible(true);
         this.lib99j$holder.addElement(this.lib99j$cameraPoint);
-        getPlayer().networkHandler.sendPacket(VirtualEntityUtils.createSetCameraEntityPacket(this.lib99j$cameraPoint.getEntityId()));
-        getPlayer().networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, GameMode.SPECTATOR.getIndex()));
-        lib99j$setCameraPos(getPlayer().getEyePos());
+        getPlayer().connection.send(VirtualEntityUtils.createSetCameraEntityPacket(this.lib99j$cameraPoint.getEntityId()));
+        getPlayer().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SPECTATOR.getId()));
+        lib99j$setCameraPos(getPlayer().getEyePosition());
     }
 
     @Override
-    public void lib99j$setCameraPos(Vec3d pos) {
+    public void lib99j$setCameraPos(Vec3 pos) {
         this.lib99j$cameraPoint.setOffset(pos);
     }
 
@@ -142,9 +141,9 @@ public abstract class ServerPlayerEntityMixin
 
     @Override
     public void lib99j$unlockCamera() {
-        getPlayer().networkHandler.sendPacket(new SetCameraEntityS2CPacket(this.cameraEntity == null ? getPlayer() : this.cameraEntity));
-        getPlayer().networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, getPlayer().interactionManager.getGameMode().getIndex()));
-        getPlayer().networkHandler.sendPacket(new EntityTrackerUpdateS2CPacket(getPlayer().getId(), List.of(DataTracker.SerializedEntry.of(EntityTrackedData.POSE, getPlayer().getPose()))));
+        getPlayer().connection.send(new ClientboundSetCameraPacket(this.camera == null ? getPlayer() : this.camera));
+        getPlayer().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, getPlayer().gameMode.getGameModeForPlayer().getId()));
+        getPlayer().connection.send(new ClientboundSetEntityDataPacket(getPlayer().getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.POSE, getPlayer().getPose()))));
         this.lib99j$holder.removeElement(this.lib99j$cameraPoint);
         this.lib99j$cameraPoint = null;
     }
@@ -199,43 +198,43 @@ public abstract class ServerPlayerEntityMixin
 
     @Unique
     private void lib99j$checkMods(GuiUtils.PlayerTranslationCheckerData data) {
-        ServerPlayerEntity player = getPlayer();
+        ServerPlayer player = getPlayer();
         if(data.remainingTries().intValue() == 5) this.lib99j$modTranslationCheckerTimeout = 5;
 
         List<Map.Entry<String, String>> entries = data.translations();
         int total = entries.size();
         int lines = 3;
         int count = (int) Math.ceil((double) total / lines);
-        BlockPos pos = new BlockPos(player.getBlockPos().getX(), player.getEntityWorld().getBottomY(), player.getBlockPos().getZ());
+        BlockPos pos = new BlockPos(player.blockPosition().getX(), player.level().getMinY(), player.blockPosition().getZ());
 
         for (int i = 0; i < count; i++) {
-            NbtCompound nbt = new NbtCompound();
+            CompoundTag nbt = new CompoundTag();
             SignText text = new SignText();
 
             for (int line = 0; line < lines; line++) {
                 int index = i * lines + line;
                 if (index < total) {
                     Map.Entry<String, String> entry = entries.get(index);
-                    text = text.withMessage(line, Text.translatable(entry.getValue()));
+                    text = text.setMessage(line, Component.translatable(entry.getValue()));
                 }
             }
 
-            if (i == count - 1) text = text.withMessage(3, Text.literal("lib99j$final"));
-            else text = text.withMessage(3, Text.literal("lib99j$checker"));
+            if (i == count - 1) text = text.setMessage(3, Component.literal("lib99j$final"));
+            else text = text.setMessage(3, Component.literal("lib99j$checker"));
 
-            DynamicOps<NbtElement> dynamicOps = player.getRegistryManager().getOps(NbtOps.INSTANCE);
-            nbt.put("front_text", SignText.CODEC, dynamicOps, text);
-            nbt.put("back_text", SignText.CODEC, dynamicOps, new SignText());
+            DynamicOps<Tag> dynamicOps = player.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+            nbt.store("front_text", SignText.DIRECT_CODEC, dynamicOps, text);
+            nbt.store("back_text", SignText.DIRECT_CODEC, dynamicOps, new SignText());
             nbt.putBoolean("is_waxed", false);
 
-            player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, Blocks.OAK_SIGN.getDefaultState()));
-            player.networkHandler.sendPacket(ClientboundBlockEntityDataPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
-            player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos, true));
-            player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
+            player.connection.send(new ClientboundBlockUpdatePacket(pos, Blocks.OAK_SIGN.defaultBlockState()));
+            player.connection.send(ClientboundBlockEntityDataPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
+            player.connection.send(new ClientboundOpenSignEditorPacket(pos, true));
+            player.connection.send(new ClientboundContainerClosePacket(0));
         }
-        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(pos, player.getEntityWorld().getBlockState(pos)));
-        if (player.getEntityWorld().getBlockEntity(pos) != null)
-            player.networkHandler.sendPacket(BlockEntityUpdateS2CPacket.create(player.getEntityWorld().getBlockEntity(pos)));
+        player.connection.send(new ClientboundBlockUpdatePacket(pos, player.level().getBlockState(pos)));
+        if (player.level().getBlockEntity(pos) != null)
+            player.connection.send(ClientboundBlockEntityDataPacket.create(player.level().getBlockEntity(pos)));
     }
 
     @Override
@@ -244,7 +243,7 @@ public abstract class ServerPlayerEntityMixin
     }
 
     @Override
-    public Vec3d lib99j$getCameraWorldPos() {
+    public Vec3 lib99j$getCameraWorldPos() {
         return this.lib99j$cameraPoint.getOffset();
     }
 }

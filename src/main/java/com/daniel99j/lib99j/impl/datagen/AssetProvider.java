@@ -12,10 +12,10 @@ import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.model.BasicItemModel;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTintSource;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
-import net.minecraft.data.DataOutput;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.DataWriter;
-import net.minecraft.util.Identifier;
+import net.minecraft.data.PackOutput;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class AssetProvider implements DataProvider {
               }
             }
             """.replace(" ", "").replace("\n", "");
-    private final DataOutput output;
+    private final PackOutput output;
 
     public AssetProvider(FabricDataOutput output) {
         this.output = output;
@@ -48,15 +48,15 @@ public class AssetProvider implements DataProvider {
 
         for (ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
             assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/gui/" + texture.path().getPath() + ".json",
-                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of(texture.path().getNamespace(), "gui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath(texture.path().getNamespace(), "gui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
         }
 
         ServerParticleManager.generateAssets(assetWriter);
 
         assetWriter.accept("assets/lib99j/models/gui/solid_colour.json",
-                BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.of("lib99j", "gui/solid_colour").toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+                BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath("lib99j", "gui/solid_colour").toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
 
-        assetWriter.accept("assets/lib99j/items/gui/solid_colour.json", new ItemAsset(new BasicItemModel(Identifier.of(Lib99j.MOD_ID, "gui/solid_colour"), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
+        assetWriter.accept("assets/lib99j/items/gui/solid_colour.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "gui/solid_colour"), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
 
 
         var sounds = new JsonObject();
@@ -66,7 +66,7 @@ public class AssetProvider implements DataProvider {
 
             var soundArray = new JsonArray();
             var soundObject = new JsonObject();
-            soundObject.addProperty("name", entry.sound().id().toString());
+            soundObject.addProperty("name", entry.sound().location().toString());
             soundObject.addProperty("type", "event");
             soundArray.add(soundObject);
 
@@ -80,17 +80,17 @@ public class AssetProvider implements DataProvider {
     }
 
     @Override
-    public CompletableFuture<?> run(DataWriter writer) {
+    public CompletableFuture<?> run(CachedOutput writer) {
         BiConsumer<String, byte[]> assetWriter = (path, data) -> {
             try {
-                writer.write(this.output.getPath().resolve(path), data, HashCode.fromBytes(data));
+                writer.writeIfNeeded(this.output.getOutputFolder().resolve(path), data, HashCode.fromBytes(data));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         };
         return CompletableFuture.runAsync(() -> {
             runWriters(assetWriter);
-        }, Util.getMainWorkerExecutor());
+        }, Util.backgroundExecutor());
     }
 
     @Override

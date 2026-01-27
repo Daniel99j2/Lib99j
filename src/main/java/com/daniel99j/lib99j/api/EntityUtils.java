@@ -1,46 +1,42 @@
 package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.impl.mixin.PlayerManagerAccessor;
+import com.daniel99j.lib99j.impl.mixin.PlayerListAccessor;
 import com.mojang.authlib.GameProfile;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import eu.pb4.polymer.virtualentity.mixin.accessors.EntityAccessor;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.vehicle.VehicleEntity;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.NetworkSide;
-import net.minecraft.network.message.ChatVisibility;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
-import net.minecraft.network.packet.c2s.play.PlayerLoadedC2SPacket;
-import net.minecraft.network.packet.s2c.play.ExplosionS2CPacket;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.particle.ParticlesMode;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.network.ConnectedClientData;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.util.Arm;
-import net.minecraft.util.collection.Pool;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.random.WeightedList;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.ChatVisiblity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.VehicleEntity;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,8 +55,8 @@ public class EntityUtils {
      * <p>It will not kill the entity if it is invulnerable to the damage source
      */
     public static void killDamageSource(LivingEntity entity, DamageSource source) {
-        if (!entity.isInvulnerableTo(((ServerWorld) entity.getEntityWorld()), source) && entity.isAlive() && !entity.isRemoved()) {
-            entity.damage(((ServerWorld) entity.getEntityWorld()), source, Float.MAX_VALUE);
+        if (!entity.isInvulnerableTo(((ServerLevel) entity.level()), source) && entity.isAlive() && !entity.isRemoved()) {
+            entity.hurtServer(((ServerLevel) entity.level()), source, Float.MAX_VALUE);
         }
     }
 
@@ -72,22 +68,22 @@ public class EntityUtils {
     public static Entity fakeEntityFromId(int id) {
         Entity entity = new Entity(EntityType.PIG, null) {
             @Override
-            protected void initDataTracker(DataTracker.Builder builder) {
+            protected void defineSynchedData(SynchedEntityData.Builder builder) {
 
             }
 
             @Override
-            public boolean damage(ServerWorld world, DamageSource source, float amount) {
+            public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
                 return false;
             }
 
             @Override
-            protected void readCustomData(ReadView view) {
+            protected void readAdditionalSaveData(ValueInput view) {
 
             }
 
             @Override
-            protected void writeCustomData(WriteView view) {
+            protected void addAdditionalSaveData(ValueOutput view) {
 
             }
         };
@@ -99,25 +95,25 @@ public class EntityUtils {
      * Accelerates an entity to a pos
      */
     public static void accelerateTowards(Entity entity, double targetX, double targetY, double targetZ, double acceleration) {
-        Vec3d startVelocity = entity.getVelocity();
+        Vec3 startVelocity = entity.getDeltaMovement();
 
-        Vec3d currentPos = entity.getEntityPos();
-        Vec3d targetPos = new Vec3d(targetX, targetY, targetZ);
-        Vec3d direction = targetPos.subtract(currentPos).normalize();
-        Vec3d accelerationVector = direction.multiply(acceleration);
+        Vec3 currentPos = entity.position();
+        Vec3 targetPos = new Vec3(targetX, targetY, targetZ);
+        Vec3 direction = targetPos.subtract(currentPos).normalize();
+        Vec3 accelerationVector = direction.scale(acceleration);
 
-        entity.addVelocity(accelerationVector.x, accelerationVector.y, accelerationVector.z);
+        entity.push(accelerationVector.x, accelerationVector.y, accelerationVector.z);
 
-        if (entity instanceof ServerPlayerEntity player)
-            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
-        if (entity instanceof VehicleEntity vehicle && vehicle.getControllingPassenger() instanceof ServerPlayerEntity player)
-            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof ServerPlayer player)
+            sendVelocityDelta(player, player.getDeltaMovement().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof VehicleEntity vehicle && vehicle.getControllingPassenger() instanceof ServerPlayer player)
+            sendVelocityDelta(player, player.getDeltaMovement().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
     }
 
     /**
      * Accelerates an entity to a pos
      */
-    public static void accelerateTowards(Entity entity, Vec3d target, double acceleration) {
+    public static void accelerateTowards(Entity entity, Vec3 target, double acceleration) {
         accelerateTowards(entity, target.x, target.y, target.z, acceleration);
 
     }
@@ -126,14 +122,14 @@ public class EntityUtils {
      * Accelerates an entity based on it's look direction
      */
     public static void accelerateEntityFacing(Entity entity, double acceleration) {
-        accelerateEntityPitchYaw(entity, acceleration, entity.getPitch(), entity.getYaw());
+        accelerateEntityPitchYaw(entity, acceleration, entity.getXRot(), entity.getYRot());
     }
 
     /**
      * Accelerates an entity based on a pitch and yaw
      */
     public static void accelerateEntityPitchYaw(Entity entity, double acceleration, float pitch, float yaw) {
-        Vec3d startVelocity = entity.getVelocity();
+        Vec3 startVelocity = entity.getDeltaMovement();
 
         double yawRad = Math.toRadians(yaw);
         double pitchRad = Math.toRadians(pitch);
@@ -142,20 +138,20 @@ public class EntityUtils {
         double y = -Math.sin(pitchRad);
         double z = Math.cos(yawRad) * Math.cos(pitchRad);
 
-        Vec3d accelerationVector = new Vec3d(x, y, z).normalize().multiply(acceleration);
+        Vec3 accelerationVector = new Vec3(x, y, z).normalize().scale(acceleration);
 
-        entity.addVelocity(accelerationVector.x, accelerationVector.y, accelerationVector.z);
+        entity.push(accelerationVector.x, accelerationVector.y, accelerationVector.z);
 
-        if (entity instanceof ServerPlayerEntity player)
-            sendVelocityDelta(player, player.getVelocity().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
+        if (entity instanceof ServerPlayer player)
+            sendVelocityDelta(player, player.getDeltaMovement().add(-startVelocity.x, -startVelocity.y, -startVelocity.z));
     }
 
     /**
      * Sends motion data to a player
      * <p>To do this, it creates a fake client-side explosion for the player
      */
-    public static void sendVelocityDelta(@NotNull ServerPlayerEntity player, Vec3d delta) {
-        player.networkHandler.sendPacket(new ExplosionS2CPacket(new Vec3d(player.getX(), player.getY() - 9999, player.getZ()), 1, 0, Optional.of(delta), ParticleTypes.BUBBLE, Registries.SOUND_EVENT.getEntry(SoundEvents.INTENTIONALLY_EMPTY), Pool.empty()));
+    public static void sendVelocityDelta(@NotNull ServerPlayer player, Vec3 delta) {
+        player.connection.send(new ClientboundExplodePacket(new Vec3(player.getX(), player.getY() - 9999, player.getZ()), 1, 0, Optional.of(delta), ParticleTypes.BUBBLE, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY), WeightedList.of()));
     }
 
     /**
@@ -163,28 +159,28 @@ public class EntityUtils {
      */
     public static void setRotationFromDirection(Direction direction, Entity entity) {
         if (direction == Direction.UP) {
-            entity.setPitch(270);
-            entity.setYaw(0);
+            entity.setXRot(270);
+            entity.setYRot(0);
         }
         if (direction == Direction.DOWN) {
-            entity.setPitch(90);
-            entity.setYaw(0);
+            entity.setXRot(90);
+            entity.setYRot(0);
         }
         if (direction == Direction.NORTH) {
-            entity.setPitch(0);
-            entity.setYaw(180);
+            entity.setXRot(0);
+            entity.setYRot(180);
         }
         if (direction == Direction.SOUTH) {
-            entity.setPitch(0);
-            entity.setYaw(0);
+            entity.setXRot(0);
+            entity.setYRot(0);
         }
         if (direction == Direction.EAST) {
-            entity.setPitch(0);
-            entity.setYaw(270);
+            entity.setXRot(0);
+            entity.setYRot(270);
         }
         if (direction == Direction.WEST) {
-            entity.setPitch(0);
-            entity.setYaw(90);
+            entity.setXRot(0);
+            entity.setYRot(90);
         }
     }
 
@@ -221,11 +217,11 @@ public class EntityUtils {
     /**
      * Creates a fake player
      */
-    public static PlayerEntity fakePlayer(World world, BlockPos pos) {
-        return new PlayerEntity(world, new GameProfile(UUID.fromString("58067007-10db-47f1-8844-b142275b76f15"), "LIB99j FAKE PLAYER")) {
+    public static Player fakePlayer(Level world, BlockPos pos) {
+        return new Player(world, new GameProfile(UUID.fromString("58067007-10db-47f1-8844-b142275b76f15"), "LIB99j FAKE PLAYER")) {
             @Override
-            public @NotNull GameMode getGameMode() {
-                return GameMode.CREATIVE;
+            public @NotNull GameType gameMode() {
+                return GameType.CREATIVE;
             }
         };
     }
@@ -233,15 +229,15 @@ public class EntityUtils {
     /**
      * Creates a fake server-player
      */
-    public static ServerPlayerEntity fakeServerPlayer(ServerWorld world, BlockPos pos) {
-        return fakeServerPlayerInternal(world, pos, GameMode.SURVIVAL, UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER", true, true);
+    public static ServerPlayer fakeServerPlayer(ServerLevel world, BlockPos pos) {
+        return fakeServerPlayerInternal(world, pos, GameType.SURVIVAL, UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER", true, true);
     }
 
     /**
      * Creates a fake server-player
      * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
      */
-    public static ServerPlayerEntity fakeServerPlayer(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name, boolean autoEditName) {
+    public static ServerPlayer fakeServerPlayer(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name, boolean autoEditName) {
         return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, true, autoEditName);
     }
 
@@ -250,78 +246,78 @@ public class EntityUtils {
      * <p>Only use this if you know what you are doing, as the player will stay loaded in memory.
      * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
      */
-    public static ServerPlayerEntity fakeServerPlayerAddToWorld(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name, boolean autoEditName) {
+    public static ServerPlayer fakeServerPlayerAddToWorld(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name, boolean autoEditName) {
         return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, false, autoEditName);
     }
 
     @ApiStatus.Internal
-    private static ServerPlayerEntity fakeServerPlayerInternal(ServerWorld world, BlockPos pos, GameMode gameMode, UUID uuid, String name1, boolean remove, boolean autoEditName) {
+    private static ServerPlayer fakeServerPlayerInternal(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name1, boolean remove, boolean autoEditName) {
         String name = autoEditName ? name1 + playerIdPrefix++ : name1;
         if(name.length() > 16) throw new IllegalStateException("Player name is too long");
-        if(Lib99j.getServer() != null && Lib99j.getServer().getPlayerManager().getPlayer(name) != null) {
+        if(Lib99j.getServer() != null && Lib99j.getServer().getPlayerList().getPlayerByName(name) != null) {
             throw new IllegalStateException("Player name is already taken");
         }
-        ServerPlayerEntity player = new ServerPlayerEntity(Lib99j.getServerOrThrow(), world, new GameProfile(uuid, name), new SyncedClientOptions("bot", 0, ChatVisibility.HIDDEN, false, 0, Arm.RIGHT, false, false, ParticlesMode.MINIMAL));
-        player.networkHandler = new ServerPlayNetworkHandler(Lib99j.getServerOrThrow(),
-                new ClientConnection(NetworkSide.CLIENTBOUND),
+        ServerPlayer player = new ServerPlayer(Lib99j.getServerOrThrow(), world, new GameProfile(uuid, name), new ClientInformation("bot", 0, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, false, false, ParticleStatus.MINIMAL));
+        player.connection = new ServerGamePacketListenerImpl(Lib99j.getServerOrThrow(),
+                new Connection(PacketFlow.CLIENTBOUND),
                 player,
-                ConnectedClientData.createDefault(player.getGameProfile(), false)
+                CommonListenerCookie.createInitial(player.getGameProfile(), false)
         ) {
             @Override
-            public boolean isConnectionOpen() {
+            public boolean isAcceptingMessages() {
                 return false;
             }
 
             @Override
-            public boolean accepts(Packet<?> packet) {
+            public boolean shouldHandleMessage(Packet<?> packet) {
                 return false;
             }
         };
-        if(!remove) world.onPlayerConnected(player);
-        if(remove) world.removePlayer(player, Entity.RemovalReason.DISCARDED);
-        player.interactionManager.changeGameMode(gameMode);
-        player.getAdvancementTracker().clearCriteria();
-        PlayerManagerAccessor playerManagerAccessor = ((PlayerManagerAccessor) Lib99j.getServerOrThrow().getPlayerManager());
+        if(!remove) world.addNewPlayer(player);
+        if(remove) world.removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+        player.gameMode.changeGameModeForPlayer(gameMode);
+        player.getAdvancements().stopListening();
+        PlayerListAccessor playerManagerAccessor = ((PlayerListAccessor) Lib99j.getServerOrThrow().getPlayerList());
         if(remove) playerManagerAccessor.getPlayers().remove(player);
         else playerManagerAccessor.getPlayers().add(player);
-        UUID uUID = player.getUuid();
-        ServerPlayerEntity serverPlayerEntity = playerManagerAccessor.getPlayerMap().get(uUID);
+        UUID uUID = player.getUUID();
+        ServerPlayer serverPlayerEntity = playerManagerAccessor.getPlayersByUUID().get(uUID);
         if (serverPlayerEntity == player) {
-            if(remove) playerManagerAccessor.getPlayerMap().remove(uUID);
-            else playerManagerAccessor.getPlayerMap().put(uUID, player);
-            playerManagerAccessor.getStatisticsMap().remove(uUID);
-            playerManagerAccessor.getAdvancementTrackers().remove(uUID);
+            if(remove) playerManagerAccessor.getPlayersByUUID().remove(uUID);
+            else playerManagerAccessor.getPlayersByUUID().put(uUID, player);
+            playerManagerAccessor.getStats().remove(uUID);
+            playerManagerAccessor.getAdvancements().remove(uUID);
         }
-        player.networkHandler.enableFlush();
-        player.networkHandler.onPlayerLoaded(new PlayerLoadedC2SPacket());
+        player.connection.resumeFlushing();
+        player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
         return player;
     }
 
     /**
      * Gets the players who are receiving packets for an entity
      */
-    public static List<ServerPlayerEntity> getWatching(Entity entity) {
-        return getWatching(((ServerWorld) entity.getEntityWorld()), entity.getChunkPos());
+    public static List<ServerPlayer> getWatching(Entity entity) {
+        return getWatching(((ServerLevel) entity.level()), entity.chunkPosition());
     }
 
     /**
      * Gets the players who are receiving packets for a chunk
      */
-    public static List<ServerPlayerEntity> getWatching(ServerWorld world, ChunkPos pos) {
-        return new ArrayList<>(world.getChunkManager().chunkLoadingManager.playerChunkWatchingManager.getPlayersWatchingChunk());
+    public static List<ServerPlayer> getWatching(ServerLevel world, ChunkPos pos) {
+        return new ArrayList<>(world.getChunkSource().chunkMap.playerMap.getAllPlayers());
     }
 
     /**
      * Sets a data tracker's data to be an invisible, small, marker armor stand
      */
-    public static void dummyArmorStandData(List<DataTracker.SerializedEntry<?>> data) {
-        data.add(DataTracker.SerializedEntry.of(EntityTrackedData.FLAGS, (byte) (1 << EntityTrackedData.INVISIBLE_FLAG_INDEX)));
-        data.add(new DataTracker.SerializedEntry<>(EntityAccessor.getDATA_NO_GRAVITY().id(), EntityAccessor.getDATA_NO_GRAVITY().dataType(), true));
-        data.add(DataTracker.SerializedEntry.of(ArmorStandEntity.ARMOR_STAND_FLAGS, (byte) (ArmorStandEntity.SMALL_FLAG | ArmorStandEntity.MARKER_FLAG)));
+    public static void dummyArmorStandData(List<SynchedEntityData.DataValue<?>> data) {
+        data.add(SynchedEntityData.DataValue.create(EntityTrackedData.FLAGS, (byte) (1 << EntityTrackedData.INVISIBLE_FLAG_INDEX)));
+        data.add(new SynchedEntityData.DataValue<>(EntityAccessor.getDATA_NO_GRAVITY().id(), EntityAccessor.getDATA_NO_GRAVITY().serializer(), true));
+        data.add(SynchedEntityData.DataValue.create(ArmorStand.DATA_CLIENT_FLAGS, (byte) (ArmorStand.CLIENT_FLAG_SMALL | ArmorStand.CLIENT_FLAG_MARKER)));
     }
 
     public static Entity getEntityFromType(EntityType<?> entityType) {
-        return entityType.create(PolymerCommonUtils.getFakeWorld(), SpawnReason.COMMAND);
+        return entityType.create(PolymerCommonUtils.getFakeWorld(), EntitySpawnReason.COMMAND);
     }
 
     public static BlockPos getFarPos(Entity entity) {
@@ -333,11 +329,11 @@ public class EntityUtils {
                 new BlockPos(-far, 0, -far)
         };
 
-        BlockPos furthest = BlockPos.ORIGIN;
+        BlockPos furthest = BlockPos.ZERO;
         double furthestDistance = 0;
 
         for (int i = 0; i < corners.length; i++) {
-            double distance = entity.getBlockPos().getSquaredDistance(corners[i].getX(), corners[i].getY(), corners[i].getZ());
+            double distance = entity.blockPosition().distToLowCornerSqr(corners[i].getX(), corners[i].getY(), corners[i].getZ());
             if (distance > furthestDistance) {
                 furthestDistance = distance;
                 furthest = corners[i];
@@ -347,6 +343,6 @@ public class EntityUtils {
     };
 
     public static boolean exists(Entity e) {
-        return !(e == null || e.isRemoved() || e.isRegionUnloaded());
+        return !(e == null || e.isRemoved() || e.touchingUnloadedChunk());
     }
 }

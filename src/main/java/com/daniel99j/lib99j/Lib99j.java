@@ -1,6 +1,9 @@
 package com.daniel99j.lib99j;
 
-import com.daniel99j.lib99j.api.*;
+import com.daniel99j.lib99j.api.ChunkSenderUtil;
+import com.daniel99j.lib99j.api.CustomEvents;
+import com.daniel99j.lib99j.api.GameProperties;
+import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.ServerParticleCommand;
@@ -23,42 +26,45 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.RespawnAnchorBlock;
-import net.minecraft.command.argument.ItemStackArgumentType;
-import net.minecraft.command.argument.TextArgumentType;
-import net.minecraft.entity.EntityPosition;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.TntEntity;
-import net.minecraft.entity.mob.CreeperEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.Items;
-import net.minecraft.network.listener.PacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.PacketType;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.particle.ParticleTypes;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ComponentArgument;
+import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.PacketListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketType;
+import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.*;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeKeys;
-import net.minecraft.world.explosion.EntityExplosionBehavior;
-import net.minecraft.world.explosion.Explosion;
-import net.minecraft.world.explosion.ExplosionBehavior;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * A library for all of Daniel99j's mods
@@ -113,7 +119,7 @@ public class Lib99j implements ModInitializer {
         PolymerResourcePackUtils.RESOURCE_PACK_CREATION_EVENT.register((builder -> AssetProvider.runWriters(builder::addData)));
 
         ServerTickEvents.START_SERVER_TICK.register((server) -> {
-            if(server.getTickManager().isFrozen()) return;
+            if(server.tickRateManager().isFrozen()) return;
             ServerParticleManager.tick();
             VFXUtils.tick();
             PonderManager.tick();
@@ -127,133 +133,131 @@ public class Lib99j implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.contentModsLoaded) ServerParticleCommand.register(dispatcher);
             if (GameProperties.contentModsLoaded) VfxCommand.register(dispatcher);
-            dispatcher.getRoot().addChild(CommandManager.literal("translationcheck")
+            dispatcher.getRoot().addChild(Commands.literal("translationcheck")
                     .executes((context) -> {
                         GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray", "test", "controls.reset", "vanilla1", "addServer.add", "hacks1", "x13.mod.xray", "test1", "controls.reset", "vanilla2", "addServer.add", "hacks2", "x13.mod.xray", "test2", "controls.reset"), (e) -> {
-                            for (String s : e.matches()) context.getSource().getPlayer().sendMessage(Text.literal("match: " + s));
-                            for (String s : e.misses()) context.getSource().getPlayer().sendMessage(Text.literal("miss: " + s));
-                            context.getSource().getPlayer().sendMessage(Text.literal("failed: " + e.checkFailed()));
-                            context.getSource().getPlayer().sendMessage(Text.literal("blocked: " + e.translationCheckBlocked()));
+                            for (String s : e.matches()) context.getSource().getPlayer().sendSystemMessage(Component.literal("match: " + s));
+                            for (String s : e.misses()) context.getSource().getPlayer().sendSystemMessage(Component.literal("miss: " + s));
+                            context.getSource().getPlayer().sendSystemMessage(Component.literal("failed: " + e.checkFailed()));
+                            context.getSource().getPlayer().sendSystemMessage(Component.literal("blocked: " + e.translationCheckBlocked()));
                         });
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("toast")
-                            .then(CommandManager.argument("icon", ItemStackArgumentType.itemStack(registryAccess))
-                                    .then(CommandManager.argument("title", TextArgumentType.text(registryAccess))
-                                            .then(CommandManager.argument("desc", TextArgumentType.text(registryAccess))
+            dispatcher.getRoot().addChild(Commands.literal("toast")
+                            .then(Commands.argument("icon", ItemArgument.item(registryAccess))
+                                    .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
+                                            .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
                     .executes((context) -> {
-                        GuiUtils.toast(context.getSource().getPlayer(), ItemStackArgumentType.getItemStackArgument(context, "icon").createStack(2,  true), TextArgumentType.getTextArgument(context, "title"), TextArgumentType.getTextArgument(context, "desc"), Identifier.ofVanilla("test"));
+                        GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2,  true), ComponentArgument.getRawComponent(context, "title"), ComponentArgument.getRawComponent(context, "desc"), Identifier.withDefaultNamespace("test"));
                         return 1;
                     })))).build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("clientexplode")
+            dispatcher.getRoot().addChild(Commands.literal("clientexplode")
                     .executes((context) -> {
-                        ArrayList<ServerPlayerEntity> players = new ArrayList<>();
+                        ArrayList<ServerPlayer> players = new ArrayList<>();
                         players.add(context.getSource().getPlayer());
-                        VFXUtils.clientSideExplode(players, new ExplosionBehavior(), context.getSource().getPosition().getX(), context.getSource().getPosition().getY(), context.getSource().getPosition().getZ(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.ENTITY_GENERIC_EXPLODE, true);
+                        VFXUtils.clientSideExplode(players, new ExplosionDamageCalculator(), context.getSource().getPosition().x(), context.getSource().getPosition().y(), context.getSource().getPosition().z(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE, true);
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("tplockedcamera")
+            dispatcher.getRoot().addChild(Commands.literal("tplockedcamera")
                     .executes((context) -> {
-                        Vec3d pos = ((Lib99jPlayerUtilController) context.getSource().getPlayerOrThrow()).lib99j$getCameraWorldPos();
-                        VFXUtils.clearGenericScreenEffects(context.getSource().getPlayerOrThrow());
-                        context.getSource().getPlayerOrThrow().networkHandler.sendPacket(PlayerPositionLookS2CPacket.of(-1, new EntityPosition(pos, Vec3d.ZERO, 0, 0), Set.of(PositionFlag.X, PositionFlag.Y, PositionFlag.Z)));
+                        ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("noponder")
+            dispatcher.getRoot().addChild(Commands.literal("noponder")
                     .executes((context) -> {
-                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.of("ponder", "ponder_lock"));
-                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.of("ponder", "ponder_bright"));
+                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
                         PolymerUtils.reloadWorld(context.getSource().getPlayer());
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("ghostblock")
+            dispatcher.getRoot().addChild(Commands.literal("ghostblock")
                     .executes((context) -> {
-                        context.getSource().getPlayer().networkHandler.sendPacket(new BlockUpdateS2CPacket(BlockPos.ofFloored(context.getSource().getPosition()), TestingElements.TEST.getDefaultState()));
+                        context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("reloadworld")
+            dispatcher.getRoot().addChild(Commands.literal("reloadworld")
                     .executes((context) -> {
                         PolymerUtils.reloadWorld(context.getSource().getPlayer());
                         return 1;
                     })
                     .build());
 
-            dispatcher.getRoot().addChild(CommandManager.literal("singleponder")
+            dispatcher.getRoot().addChild(Commands.literal("singleponder")
                     .executes((context) -> {
-                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.of("ponder", "ponder_lock"));
-                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.of("ponder", "ponder_bright"));
+                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
 
-                        ServerPlayerEntity realPlayer = context.getSource().getPlayer();
+                        ServerPlayer realPlayer = context.getSource().getPlayer();
 
                         BlockPos renderPos = new BlockPos((int) (100000), 60, 0);
-                        VFXUtils.setCameraPos(realPlayer, Vec3d.of(renderPos));
-                        realPlayer.networkHandler.sendPacket(new ChunkRenderDistanceCenterS2CPacket(ChunkSectionPos.getSectionCoord(renderPos.getX()), ChunkSectionPos.getSectionCoord(renderPos.getZ()) ));
-                        realPlayer.networkHandler.sendPacket(PlayerPositionLookS2CPacket.of(-69, new EntityPosition(Vec3d.of(renderPos), Vec3d.ZERO, 0, 0), Set.of(PositionFlag.X, PositionFlag.Y, PositionFlag.Z)));
+                        VFXUtils.setCameraPos(realPlayer, Vec3.atLowerCornerOf(renderPos));
+                        realPlayer.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(renderPos.getX()), SectionPos.blockToSectionCoord(renderPos.getZ()) ));
+                        realPlayer.connection.send(ClientboundPlayerPositionPacket.of(-69, new PositionMoveRotation(Vec3.atLowerCornerOf(renderPos), Vec3.ZERO, 0, 0), Set.of(Relative.X, Relative.Y, Relative.Z)));
 
-                        ServerWorld serverWorld = Lib99j.getServerOrThrow().getWorld(World.NETHER);
+                        ServerLevel serverWorld = Lib99j.getServerOrThrow().getLevel(Level.NETHER);
 
-                        CreeperEntity creeper = new CreeperEntity(EntityType.CREEPER, serverWorld) {
+                        Creeper creeper = new Creeper(EntityType.CREEPER, serverWorld) {
                             @Override
                             public void tick() {
                                 super.tick();
-                                this.age++;
-                                if(this.age == 200) {
-                                    ChunkSenderUtil.sendRegion(realPlayer, new ChunkPos(ChunkSectionPos.getSectionCoord(renderPos.getX()) - 1, ChunkSectionPos.getSectionCoord(renderPos.getZ()) - 1), new ChunkPos(ChunkSectionPos.getSectionCoord(renderPos.getX()) + 1, ChunkSectionPos.getSectionCoord(renderPos.getZ()) + 1), serverWorld);
+                                this.tickCount++;
+                                if(this.tickCount == 200) {
+                                    ChunkSenderUtil.sendRegion(realPlayer, new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) - 1, SectionPos.blockToSectionCoord(renderPos.getZ()) - 1), new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) + 1, SectionPos.blockToSectionCoord(renderPos.getZ()) + 1), serverWorld);
                                     this.discard();
                                 }
                             }
                         };
-                        creeper.setPos(realPlayer.getEntityPos().getX(), realPlayer.getEntityPos().getY(), realPlayer.getEntityPos().getZ());
-                        creeper.setPersistent();
+                        creeper.setPosRaw(realPlayer.position().x(), realPlayer.position().y(), realPlayer.position().z());
+                        creeper.setPersistenceRequired();
                         creeper.setNoGravity(true);
-                        realPlayer.getEntityWorld().spawnEntity(creeper);
+                        realPlayer.level().addFreshEntity(creeper);
 
-                        context.getSource().sendMessage(Text.of("done"));
+                        context.getSource().sendSystemMessage(Component.nullToEmpty("done"));
 
                         return 1;
                     }).build());
 
             //old
 
-            dispatcher.getRoot().addChild(CommandManager.literal("ponder")
+            dispatcher.getRoot().addChild(Commands.literal("ponder")
                     .executes((context) -> {
-                        context.getSource().sendMessage(Text.of("Pondering"));
-                        PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.getDefaultState(), Blocks.DIAMOND_BLOCK.getDefaultState()).defaultBiome(BiomeKeys.BASALT_DELTAS)
+                        context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
+                        PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.defaultBlockState(), Blocks.DIAMOND_BLOCK.defaultBlockState()).defaultBiome(Biomes.BASALT_DELTAS)
                                 .wait(100)
                                 .instruction(new ExecuteCodeInstruction((scene) -> {
-                                    scene.getWorld().setBlockState(scene.getOrigin(), Blocks.PISTON.getDefaultState());
+                                    scene.getWorld().setBlockAndUpdate(scene.getOrigin(), Blocks.PISTON.defaultBlockState());
                                 }))
                                 .wait(100)
                                 .instruction(new ExecuteCodeInstruction((scene) -> {
-                                    scene.getWorld().setBlockState(scene.getOrigin().add(0, 1, 0), Blocks.REDSTONE_BLOCK.getDefaultState());
-                                    CreeperEntity creeper = new CreeperEntity(EntityType.CREEPER, scene.getWorld());
-                                    creeper.setPos(scene.getOrigin().getX()-5, scene.getOrigin().getY()+10, scene.getOrigin().getZ()-5);
-                                    creeper.setPersistent();
-                                    scene.getWorld().spawnEntity(creeper);
+                                    scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(0, 1, 0), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                                    Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
+                                    creeper.setPosRaw(scene.getOrigin().getX()-5, scene.getOrigin().getY()+10, scene.getOrigin().getZ()-5);
+                                    creeper.setPersistenceRequired();
+                                    scene.getWorld().addFreshEntity(creeper);
                                 }))
                                 .wait(100)
-                                .instruction(new ShowItemInstruction(1000, Items.PISTON.getDefaultStack()))
-                                .instruction(new ShowLineInstruction(1000, 0xFF0000, Vec2f.ZERO, new Vec2f(10, 10), 10))
+                                .instruction(new ShowItemInstruction(1000, Items.PISTON.getDefaultInstance()))
+                                .instruction(new ShowLineInstruction(1000, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
                                 .wait(200)
-                                .finishStep(Text.literal("Step Title"), Text.literal("Step Description"))
+                                .finishStep(Component.literal("Step Title"), Component.literal("Step Description"))
                                 .wait(100)
-                                .instruction(new ShowItemInstruction(1000, Items.STICKY_PISTON.getDefaultStack()))
-                                .instruction(new ShowLineInstruction(1000, 0x00FF00, Vec2f.ZERO, new Vec2f(20, 20), 5))
+                                .instruction(new ShowItemInstruction(1000, Items.STICKY_PISTON.getDefaultInstance()))
+                                .instruction(new ShowLineInstruction(1000, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
                                 .wait(200)
-                                .finishStep(Text.literal("Step Title2"), Text.literal("Step Description2"))
+                                .finishStep(Component.literal("Step Title2"), Component.literal("Step Description2"))
                                 .build()
-                                .startPondering(context.getSource().getPlayerOrThrow());
+                                .startPondering(context.getSource().getPlayerOrException());
                         return 1;
                     })
                     .build());
@@ -266,12 +270,12 @@ public class Lib99j implements ModInitializer {
 
     public record BypassPacket(Packet<?> packet) implements Packet {
         @Override
-        public PacketType<? extends Packet> getPacketType() {
+        public PacketType<? extends Packet> type() {
             return null;
         }
 
         @Override
-        public void apply(PacketListener listener) {
+        public void handle(PacketListener listener) {
             throw new UnsupportedOperationException();
         }
     }

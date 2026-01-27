@@ -3,7 +3,7 @@ package com.daniel99j.lib99j.ponder.api;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
-import com.daniel99j.lib99j.impl.LocalChannelAccessor;
+import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
 import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
@@ -11,48 +11,34 @@ import com.mojang.serialization.Lifecycle;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
-import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.channel.local.LocalChannel;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.util.ReferenceCountUtil;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.boss.ServerBossBar;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.NetworkSide;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.handler.LegacyQueryHandler;
-import net.minecraft.network.message.ChatVisibility;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
-import net.minecraft.network.packet.c2s.play.PlayerLoadedC2SPacket;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.network.state.ConfigurationStates;
-import net.minecraft.network.state.PlayStateFactories;
-import net.minecraft.particle.ParticlesMode;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.resource.DataConfiguration;
-import net.minecraft.server.ServerNetworkIo;
-import net.minecraft.server.network.*;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Arm;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.ProgressListener;
-import net.minecraft.util.math.*;
-import net.minecraft.util.math.random.RandomSequencesState;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeKeys;
-import net.minecraft.world.dimension.DimensionOptions;
-import net.minecraft.world.gen.GeneratorOptions;
-import net.minecraft.world.level.LevelInfo;
-import net.minecraft.world.level.LevelProperties;
-import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.*;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.RandomSequences;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.ChatVisiblity;
+import net.minecraft.world.level.*;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -60,32 +46,44 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PonderScene {
-    public final ServerPlayerEntity player;
-    private final ServerWorld world;
+    public final ServerPlayer player;
+    private final ServerLevel world;
     public final PonderBuilder builder;
-    public final int floorHeight;
     public final UUID uuid;
     private final ElementHolder elementHolder;
     private int currentStep = 0;
     private int currentInstructionInStep = 0;
     private final ArrayList<PonderStep> steps;
     private final ArrayList<PonderInstruction> activeInstructions = new ArrayList<>();
-    public final RegistryKey<World> worldKey;
-    private final ServerPlayerEntity packetRedirector;
+    public final ResourceKey<Level> worldKey;
+    private final ServerPlayer packetRedirector;
     private final BlockPos origin;
     private boolean isToBeRemoved = false;
-    private final ServerBossBar displayTopBar;
+    private final ServerBossEvent displayTopBar;
+    private Vec3 cameraPos = Vec3.ZERO;
+    private Vec2 cameraRotation = new Vec2(-45, -45);
 
-    protected PonderScene(ServerPlayerEntity player, PonderBuilder builder) {
+    protected PonderScene(ServerPlayer player, PonderBuilder builder) {
         if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering();
+
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            if(builder.y <= 2) player.sendSystemMessage(Component.literal("Warning: Ponder height is very low!").withColor(0xf5d442));
+            if(builder.y <= 2) player.sendSystemMessage(Component.literal("Warning: This will cause issues in non-overworld dimensions!").withColor(0xf5d442));
+
+            if(builder.y >= 250-builder.y) player.sendSystemMessage(Component.literal("Warning: Ponder height is very high!").withColor(0xf5d442));
+            if(builder.y >= 250-builder.y) player.sendSystemMessage(Component.literal("Warning: This will cause issues in non-overworld dimensions!").withColor(0xf5d442));
+        }
+
         this.player = player;
-        this.player.networkHandler.sendPacket(new TitleS2CPacket(Text.of("FADE EFFECT")));
-        this.player.networkHandler.sendPacket(new SubtitleS2CPacket(DefaultGuiTextures.BIG_WHITE_SQUARE.text().withColor(0xFF00FF)));
-        this.player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 10000, 5));
+        this.player.connection.send(new ClientboundSetTitleTextPacket(Component.nullToEmpty("FADE EFFECT")));
+        this.player.connection.send(new ClientboundSetSubtitleTextPacket(GuiUtils.colourText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), 0x000000)));
+        this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 10000, 5));
 
         this.builder = builder;
         ArrayList<PonderStep> copiedSteps = new ArrayList<>();
@@ -98,28 +96,29 @@ public class PonderScene {
 
         //START THE JANKFEST!
 
-        VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.of("ponder", "ponder_lock"));
-        VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.of("ponder", "ponder_bright"));
+        VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+        VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
 
         BlockPos farPos = EntityUtils.getFarPos(player);
-        this.floorHeight = player.getEntityWorld().getHeight() / 2;
-        this.origin = new BlockPos(farPos.getX(), this.getFloorHeight() + 1, farPos.getZ());
-        VFXUtils.setCameraPos(player, Vec3d.of(this.origin).add(5, 5, 5));
-        VFXUtils.setCameraPitch(player, 45);
-        VFXUtils.setCameraYaw(player, -45);
+        this.origin = new BlockPos(farPos.getX(), builder.y, farPos.getZ());
+        this.cameraPos = Vec3.atCenterOf(this.origin).add(-builder.sizeX/2.0f, builder.sizeY/2.0f, -builder.sizeZ/2.0f);
+        VFXUtils.setCameraPos(player, this.cameraPos);
+        VFXUtils.setCameraPitch(player, this.cameraRotation.x);
+        VFXUtils.setCameraYaw(player, this.cameraRotation.y);
 
-        this.worldKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of("ponder", "scene_" + this.uuid));
-        this.world = new ServerWorld(Lib99j.getServerOrThrow(), Lib99j.getServerOrThrow().workerExecutor, Lib99j.getServerOrThrow().session, new LevelProperties(new LevelInfo("Ponder (Temporary world)", GameMode.CREATIVE, player.getEntityWorld().getLevelProperties().isHardcore(), player.getEntityWorld().getDifficulty(), true, player.getEntityWorld().getGameRules(), DataConfiguration.SAFE_MODE), new GeneratorOptions(0, false, false), LevelProperties.SpecialProperty.FLAT, Lifecycle.experimental()), worldKey, new DimensionOptions(player.getEntityWorld().getDimensionEntry(), new EmptyChunkGenerator(BiomeKeys.THE_VOID, 0)), false, 0, List.of(), true, new RandomSequencesState()) {
+        this.worldKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ponder", "scene_" + this.uuid));
+        this.world = new ServerLevel(Lib99j.getServerOrThrow(), Lib99j.getServerOrThrow().executor, Lib99j.getServerOrThrow().storageSource, new PrimaryLevelData(new LevelSettings("Ponder (Temporary world)", GameType.CREATIVE, player.level().getLevelData().isHardcore(), player.level().getDifficulty(), true, player.level().getGameRules(), WorldDataConfiguration.DEFAULT), new WorldOptions(0, false, false), PrimaryLevelData.SpecialWorldProperty.FLAT, Lifecycle.experimental()), worldKey, new LevelStem(player.level().dimensionTypeRegistration(), new EmptyChunkGenerator(Biomes.THE_VOID, 0)), false, 0, List.of(), true, new RandomSequences()) {
             @Override
-            public void save(@Nullable ProgressListener progressListener, boolean flush, boolean savingDisabled) {
+            public boolean noSave() {
+                return true;
             }
         };
 
-        Lib99j.getServerOrThrow().worlds.put(worldKey, world);
+        Lib99j.getServerOrThrow().levels.put(worldKey, world);
 
-        this.packetRedirector = EntityUtils.fakeServerPlayerAddToWorld(world, BlockPos.ORIGIN, GameMode.CREATIVE, UUID.randomUUID(), "ponder_scene_", true);
+        this.packetRedirector = EntityUtils.fakeServerPlayerAddToWorld(world, BlockPos.ZERO, GameType.CREATIVE, UUID.randomUUID(), "ponder_scene_", true);
 
-        this.packetRedirector.setClientOptions(new SyncedClientOptions("ponder", 32, ChatVisibility.HIDDEN, false, 0, Arm.RIGHT, true, false, ParticlesMode.ALL));
+        this.packetRedirector.updateOptions(new ClientInformation("ponder", 32, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, true, false, ParticleStatus.ALL));
 
         try {
 //            LocalChannel channel = new LocalChannel();
@@ -145,12 +144,12 @@ public class PonderScene {
         //Lib99j.getServerOrThrow().getPlayerManager().players.add(this.packetRedirector);
         //Lib99j.getServerOrThrow().getPlayerManager().playerMap.put(this.packetRedirector.getUuid(), this.packetRedirector);
 
-        ConnectedClientData connectedClientData = ConnectedClientData.createDefault(this.packetRedirector.getGameProfile(), false);
+        CommonListenerCookie connectedClientData = CommonListenerCookie.createInitial(this.packetRedirector.getGameProfile(), false);
 
 //        this.packetRedirector.networkHandler.connection.transitionOutbound(PlayStateFactories.S2C.bind(RegistryByteBuf.makeFactory(Lib99j.getServerOrThrow().getRegistryManager())));
 //        this.packetRedirector.networkHandler.connection.transitionInbound(ConfigurationStates.C2S, new ServerConfigurationNetworkHandler(Lib99j.getServerOrThrow(), this.packetRedirector.networkHandler.connection, connectedClientData));
 
-        ServerConfigurationNetworkHandler serverConfigurationNetworkHandler = new ServerConfigurationNetworkHandler(Lib99j.getServerOrThrow(), this.packetRedirector.networkHandler.connection, connectedClientData);
+        ServerConfigurationPacketListenerImpl serverConfigurationNetworkHandler = new ServerConfigurationPacketListenerImpl(Lib99j.getServerOrThrow(), this.packetRedirector.connection.connection, connectedClientData);
 
         //player.networkHandler.sendPacket(PlayerListS2CPacket.entryFromPlayer(List.of(this.packetRedirector)));
 
@@ -165,16 +164,16 @@ public class PonderScene {
         for (int i = 0; i < builder.sizeX; i++) {
             for (int j = 0; j < builder.sizeZ; j++) {
                 boolean checker = (i % 2 == 0) != (j % 2 == 1);
-                world.setBlockState(getOrigin().add(new BlockPos(i, -1, j)), checker ? builder.state1 : builder.state2);
+                world.setBlockAndUpdate(getOrigin().offset(new BlockPos(i, -1, j)), checker ? builder.state1 : builder.state2);
             }
         }
 
         //player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
 
-        this.displayTopBar = new ServerBossBar(this.builder.title, BossBar.Color.YELLOW, BossBar.Style.NOTCHED_20);
+        this.displayTopBar = new ServerBossEvent(this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_20);
 
         this.elementHolder = new ElementHolder();
-        this.elementHolder.setAttachment(ChunkAttachment.ofTicking(this.elementHolder, this.getWorld(), Vec3d.ZERO));
+        this.elementHolder.setAttachment(ChunkAttachment.ofTicking(this.elementHolder, this.getWorld(), Vec3.ZERO));
 
         PonderManager.activeScenes.put(this.player, this);
 
@@ -182,38 +181,37 @@ public class PonderScene {
 
 
         //BEGIN RE-CREATION
-        ServerPlayerEntity player1 = this.player;
+        ServerPlayer player1 = this.player;
 
-        ClientConnection connection = new ClientConnection(NetworkSide.SERVERBOUND);
+        Connection connection = new Connection(PacketFlow.SERVERBOUND);
 
         //connection.setInitialPacketListener(new ServerHandshakeNetworkHandler(Lib99j.getServerOrThrow(), connection));
 
-        this.packetRedirector.networkHandler = new ServerPlayNetworkHandler(Lib99j.getServerOrThrow(),
+        this.packetRedirector.connection = new ServerGamePacketListenerImpl(Lib99j.getServerOrThrow(),
                 connection,
                 this.packetRedirector,
-                ConnectedClientData.createDefault(this.packetRedirector.getGameProfile(), false)
+                CommonListenerCookie.createInitial(this.packetRedirector.getGameProfile(), false)
         ) {
 
             @Override
-            public boolean isConnectionOpen() {
+            public boolean isAcceptingMessages() {
                 return true;
             }
 
             @Override
-            public void sendPacket(Packet<?> packet) {
-                Lib99j.LOGGER.info("testing: " + packet);
+            public void send(@NonNull Packet<?> packet) {
                 PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
-                if (info == null || !player1.networkHandler.isConnectionOpen() || !(info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT))) {
+                if (info == null || !player1.connection.isAcceptingMessages() || !(info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT))) {
                     return;
                 }
                 ;
-                player1.networkHandler.sendPacket(new Lib99j.BypassPacket(packet));
+                player1.connection.send(new Lib99j.BypassPacket(packet));
             }
         };
 
-        this.packetRedirector.networkHandler.onPlayerLoaded(new PlayerLoadedC2SPacket());
+        this.packetRedirector.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
 
-        world.onDimensionChanged(this.packetRedirector);
+        world.addDuringTeleport(this.packetRedirector);
 
 //        connection.transitionInbound(
 //                PlayStateFactories.C2S.bind(RegistryByteBuf.makeFactory(Lib99j.getServerOrThrow().getRegistryManager()), this.packetRedirector.networkHandler), this.packetRedirector.networkHandler
@@ -223,16 +221,16 @@ public class PonderScene {
 
         //FINISH
 
-        this.packetRedirector.networkHandler.sendPacket(new ChunkRenderDistanceCenterS2CPacket(ChunkSectionPos.getSectionCoord(this.origin.getX()), ChunkSectionPos.getSectionCoord(this.origin.getZ())));
+        this.packetRedirector.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(this.origin.getX()), SectionPos.blockToSectionCoord(this.origin.getZ())));
 
-        this.packetRedirector.setPos(this.origin.getX(), this.origin.getY(), this.origin.getZ());
-        this.world.getChunkManager().chunkLoadingManager.updatePosition(this.packetRedirector); //instant update the pos
-        this.packetRedirector.networkHandler.sendPacket(BossBarS2CPacket.add(this.displayTopBar));
-        ChunkSenderUtil.sendRegion(this.packetRedirector, new ChunkPos(ChunkSectionPos.getSectionCoord(this.origin.getX()) - 5, ChunkSectionPos.getSectionCoord(this.origin.getZ()) - 5), new ChunkPos(ChunkSectionPos.getSectionCoord(this.origin.getX()) + 5, ChunkSectionPos.getSectionCoord(this.origin.getZ()) + 5), this.world);
+        this.packetRedirector.setPosRaw(this.origin.getX(), this.origin.getY(), this.origin.getZ());
+        this.world.getChunkSource().chunkMap.move(this.packetRedirector); //instant update the pos
+        this.packetRedirector.connection.send(ClientboundBossEventPacket.createAddPacket(this.displayTopBar));
+        ChunkSenderUtil.sendRegion(this.packetRedirector, new ChunkPos(SectionPos.blockToSectionCoord(this.origin.getX()) - 5, SectionPos.blockToSectionCoord(this.origin.getZ()) - 5), new ChunkPos(SectionPos.blockToSectionCoord(this.origin.getX()) + 5, SectionPos.blockToSectionCoord(this.origin.getZ()) + 5), this.world);
 
         //PolymerUtils.reloadWorld(this.packetRedirector);
 
-        this.player.networkHandler.sendPacket(new TitleFadeS2CPacket(0, 0, 10));
+        this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 0, 10));
 
         this.elementHolder.startWatching(player);
     }
@@ -241,7 +239,7 @@ public class PonderScene {
         return this.elementHolder;
     }
 
-    public ServerWorld getWorld() {
+    public ServerLevel getWorld() {
         return world;
     }
 
@@ -249,23 +247,19 @@ public class PonderScene {
         return this.origin;
     }
 
-    public int getFloorHeight() {
-        return this.floorHeight;
-    }
-
     public void stopPondering() {
         this.isToBeRemoved = true;
-        VFXUtils.removeGenericScreenEffect(this.player, Identifier.of("ponder", "ponder_lock"));
-        VFXUtils.removeGenericScreenEffect(this.player, Identifier.of("ponder", "ponder_bright"));
+        VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+        VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
         this.elementHolder.destroy();
-        this.world.removePlayer(this.packetRedirector, Entity.RemovalReason.DISCARDED);
-        this.player.networkHandler.sendPacket(new ChunkRenderDistanceCenterS2CPacket(ChunkSectionPos.getSectionCoord(this.player.getX()), ChunkSectionPos.getSectionCoord(this.player.getZ())));
+        this.world.removePlayerImmediately(this.packetRedirector, Entity.RemovalReason.DISCARDED);
+        this.player.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.posToSectionCoord(this.player.getX()), SectionPos.posToSectionCoord(this.player.getZ())));
         PolymerUtils.reloadWorld(this.player);
-        this.player.networkHandler.sendPacket(BossBarS2CPacket.remove(this.displayTopBar.getUuid()));
-        this.player.networkHandler.requestTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYaw(), this.player.getPitch());
+        this.player.connection.send(ClientboundBossEventPacket.createRemovePacket(this.displayTopBar.getId()));
+        this.player.connection.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
 
         try {
-            Files.walkFileTree(Path.of(this.world.getChunkManager().chunkLoadingManager.getSaveDir()), new SimpleFileVisitor<>() {
+            Files.walkFileTree(Path.of(this.world.getChunkSource().chunkMap.getStorageName()), new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.deleteIfExists(file);
@@ -280,7 +274,7 @@ public class PonderScene {
             });
 
         } catch (Exception e) {
-            Lib99j.LOGGER.error("Failed to remove save data for temporary level " + this.worldKey.getValue(), e);
+            Lib99j.LOGGER.error("Failed to remove save data for temporary level " + this.worldKey.identifier(), e);
         }
     }
 
@@ -316,7 +310,7 @@ public class PonderScene {
             var step = getCurrentStep();
 
             if (step == null) {
-                player.sendMessage(Text.of("It done"));
+                player.sendSystemMessage(Component.nullToEmpty("It done"));
                 stopPondering();
                 return;
             }
@@ -325,7 +319,7 @@ public class PonderScene {
                 // next instruction
                 currentInstructionInStep++;
                 addInstruction(getCurrentInstruction());
-                player.sendMessage(Text.of("Normal run " + getCurrentInstruction()));
+                player.sendSystemMessage(Component.nullToEmpty("Normal run " + getCurrentInstruction()));
             } else {
                 // NEXT STEP!
                 currentStep++;
@@ -333,14 +327,21 @@ public class PonderScene {
 
                 step = getCurrentStep();
                 if (step == null) {
-                    player.sendMessage(Text.of("It done"));
+                    player.sendSystemMessage(Component.nullToEmpty("It done"));
                     stopPondering();
+                    return;
                 } else {
-                    player.sendMessage(Text.of("Next step " + step.title()));
+                    player.sendSystemMessage(Component.nullToEmpty("Next step " + step.title()));
                     addInstruction(getCurrentInstruction());
-                    player.sendMessage(Text.of("Next step run " + getCurrentInstruction()));
+                    player.sendSystemMessage(Component.nullToEmpty("Next step run " + getCurrentInstruction()));
                 }
             }
         }
+
+        VFXUtils.setCameraPos(player, this.cameraPos);
+        VFXUtils.setCameraPitch(player, this.cameraRotation.x);
+        VFXUtils.setCameraYaw(player, this.cameraRotation.y);
+
+        this.world.getChunkSource().chunkMap.updateChunkTracking(this.player);
     }
 }

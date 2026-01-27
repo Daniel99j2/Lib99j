@@ -4,16 +4,19 @@ import com.daniel99j.lib99j.impl.ServerParticleManager;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
-import net.minecraft.client.particle.Particle;
-import net.minecraft.client.particle.ParticleManager;
-import net.minecraft.client.particle.ParticleTextureSheet;
-import net.minecraft.client.render.WorldRenderer;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.*;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.particle.ParticleEngine;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -23,13 +26,13 @@ import java.util.List;
  * A server-side visual effect with position, velocity, collision, and additional render properties.
  *
  * <p>
- * Note: This was mostly copied from {@link Particle}, so most code can be copied over.
+ * Note: This was mostly copied from {@link net.minecraft.client.particle.Particle}, so most code can be copied over.
  */
 public abstract class ServerParticle {
-    private static final Box EMPTY_BOUNDING_BOX = new Box(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    private static final double MAX_SQUARED_COLLISION_CHECK_DISTANCE = MathHelper.square(100.0);
-    protected final ServerWorld world;
-    protected final Random random = Random.create();
+    private static final AABB EMPTY_BOUNDING_BOX = new AABB(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    private static final double MAX_SQUARED_COLLISION_CHECK_DISTANCE = Mth.square(100.0);
+    protected final ServerLevel world;
+    protected final RandomSource random = RandomSource.create();
     protected final TextDisplayElement display;
     private final ElementHolder elementHolder;
     protected double x;
@@ -52,7 +55,7 @@ public abstract class ServerParticle {
     protected float alpha = 1.0F;
     protected float angle;
     protected float velocityMultiplier = 0.98F;
-    private Box boundingBox = EMPTY_BOUNDING_BOX;
+    private AABB boundingBox = EMPTY_BOUNDING_BOX;
     private boolean stopped;
 
     /**
@@ -60,7 +63,7 @@ public abstract class ServerParticle {
      * <p>{@code private static final ArrayList<ServerParticleManager.ParticleFrame> sprites}
      */
 
-    public ServerParticle(ServerWorld world, double x, double y, double z) {
+    public ServerParticle(ServerLevel world, double x, double y, double z) {
         this.world = world;
         this.elementHolder = new ElementHolder();
         this.setBoundingBoxSpacing(0.2F, 0.2F);
@@ -70,7 +73,7 @@ public abstract class ServerParticle {
         };
         this.display.setSeeThrough(false);
         this.display.setBackground(26);
-        this.display.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
+        this.display.setBillboardMode(Display.BillboardConstraints.CENTER);
         this.display.setInterpolationDuration(1);
         this.display.setTeleportDuration(1);
         this.display.setInvisible(true);
@@ -79,7 +82,7 @@ public abstract class ServerParticle {
         ChunkAttachment.ofTicking(this.elementHolder, this.world, this.getPos());
     }
 
-    protected ServerParticle(ServerWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+    protected ServerParticle(ServerLevel world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
         this(world, x, y, z);
         this.velocityX = velocityX + (Math.random() * 2.0 - 1.0) * 0.4F;
         this.velocityY = velocityY + (Math.random() * 2.0 - 1.0) * 0.4F;
@@ -101,13 +104,13 @@ public abstract class ServerParticle {
      * <p>Run this when changing color etc
      */
     public void updateFrame() {
-        this.display.setOverridePos(new Vec3d(this.x, this.y, this.z));
-        this.display.setText(getSprites().get(getCurrentFrame()).text().withColor(ColorHelper.fromFloats(this.alpha, this.red, this.green, this.blue)));
+        this.display.setOverridePos(new Vec3(this.x, this.y, this.z));
+        this.display.setText(getSprites().get(getCurrentFrame()).text().withColor(ARGB.colorFromFloat(this.alpha, this.red, this.green, this.blue)));
         this.display.startInterpolation();
     }
 
-    public Vec3d getPos() {
-        return new Vec3d(this.x, this.y, this.z);
+    public Vec3 getPos() {
+        return new Vec3(this.x, this.y, this.z);
     }
 
     public boolean isDead() {
@@ -155,15 +158,15 @@ public abstract class ServerParticle {
         return Math.min((int) ((float) this.age / this.getMaxAge() * getSprites().size()), getSprites().size() - 1);
     }
 
-    public void readNbt(NbtCompound data) {
-        this.alpha = data.getFloat("alpha", this.alpha);
-        this.red = data.getFloat("red", this.red);
-        this.green = data.getFloat("green", this.green);
-        this.blue = data.getFloat("blue", this.blue);
-        this.velocityX = data.getDouble("velocityX", this.velocityX);
-        this.velocityY = data.getDouble("velocityY", this.velocityY);
-        this.velocityZ = data.getDouble("velocityZ", this.velocityZ);
-        this.display.setScale(new Vector3f(data.getFloat("scaleX", this.display.getScale().x()), data.getFloat("scaleY", this.display.getScale().y()), data.getFloat("scaleZ", this.display.getScale().z())));
+    public void readNbt(CompoundTag data) {
+        this.alpha = data.getFloatOr("alpha", this.alpha);
+        this.red = data.getFloatOr("red", this.red);
+        this.green = data.getFloatOr("green", this.green);
+        this.blue = data.getFloatOr("blue", this.blue);
+        this.velocityX = data.getDoubleOr("velocityX", this.velocityX);
+        this.velocityY = data.getDoubleOr("velocityY", this.velocityY);
+        this.velocityZ = data.getDoubleOr("velocityZ", this.velocityZ);
+        this.display.setScale(new Vector3f(data.getFloatOr("scaleX", this.display.getScale().x()), data.getFloatOr("scaleY", this.display.getScale().y()), data.getFloatOr("scaleZ", this.display.getScale().z())));
     }
 
     /**
@@ -220,8 +223,8 @@ public abstract class ServerParticle {
      * Updates the alpha value of this particle to use while rendering.
      *
      * <p>
-     * Note that a particle cannot render with transparency unless {@link Particle#getType()} is
-     * {@link ParticleTextureSheet#PARTICLE_SHEET_TRANSLUCENT}, or another sheet that supports transparency.
+     * Note that a particle cannot render with transparency unless {@link hlq#getType()} is
+     * {@link ParticleRenderType#PARTICLE_SHEET_TRANSLUCENT}, or another sheet that supports transparency.
      *
      * <p>
      * Also note that the default particle shader (core/particle.fsh) will discard all transparent pixels below 0.1 alpha.
@@ -270,7 +273,7 @@ public abstract class ServerParticle {
     }
 
     /**
-     * Marks this particle as ready to be removed from the containing {@link ServerWorld}.
+     * Marks this particle as ready to be removed from the containing {@link ServerLevel}.
      */
     public void markDead() {
         this.dead = true;
@@ -280,10 +283,10 @@ public abstract class ServerParticle {
         if (spacingXZ != this.spacingXZ || spacingY != this.spacingY) {
             this.spacingXZ = spacingXZ;
             this.spacingY = spacingY;
-            Box box = this.getBoundingBox();
+            AABB box = this.getBoundingBox();
             double d = (box.minX + box.maxX - (double) spacingXZ) / 2.0;
             double e = (box.minZ + box.maxZ - (double) spacingXZ) / 2.0;
-            this.setBoundingBox(new Box(d, box.minY, e, d + (double) this.spacingXZ, box.minY + (double) this.spacingY, e + (double) this.spacingXZ));
+            this.setBoundingBox(new AABB(d, box.minY, e, d + (double) this.spacingXZ, box.minY + (double) this.spacingY, e + (double) this.spacingXZ));
         }
     }
 
@@ -300,7 +303,7 @@ public abstract class ServerParticle {
         this.z = z;
         float f = this.spacingXZ / 2.0F;
         float g = this.spacingY;
-        this.setBoundingBox(new Box(x - (double) f, y, z - (double) f, x + (double) f, y + (double) g, z + (double) f));
+        this.setBoundingBox(new AABB(x - (double) f, y, z - (double) f, x + (double) f, y + (double) g, z + (double) f));
     }
 
     /**
@@ -316,14 +319,14 @@ public abstract class ServerParticle {
             double e = dy;
             double f = dz;
             if (this.collidesWithWorld && (dx != 0.0 || dy != 0.0 || dz != 0.0) && dx * dx + dy * dy + dz * dz < MAX_SQUARED_COLLISION_CHECK_DISTANCE) {
-                Vec3d vec3d = Entity.adjustMovementForCollisions(null, new Vec3d(dx, dy, dz), this.getBoundingBox(), this.world, List.of());
+                Vec3 vec3d = Entity.collideBoundingBox(null, new Vec3(dx, dy, dz), this.getBoundingBox(), this.world, List.of());
                 dx = vec3d.x;
                 dy = vec3d.y;
                 dz = vec3d.z;
             }
 
             if (dx != 0.0 || dy != 0.0 || dz != 0.0) {
-                this.setBoundingBox(this.getBoundingBox().offset(dx, dy, dz));
+                this.setBoundingBox(this.getBoundingBox().move(dx, dy, dz));
                 this.repositionFromBoundingBox();
             }
 
@@ -343,7 +346,7 @@ public abstract class ServerParticle {
     }
 
     protected void repositionFromBoundingBox() {
-        Box box = this.getBoundingBox();
+        AABB box = this.getBoundingBox();
         this.x = (box.minX + box.maxX) / 2.0;
         this.y = box.minY;
         this.z = (box.minZ + box.maxZ) / 2.0;
@@ -352,33 +355,33 @@ public abstract class ServerParticle {
     /**
      * {@return the packed light level this particle should render at}
      *
-     * @see net.minecraft.client.render.LightmapTextureManager
+     * @see net.minecraft.client.renderer.LightTexture
      */
     protected int getBrightness(float tint) {
-        BlockPos blockPos = BlockPos.ofFloored(this.x, this.y, this.z);
-        return this.world.isChunkLoaded(blockPos) ? WorldRenderer.getLightmapCoordinates(this.world, blockPos) : 0;
+        BlockPos blockPos = BlockPos.containing(this.x, this.y, this.z);
+        return this.world.hasChunkAt(blockPos) ? LevelRenderer.getLightColor(this.world, blockPos) : 0;
     }
 
     /**
-     * {@return {@code false} if this particle is finished and should be removed from the parent {@link ParticleManager }, otherwise {@code true} if the particle is still alive}
+     * {@return {@code false} if this particle is finished and should be removed from the parent {@link ParticleEngine }, otherwise {@code true} if the particle is still alive}
      */
     public boolean isAlive() {
         return !this.dead;
     }
 
     /**
-     * {@return the bounding {@link Box} of this particle used for collision and movement logic}
+     * {@return the bounding {@link AABB } of this particle used for collision and movement logic}
      *
      * <p>
-     * By default, this bounding box is automatically repositioned when a particle moves in {@link Particle#tick()}.
+     * By default, this bounding box is automatically repositioned when a particle moves in {@link hlq#a()}.
      * To adjust the size of the returned box, visit {@link ServerParticle#setBoundingBoxSpacing(float, float)}.
-     * To directly update the current bounding box, visit {@link ServerParticle#setBoundingBox(Box)};
+     * To directly update the current bounding box, visit {@link ServerParticle#setBoundingBox(AABB)};
      */
-    public Box getBoundingBox() {
+    public AABB getBoundingBox() {
         return this.boundingBox;
     }
 
-    public void setBoundingBox(Box boundingBox) {
+    public void setBoundingBox(AABB boundingBox) {
         this.boundingBox = boundingBox;
     }
 }

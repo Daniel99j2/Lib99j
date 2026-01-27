@@ -1,20 +1,20 @@
 package com.daniel99j.lib99j.api;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.SpawnEggItem;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 @SuppressWarnings({"unused"})
 public class PolymerSpawnEgg extends SpawnEggItem implements PolymerItem {
-    public PolymerSpawnEgg(EntityType<? extends MobEntity> type, Settings settings) {
+    public PolymerSpawnEgg(EntityType<? extends Mob> type, Properties settings) {
         super(settings);
     }
 
@@ -24,7 +24,7 @@ public class PolymerSpawnEgg extends SpawnEggItem implements PolymerItem {
     }
 
     @Override
-    public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
-        return super.useOnEntity(stack, user, entity, hand);
+    public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
+        return super.interactLivingEntity(stack, user, entity, hand);
     }
 }

@@ -7,50 +7,50 @@ import eu.pb4.polymer.core.api.block.PolymerBlock;
 import eu.pb4.polymer.virtualentity.api.BlockWithElementHolder;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 import java.util.Objects;
 
 
 public class TestBlock extends Block implements PolymerBlock, BlockWithElementHolder {
-    public TestBlock(Settings settings) {
+    public TestBlock(Properties settings) {
         super(settings);
-        this.setDefaultState(this.stateManager.getDefaultState());
+        this.registerDefaultState(this.stateDefinition.any());
     }
 
     @Override
-    public MapCodec<? extends BlockWithEntity> getCodec() {
+    public MapCodec<? extends BaseEntityBlock> codec() {
         return null;
     }
 
     @Override
-    public ElementHolder createElementHolder(ServerWorld world, BlockPos pos, BlockState initialBlockState) {
+    public ElementHolder createElementHolder(ServerLevel world, BlockPos pos, BlockState initialBlockState) {
         return new Model(world, initialBlockState);
     }
 
     @Override
-    public boolean tickElementHolder(ServerWorld world, BlockPos pos, BlockState initialBlockState) {
+    public boolean tickElementHolder(ServerLevel world, BlockPos pos, BlockState initialBlockState) {
         return true;
     }
 
     @Override
     public BlockState getPolymerBlockState(BlockState state, PacketContext context) {
-        return Blocks.TRIPWIRE.getDefaultState();
+        return Blocks.TRIPWIRE.defaultBlockState();
     }
 
     public static final class Model extends BlockModel {
         private final ItemDisplayElement mainElement;
 
-        private Model(ServerWorld world, BlockState state) {
-            this.mainElement = LodItemDisplayElement.createSimple(Items.TNT.getDefaultStack(), this.getUpdateRate(), 0.3f, 0.6f);
+        private Model(ServerLevel world, BlockState state) {
+            this.mainElement = LodItemDisplayElement.createSimple(Items.TNT.getDefaultInstance(), this.getUpdateRate(), 0.3f, 0.6f);
             this.mainElement.setTeleportDuration(0);
             this.addElement(this.mainElement);
             this.updateAnimation(world);
@@ -61,8 +61,8 @@ public class TestBlock extends Block implements PolymerBlock, BlockWithElementHo
         }
 
 
-        private void updateAnimation(World world) {
-            this.mainElement.setItem(Items.TNT.getDefaultStack());
+        private void updateAnimation(Level world) {
+            this.mainElement.setItem(Items.TNT.getDefaultInstance());
             this.mainElement.setInterpolationDuration(0);
             this.mainElement.setTeleportDuration(0);
             this.mainElement.setInvisible(true);
@@ -74,7 +74,7 @@ public class TestBlock extends Block implements PolymerBlock, BlockWithElementHo
             if (!Objects.requireNonNull(this.blockAware()).isPartOfTheWorld()) {
                 return;
             }
-            var tick = Objects.requireNonNull(this.blockAware()).getWorld().getTime();
+            var tick = Objects.requireNonNull(this.blockAware()).getWorld().getGameTime();
             if (tick % this.getUpdateRate() == 0) {
                 this.updateAnimation(Objects.requireNonNull(Objects.requireNonNull(this.blockAware()).getWorld()));
                 this.mainElement.startInterpolationIfDirty();

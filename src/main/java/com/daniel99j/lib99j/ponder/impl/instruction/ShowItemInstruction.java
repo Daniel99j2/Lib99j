@@ -1,7 +1,7 @@
 package com.daniel99j.lib99j.ponder.impl.instruction;
 
 import com.daniel99j.lib99j.ponder.api.PonderScene;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class ShowItemInstruction extends PonderInstruction {
     private final int displayTime;

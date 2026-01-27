@@ -4,28 +4,26 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
 import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.impl.instruction.WaitInstruction;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.gui.hud.debug.BiomeDebugHudEntry;
-import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeKeys;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 
 public class PonderBuilder {
     protected ArrayList<PonderStep> steps = new ArrayList<>();
-    protected Text title = Text.of("Title not specified");
+    protected Component title = Component.nullToEmpty("Title not specified");
     protected int sizeX = 10;
     protected int sizeY = 10;
     protected int sizeZ = 10;
-    protected RegistryKey<Biome> defaultBiome = BiomeKeys.PLAINS;
-    protected BlockState state1 = Blocks.SNOW_BLOCK.getDefaultState();
-    protected BlockState state2 = Blocks.GRAY_CONCRETE.getDefaultState();
+    protected int y = 60;
+    protected ResourceKey<Biome> defaultBiome = Biomes.PLAINS;
+    protected BlockState state1 = Blocks.SNOW_BLOCK.defaultBlockState();
+    protected BlockState state2 = Blocks.GRAY_CONCRETE.defaultBlockState();
     
     private boolean done = false;
     private ArrayList<PonderInstruction> currentStepInstructions = new ArrayList<>();
@@ -53,7 +51,7 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderBuilder defaultBiome(RegistryKey<Biome> defaultBiome) {
+    public PonderBuilder defaultBiome(ResourceKey<Biome> defaultBiome) {
         if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
         this.defaultBiome = defaultBiome;
         return this;
@@ -61,7 +59,13 @@ public class PonderBuilder {
 
     public PonderBuilder title(String title) {
         if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
-        this.title = Text.literal(title);
+        this.title = Component.literal(title);
+        return this;
+    }
+
+    public PonderBuilder title(Component title) {
+        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.title = title;
         return this;
     }
 
@@ -72,9 +76,9 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderBuilder title(Text title) {
+    public PonderBuilder yLevel(int level) {
         if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
-        this.title = title;
+        this.y = level;
         return this;
     }
 
@@ -84,7 +88,7 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderBuilder finishStep(Text title, Text description) {
+    public PonderBuilder finishStep(Component title, Component description) {
         if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
         this.steps.add(new PonderStep(title, description, new ArrayList<>(this.currentStepInstructions)));
         this.currentStepInstructions.clear();
@@ -100,7 +104,7 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderScene startPondering(ServerPlayerEntity player) {
+    public PonderScene startPondering(ServerPlayer player) {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
         return new PonderScene(player, this);
     };

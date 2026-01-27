@@ -2,8 +2,8 @@ package com.daniel99j.lib99j.api;
 
 import de.tomalbrc.bil.api.AnimatedHolder;
 import de.tomalbrc.bil.api.Animator;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 @SuppressWarnings({"unused"})
 public class AnimationUtils {
@@ -15,7 +15,7 @@ public class AnimationUtils {
 
     public static void updateWalkAnimation(LivingEntity entity, AnimatedHolder holder, int priority) {
         Animator animator = holder.getAnimator();
-        if (entity.limbAnimator.isLimbMoving() && !entity.getVelocity().isInRange(Vec3d.ZERO, 0.02)) {
+        if (entity.walkAnimation.isMoving() && !entity.getDeltaMovement().closerThan(Vec3.ZERO, 0.02)) {
             animator.playAnimation("walk", priority);
             animator.pauseAnimation("idle");
         } else {

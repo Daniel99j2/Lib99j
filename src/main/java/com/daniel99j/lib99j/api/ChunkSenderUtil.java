@@ -1,22 +1,21 @@
 package com.daniel99j.lib99j.api;
 
 import eu.pb4.polymer.virtualentity.impl.HolderAttachmentHolder;
-import net.minecraft.network.packet.s2c.play.ChunkDataS2CPacket;
-import net.minecraft.network.packet.s2c.play.ChunkSentS2CPacket;
-import net.minecraft.network.packet.s2c.play.StartChunkSendS2CPacket;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.network.protocol.game.ClientboundChunkBatchFinishedPacket;
+import net.minecraft.network.protocol.game.ClientboundChunkBatchStartPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChunkSenderUtil {
-    public static void sendRegion(ServerPlayerEntity player, ChunkPos pos1, ChunkPos pos2, ServerWorld from) {
+    public static void sendRegion(ServerPlayer player, ChunkPos pos1, ChunkPos pos2, ServerLevel from) {
         List<ChunkPos> chunks = new ArrayList<>();
         for (int i = pos1.x; i < pos2.x; i++) {
             for (int j = pos1.z; j < pos2.z; j++) {
@@ -26,33 +25,33 @@ public class ChunkSenderUtil {
         sendChunkBatches(player, chunks, from);
     }
 
-    public static void sendChunkBatches(ServerPlayerEntity player, List<ChunkPos> chunkPositions, ServerWorld from) {
+    public static void sendChunkBatches(ServerPlayer player, List<ChunkPos> chunkPositions, ServerLevel from) {
         if (!chunkPositions.isEmpty()) {
-            List<WorldChunk> list = makeBatch(chunkPositions, from);
+            List<LevelChunk> list = makeBatch(chunkPositions, from);
             if (!list.isEmpty()) {
-                player.networkHandler.sendPacket(StartChunkSendS2CPacket.INSTANCE);
+                player.connection.send(ClientboundChunkBatchStartPacket.INSTANCE);
 
-                for (WorldChunk worldChunk : list) {
-                    sendChunkData(player.networkHandler, from, worldChunk);
+                for (LevelChunk worldChunk : list) {
+                    sendChunkData(player.connection, from, worldChunk);
                 }
 
-                player.networkHandler.sendPacket(new ChunkSentS2CPacket(list.size()));
+                player.connection.send(new ClientboundChunkBatchFinishedPacket(list.size()));
             }
         }
     }
 
-    private static List<WorldChunk> makeBatch(List<ChunkPos> chunkPositions, ServerWorld from) {
-        List<WorldChunk> list = new ArrayList<>();
+    private static List<LevelChunk> makeBatch(List<ChunkPos> chunkPositions, ServerLevel from) {
+        List<LevelChunk> list = new ArrayList<>();
         for (ChunkPos chunkPos : chunkPositions) {
-            WorldChunk c = from.getChunk(chunkPos.x, chunkPos.z);
-            if(c != null && c.getStatus() == ChunkStatus.FULL) list.add(c);
+            LevelChunk c = from.getChunk(chunkPos.x, chunkPos.z);
+            if(c != null && c.getPersistedStatus() == ChunkStatus.FULL) list.add(c);
         }
         return list;
     }
 
-    private static void sendChunkData(ServerPlayNetworkHandler handler, ServerWorld world, WorldChunk chunk) {
-        handler.sendPacket(new ChunkDataS2CPacket(chunk, world.getLightingProvider(), null, null));
-        world.getSubscriptionTracker().sendInitialIfSubscribed(handler.player, chunk.getPos());
+    private static void sendChunkData(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
+        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
+        world.debugSynchronizers().startTrackingChunk(handler.player, chunk.getPos());
 
 
         for (var hologram : ((HolderAttachmentHolder) chunk).polymerVE$getHolders()) {

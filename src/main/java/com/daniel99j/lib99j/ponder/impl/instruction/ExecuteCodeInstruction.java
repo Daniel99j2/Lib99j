@@ -1,11 +1,8 @@
 package com.daniel99j.lib99j.ponder.impl.instruction;
 
 import com.daniel99j.lib99j.ponder.api.PonderScene;
-import net.minecraft.block.BlockState;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class ExecuteCodeInstruction extends PonderInstruction {
     private final Consumer<PonderScene> onExecute;

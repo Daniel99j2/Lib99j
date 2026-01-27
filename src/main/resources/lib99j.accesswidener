@@ -1,41 +1,41 @@
 accessWidener	v2	named
-accessible class net/minecraft/server/world/ServerChunkLoadingManager$EntityTracker
-accessible class net/minecraft/entity/Entity
-accessible field net/minecraft/entity/Entity world Lnet/minecraft/world/World;
-accessible field net/minecraft/entity/LivingEntity lastDamageSource Lnet/minecraft/entity/damage/DamageSource;
-accessible field net/minecraft/entity/Entity velocity Lnet/minecraft/util/math/Vec3d;
-accessible field net/minecraft/entity/projectile/FireworkRocketEntity ITEM Lnet/minecraft/entity/data/TrackedData;
-accessible field net/minecraft/entity/projectile/FireworkRocketEntity SHOT_AT_ANGLE Lnet/minecraft/entity/data/TrackedData;
-accessible field net/minecraft/entity/LivingEntity jumping Z
-accessible field net/minecraft/client/gui/screen/ingame/RecipeBookScreen recipeBook Lnet/minecraft/client/gui/screen/recipebook/RecipeBookWidget;
-accessible field net/minecraft/client/gui/screen/SplashTextRenderer TEXT_X I
-accessible field net/minecraft/client/gui/screen/SplashTextRenderer TEXT_Y I
-accessible field net/minecraft/client/Mouse rightButtonClicked Z
-accessible method net/minecraft/world/dimension/NetherPortal <init> (Lnet/minecraft/util/math/Direction$Axis;ILnet/minecraft/util/math/Direction;Lnet/minecraft/util/math/BlockPos;II)V
-accessible field net/minecraft/world/dimension/NetherPortal foundPortalBlocks I
-accessible method net/minecraft/world/explosion/ExplosionImpl getBlocksToDestroy ()Ljava/util/List;
-accessible method net/minecraft/world/explosion/ExplosionImpl shouldDestroyBlocks ()Z
-accessible field net/minecraft/world/explosion/ExplosionImpl createFire Z
-accessible field net/minecraft/block/AbstractBlock$AbstractBlockState shapeCache Lnet/minecraft/block/AbstractBlock$AbstractBlockState$ShapeCache;
-accessible class net/minecraft/block/AbstractBlock$AbstractBlockState$ShapeCache
-accessible field net/minecraft/client/render/model/BakedModelManager bakedItemModels Ljava/util/Map;
-accessible method net/minecraft/item/GoatHornItem getInstrument (Lnet/minecraft/item/ItemStack;Lnet/minecraft/registry/RegistryWrapper$WrapperLookup;)Ljava/util/Optional;
-accessible field net/minecraft/block/AbstractBlock$Settings registryKey Lnet/minecraft/registry/RegistryKey;
-accessible field net/minecraft/server/world/ServerChunkLoadingManager playerChunkWatchingManager Lnet/minecraft/server/world/PlayerChunkWatchingManager;
-accessible field net/minecraft/world/explosion/ExplosionImpl behavior Lnet/minecraft/world/explosion/ExplosionBehavior;
-accessible field net/minecraft/recipe/ServerRecipeManager recipes Ljava/util/List;
-accessible field net/minecraft/entity/Entity FROZEN_TICKS Lnet/minecraft/entity/data/TrackedData;
-accessible field net/minecraft/block/entity/CommandBlockBlockEntity conditionMet Z
-accessible method net/minecraft/registry/entry/RegistryEntry$Reference setRegistryKey (Lnet/minecraft/registry/RegistryKey;)V
-accessible field net/minecraft/network/state/NetworkStateBuilder packetTypes Ljava/util/List;
-accessible field net/minecraft/network/state/NetworkStateBuilder$PacketType codec Lnet/minecraft/network/codec/PacketCodec;
-accessible field net/minecraft/server/MinecraftServer workerExecutor Ljava/util/concurrent/Executor;
-accessible field net/minecraft/server/MinecraftServer session Lnet/minecraft/world/level/storage/LevelStorage$Session;
-accessible field net/minecraft/server/network/ServerCommonNetworkHandler connection Lnet/minecraft/network/ClientConnection;
-accessible field net/minecraft/network/ClientConnection channel Lio/netty/channel/Channel;
-accessible method net/minecraft/server/world/ServerChunkLoadingManager sendWatchPackets (Lnet/minecraft/server/network/ServerPlayerEntity;)V
-accessible field net/minecraft/server/MinecraftServer worlds Ljava/util/Map;
-accessible field net/minecraft/server/PlayerManager players Ljava/util/List;
-accessible field net/minecraft/server/PlayerManager playerMap Ljava/util/Map;
-accessible method net/minecraft/server/world/ServerWorld addPlayer (Lnet/minecraft/server/network/ServerPlayerEntity;)V
-accessible method net/minecraft/server/network/ServerCommonNetworkHandler createClientData (Lnet/minecraft/network/packet/c2s/common/SyncedClientOptions;)Lnet/minecraft/server/network/ConnectedClientData;
+accessible class net/minecraft/server/level/ChunkMap$TrackedEntity
+accessible class net/minecraft/world/entity/Entity
+accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
+accessible field net/minecraft/world/entity/LivingEntity lastDamageSource Lnet/minecraft/world/damagesource/DamageSource;
+accessible field net/minecraft/world/entity/Entity deltaMovement Lnet/minecraft/world/phys/Vec3;
+accessible field net/minecraft/world/entity/projectile/FireworkRocketEntity DATA_ID_FIREWORKS_ITEM Lnet/minecraft/network/syncher/EntityDataAccessor;
+accessible field net/minecraft/world/entity/projectile/FireworkRocketEntity DATA_SHOT_AT_ANGLE Lnet/minecraft/network/syncher/EntityDataAccessor;
+accessible field net/minecraft/world/entity/LivingEntity jumping Z
+accessible field net/minecraft/client/gui/screens/inventory/AbstractRecipeBookScreen recipeBookComponent Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;
+accessible field net/minecraft/client/gui/components/SplashRenderer WIDTH_OFFSET I
+accessible field net/minecraft/client/gui/components/SplashRenderer HEIGH_OFFSET I
+accessible field net/minecraft/client/MouseHandler isRightPressed Z
+accessible method net/minecraft/world/level/portal/PortalShape <init> (Lnet/minecraft/core/Direction$Axis;ILnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;II)V
+accessible field net/minecraft/world/level/portal/PortalShape numPortalBlocks I
+accessible method net/minecraft/world/level/ServerExplosion calculateExplodedPositions ()Ljava/util/List;
+accessible method net/minecraft/world/level/ServerExplosion interactsWithBlocks ()Z
+accessible field net/minecraft/world/level/ServerExplosion fire Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase cache Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache;
+accessible class net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache
+accessible field net/minecraft/client/resources/model/ModelManager bakedItemStackModels Ljava/util/Map;
+accessible method net/minecraft/world/item/InstrumentItem getInstrument (Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/HolderLookup$Provider;)Ljava/util/Optional;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties id Lnet/minecraft/resources/ResourceKey;
+accessible field net/minecraft/server/level/ChunkMap playerMap Lnet/minecraft/server/level/PlayerMap;
+accessible field net/minecraft/world/level/ServerExplosion damageCalculator Lnet/minecraft/world/level/ExplosionDamageCalculator;
+accessible field net/minecraft/world/item/crafting/RecipeManager allDisplays Ljava/util/List;
+accessible field net/minecraft/world/entity/Entity DATA_TICKS_FROZEN Lnet/minecraft/network/syncher/EntityDataAccessor;
+accessible field net/minecraft/world/level/block/entity/CommandBlockEntity conditionMet Z
+accessible method net/minecraft/core/Holder$Reference bindKey (Lnet/minecraft/resources/ResourceKey;)V
+accessible field net/minecraft/network/protocol/ProtocolInfoBuilder codecs Ljava/util/List;
+accessible field net/minecraft/network/protocol/ProtocolInfoBuilder$CodecEntry serializer Lnet/minecraft/network/codec/StreamCodec;
+accessible field net/minecraft/server/MinecraftServer executor Ljava/util/concurrent/Executor;
+accessible field net/minecraft/server/MinecraftServer storageSource Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;
+accessible field net/minecraft/server/network/ServerCommonPacketListenerImpl connection Lnet/minecraft/network/Connection;
+accessible field net/minecraft/network/Connection channel Lio/netty/channel/Channel;
+accessible method net/minecraft/server/level/ChunkMap updateChunkTracking (Lnet/minecraft/server/level/ServerPlayer;)V
+accessible field net/minecraft/server/MinecraftServer levels Ljava/util/Map;
+accessible field net/minecraft/server/players/PlayerList players Ljava/util/List;
+accessible field net/minecraft/server/players/PlayerList playersByUUID Ljava/util/Map;
+accessible method net/minecraft/server/level/ServerLevel addPlayer (Lnet/minecraft/server/level/ServerPlayer;)V
+accessible method net/minecraft/server/network/ServerCommonPacketListenerImpl createCookie (Lnet/minecraft/server/level/ClientInformation;)Lnet/minecraft/server/network/CommonListenerCookie;
