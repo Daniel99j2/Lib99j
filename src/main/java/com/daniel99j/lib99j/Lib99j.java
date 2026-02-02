@@ -165,7 +165,9 @@ public class Lib99j implements ModInitializer {
 
             dispatcher.getRoot().addChild(Commands.literal("tplockedcamera")
                     .executes((context) -> {
+                        Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
                         ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
+                        context.getSource().getPlayer().connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(pos, Vec3.ZERO, 0, 0), Set.of())));
                         return 1;
                     })
                     .build());

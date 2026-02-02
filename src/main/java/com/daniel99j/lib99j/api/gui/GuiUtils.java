@@ -65,7 +65,7 @@ public class GuiUtils {
         }
         DefaultGuiTextures.load();
 
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "gui"));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui"));
     }
 
     private static char getNextSpaceChar() {
@@ -146,13 +146,13 @@ public class GuiUtils {
 
         GUI_BAR_TEXTURES.forEach((entry) -> {
             for (GuiBarTexturePart part : entry.textures()) {
-                assetWriter.accept("assets/" + part.texture().path.getNamespace() + "/textures/gui/" + part.texture().path.getPath() + ".png", part.imageData());
+                assetWriter.accept("assets/" + part.texture().path.getNamespace() + "/textures/ui/" + part.texture().path.getPath() + ".png", part.imageData());
             }
         });
 
         fontBase.add("providers", providers);
 
-        assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/gui.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
+        assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/ui.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
 
         var spaceFontBase = new JsonObject();
         var spaceProviders = new JsonArray();
@@ -173,15 +173,15 @@ public class GuiUtils {
     public static GuiElementBuilder generateTexture(Identifier path) {
         ItemGuiTexture texture = new ItemGuiTexture(path);
         ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "gui"));
-        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui"));
+        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/ui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     public static GuiElementBuilder generateColourableTexture(Identifier path) {
         ItemGuiTexture texture = new ItemGuiTexture(path);
         //ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "gui"));
-        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/gui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui"));
+        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/ui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     public static MutableComponent colourText(MutableComponent texts, int colour) {
@@ -206,7 +206,7 @@ public class GuiUtils {
     public static GuiBarTexture generateBarTexture(Identifier path, int ascent, int height1, int width1) {
         try {
             ArrayList<GuiBarTexturePart> textures = new ArrayList<>();
-            InputStream stream = Lib99j.class.getResourceAsStream("/assets/" + path.getNamespace() + "/textures/gui/" + path.getPath() + ".png");
+            InputStream stream = Lib99j.class.getResourceAsStream("/assets/" + path.getNamespace() + "/textures/ui/" + path.getPath() + ".png");
             BufferedImage image = ImageIO.read(stream);
             int width = image.getWidth();
             int height = image.getHeight();

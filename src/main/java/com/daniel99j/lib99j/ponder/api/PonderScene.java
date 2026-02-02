@@ -67,7 +67,7 @@ public class PonderScene {
     private boolean isToBeRemoved = false;
     private final ServerBossEvent displayTopBar;
     private Vec3 cameraPos = Vec3.ZERO;
-    private Vec2 cameraRotation = new Vec2(-45, -45);
+    private Vec2 cameraRotation = new Vec2(45, -45);
 
     protected PonderScene(ServerPlayer player, PonderBuilder builder) {
         if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering();
@@ -101,7 +101,7 @@ public class PonderScene {
 
         BlockPos farPos = EntityUtils.getFarPos(player);
         this.origin = new BlockPos(farPos.getX(), builder.y, farPos.getZ());
-        this.cameraPos = Vec3.atCenterOf(this.origin).add(-builder.sizeX/2.0f, builder.sizeY/2.0f, -builder.sizeZ/2.0f);
+        this.cameraPos = Vec3.atCenterOf(this.origin).add(-builder.sizeX/4.0f, builder.sizeY/2.0f, -builder.sizeZ/4.0f);
         VFXUtils.setCameraPos(player, this.cameraPos);
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
@@ -259,7 +259,7 @@ public class PonderScene {
         this.player.connection.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
 
         try {
-            Files.walkFileTree(Path.of(this.world.getChunkSource().chunkMap.getStorageName()), new SimpleFileVisitor<>() {
+            Files.walkFileTree(Lib99j.getServer().storageSource.getDimensionPath(worldKey), new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.deleteIfExists(file);
@@ -338,10 +338,9 @@ public class PonderScene {
             }
         }
 
+        VFXUtils.setCameraInterpolation(player, 10);
         VFXUtils.setCameraPos(player, this.cameraPos);
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
-
-        this.world.getChunkSource().chunkMap.updateChunkTracking(this.player);
     }
 }

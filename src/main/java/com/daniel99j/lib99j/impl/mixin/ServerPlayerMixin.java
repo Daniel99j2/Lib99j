@@ -106,6 +106,7 @@ public abstract class ServerPlayerMixin
 
     @Override
     public void lib99j$lockCamera() {
+        if (this.lib99j$cameraPoint != null) return;
         float yaw = getPlayer().getYRot();
         float pitch = getPlayer().getXRot();
         this.lib99j$cameraPoint = new BlockDisplayElement() {
@@ -125,25 +126,36 @@ public abstract class ServerPlayerMixin
     }
 
     @Override
+    public void lib99j$setCameraInterpolationTime(int time) {
+        if (this.lib99j$cameraPoint == null) return;
+        this.lib99j$cameraPoint.setInterpolationDuration(time);
+        this.lib99j$cameraPoint.setInterpolationDuration(time);
+    }
+
+    @Override
     public void lib99j$setCameraPos(Vec3 pos) {
+        if (this.lib99j$cameraPoint == null) return;
         this.lib99j$cameraPoint.setOffset(pos);
     }
 
     @Override
     public void lib99j$setCameraPitch(float pitch) {
+        if (this.lib99j$cameraPoint == null) return;
         this.lib99j$cameraPoint.setPitch(pitch);
     }
 
     @Override
     public void lib99j$setCameraYaw(float yaw) {
+        if (this.lib99j$cameraPoint == null) return;
         this.lib99j$cameraPoint.setYaw(yaw);
     }
 
     @Override
     public void lib99j$unlockCamera() {
-        getPlayer().connection.send(new ClientboundSetCameraPacket(this.camera == null ? getPlayer() : this.camera));
-        getPlayer().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, getPlayer().gameMode.getGameModeForPlayer().getId()));
-        getPlayer().connection.send(new ClientboundSetEntityDataPacket(getPlayer().getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.POSE, getPlayer().getPose()))));
+        if (this.lib99j$cameraPoint == null) return;
+        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundSetCameraPacket(this.camera == null ? getPlayer() : this.camera)));
+        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, getPlayer().gameMode.getGameModeForPlayer().getId())));
+        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundSetEntityDataPacket(getPlayer().getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.POSE, getPlayer().getPose())))));
         this.lib99j$holder.removeElement(this.lib99j$cameraPoint);
         this.lib99j$cameraPoint = null;
     }

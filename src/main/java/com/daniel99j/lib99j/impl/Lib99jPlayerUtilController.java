@@ -13,7 +13,7 @@ public interface Lib99jPlayerUtilController {
 
     void lib99j$unlockCamera();
 
-    void lib99j$unlockCameraInternals();
+    void lib99j$setCameraInterpolationTime(int time);
 
     void lib99j$setCameraPos(Vec3 pos);
 

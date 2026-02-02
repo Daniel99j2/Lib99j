@@ -47,16 +47,16 @@ public class AssetProvider implements DataProvider {
         GuiUtils.generateAssets(assetWriter);
 
         for (ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
-            assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/gui/" + texture.path().getPath() + ".json",
-                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath(texture.path().getNamespace(), "gui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+            assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/ui/" + texture.path().getPath() + ".json",
+                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath(texture.path().getNamespace(), "ui/" + texture.path().getPath()).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
         }
 
         ServerParticleManager.generateAssets(assetWriter);
 
-        assetWriter.accept("assets/lib99j/models/gui/solid_colour.json",
-                BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath("lib99j", "gui/solid_colour").toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+        assetWriter.accept("assets/lib99j/models/ui/solid_colour.json",
+                BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath("lib99j", "ui/solid_colour").toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
 
-        assetWriter.accept("assets/lib99j/items/gui/solid_colour.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "gui/solid_colour"), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
+        assetWriter.accept("assets/lib99j/items/ui/solid_colour.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour"), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
 
 
         var sounds = new JsonObject();

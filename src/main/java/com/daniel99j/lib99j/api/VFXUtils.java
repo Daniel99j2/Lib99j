@@ -186,6 +186,11 @@ public class VFXUtils {
         genericScreenEffectInstances.add(instance);
     }
 
+    public static void setCameraInterpolation(ServerPlayer player, int time) {
+        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        ((Lib99jPlayerUtilController) player).lib99j$setCameraInterpolationTime(time);
+    }
+
     public static void setCameraPos(ServerPlayer player, Vec3 pos) {
         if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
         ((Lib99jPlayerUtilController) player).lib99j$setCameraPos(pos);
@@ -289,7 +294,7 @@ public class VFXUtils {
         int id = VirtualEntityUtils.requestEntityId();
         ClientboundBundlePacket bundle = new ClientboundBundlePacket(List.of(new ClientboundAddEntityPacket(id, UUID.randomUUID(),
                         pos.x, pos.y, pos.z, angle ? pitch : 0,  angle ? yaw : 0,
-                        EntityType.FIREWORK_ROCKET, 0, Vec3.ZERO, 0d),
+                        EntityType.FIREWORK_ROCKET, 0, velocity, 0d),
                 new ClientboundSetEntityDataPacket(id, List.of(
                         SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, fireworkStack),
                         SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, angle)
@@ -300,6 +305,15 @@ public class VFXUtils {
 
         for(ServerPlayer player : players) {
             player.connection.send(bundle);
+        };
+    }
+
+    public static void sendFakeEntity(List<ServerPlayer> players, Vec3 pos, EntityType<?> entityType) {
+        int id = VirtualEntityUtils.requestEntityId();
+        for(ServerPlayer player : players) {
+            player.connection.send(new ClientboundAddEntityPacket(id, UUID.randomUUID(),
+                    pos.x, pos.y, pos.z, 0, 0,
+                    entityType, 0, Vec3.ZERO, 0d));
         };
     }
 
