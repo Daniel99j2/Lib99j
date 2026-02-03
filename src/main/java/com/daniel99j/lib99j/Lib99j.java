@@ -154,7 +154,7 @@ public class Lib99j implements ModInitializer {
                                 .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
                                         .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
                                                 .executes((context) -> {
-                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2, true), ComponentArgument.getRawComponent(context, "title"), ComponentArgument.getRawComponent(context, "desc"), Identifier.withDefaultNamespace("test"));
+                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
                                                     return 1;
                                                 })))).build());
 
