@@ -115,6 +115,8 @@ public class VFXUtils {
             case LOCK_CAMERA_AND_POS -> ((Lib99jPlayerUtilController) instance.getPlayer()).lib99j$lockCamera();
             case NIGHT_VISION ->
                     instance.player.connection.send(new ClientboundUpdateMobEffectPacket(instance.player.getId(), new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 0, true, false), false));
+            case DARKNESS ->
+                    instance.player.connection.send(new ClientboundUpdateMobEffectPacket(instance.player.getId(), new MobEffectInstance(MobEffects.DARKNESS, -1, 0, true, false), false));
             case BLINDNESS ->
                     instance.player.connection.send(new ClientboundUpdateMobEffectPacket(instance.player.getId(), new MobEffectInstance(MobEffects.BLINDNESS, -1, 0, true, false), false));
         }
@@ -177,6 +179,13 @@ public class VFXUtils {
                         instance.player.connection.send(new ClientboundRemoveMobEffectPacket(instance.player.getId(), MobEffects.NIGHT_VISION));
                     }
                 }
+                case DARKNESS -> {
+                    if (instance.player.hasEffect(MobEffects.DARKNESS)) {
+                        instance.player.connection.send(new ClientboundUpdateMobEffectPacket(instance.player.getId(), Objects.requireNonNull(instance.player.getEffect(MobEffects.DARKNESS)), false));
+                    } else {
+                        instance.player.connection.send(new ClientboundRemoveMobEffectPacket(instance.player.getId(), MobEffects.DARKNESS));
+                    }
+                }
             }
         }
     }
@@ -235,6 +244,7 @@ public class VFXUtils {
     public static boolean hasEffectEffect(ServerPlayer player) {
         return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player  && !instance.isFinished() && (
                 instance.effect == GENERIC_SCREEN_EFFECT.NIGHT_VISION ||
+                        instance.effect == GENERIC_SCREEN_EFFECT.DARKNESS ||
                         instance.effect == GENERIC_SCREEN_EFFECT.BLINDNESS ||
                         instance.effect == GENERIC_SCREEN_EFFECT.BLACK_HEARTS ||
                         instance.effect == GENERIC_SCREEN_EFFECT.GREEN_HEARTS ||
@@ -327,6 +337,7 @@ public class VFXUtils {
         GREEN_HUNGER,
         BLINDNESS,
         NIGHT_VISION,
+        DARKNESS,
         LOCK_CAMERA_AND_POS
     }
 

@@ -1,6 +1,5 @@
 package com.daniel99j.lib99j.api.gui;
 
-import eu.pb4.polymer.resourcepack.extras.api.ResourcePackExtras;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
@@ -22,7 +21,6 @@ public class BackgroundTexture {
         this.width = width;
         this.path = path;
         this.offset = offset;
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui"));
         GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
     }
 

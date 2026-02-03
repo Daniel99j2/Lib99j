@@ -1,10 +1,13 @@
 package com.daniel99j.lib99j.api.gui;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import eu.pb4.polymer.resourcepack.extras.api.ResourcePackExtras;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.model.BasicItemModel;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTintSource;
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
@@ -45,6 +48,16 @@ public class GuiUtils {
     private static final List<GuiBarTexture> GUI_BAR_TEXTURES = new ArrayList<>();
     private static char currentGuiChar = '*';
     private static char currentSpaceChar = '*';
+    private static final List<String> atlasAdditions = new ArrayList<>();
+
+    private static final String BASIC_ITEM_TEMPLATE = """
+            {
+              "parent": "%BASE%",
+              "textures": {
+                "layer0": "%ID%"
+              }
+            }
+            """.replace(" ", "").replace("\n", "");
 
     static {
         blacklistedChars.add('§');
@@ -64,8 +77,6 @@ public class GuiUtils {
             SPACES.put(i, getNextSpaceChar());
         }
         DefaultGuiTextures.load();
-
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui"));
     }
 
     private static char getNextSpaceChar() {
@@ -168,20 +179,44 @@ public class GuiUtils {
         spaceFontBase.add("providers", spaceProviders);
 
         assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/spaces.json", spaceFontBase.toString().getBytes(StandardCharsets.UTF_8));
+
+        String itemAtlas = "{\"sources\":[{\"type\":\"directory\",\"source\":\"ui\",\"prefix\":\"ui/\"}";
+
+        for (String s : atlasAdditions) {
+            itemAtlas += ",{\"type\":\"single\",\"resource\":\"%name%\"}".replace("%name%", s);
+        }
+        itemAtlas += "]}";
+
+        assetWriter.accept("assets/minecraft/atlases/items.json", itemAtlas.getBytes(StandardCharsets.UTF_8));
+
+        //dont use addBridgedModelsFolder so that we can have finer control, and only include necessary assets!
+        for (ItemGuiTexture texture : GuiUtils.getItemGuiTextures()) {
+            String baseAndPath = texture.base() + "/" + texture.path().getPath();
+            assetWriter.accept("assets/" + texture.path().getNamespace() + "/models/" + baseAndPath + ".json",
+                    BASIC_ITEM_TEMPLATE.replace("%ID%", Identifier.fromNamespaceAndPath(texture.path().getNamespace(), baseAndPath).toString()).replace("%BASE%", "minecraft:item/generated").getBytes(StandardCharsets.UTF_8));
+
+            if(texture.coloured()) assetWriter.accept("assets/" + texture.path().getNamespace() + "/items/gen/" + baseAndPath + ".json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(texture.path().getNamespace(), baseAndPath), List.of(new CustomModelDataTintSource(0, 0xFFFFFF)))).toJson().getBytes());
+            else assetWriter.accept("assets/" + texture.path().getNamespace() + "/items/gen/" + texture.base() + "/" + texture.path().getPath() + ".json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(texture.path().getNamespace(), baseAndPath), List.of())).toJson().getBytes());
+
+        }
     }
 
     public static GuiElementBuilder generateTexture(Identifier path) {
-        ItemGuiTexture texture = new ItemGuiTexture(path);
-        ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui"));
-        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/ui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+        return generateTextureInternal(path, false);
     }
 
     public static GuiElementBuilder generateColourableTexture(Identifier path) {
-        ItemGuiTexture texture = new ItemGuiTexture(path);
-        //ITEM_GUI_TEXTURES.add(texture);
-        ResourcePackExtras.forDefault().addBridgedModelsFolder(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui"));
-        return blank().model(Identifier.fromNamespaceAndPath(path.getNamespace(), "-/ui/" + path.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+        return generateTextureInternal(path, true);
+    }
+
+    private static GuiElementBuilder generateTextureInternal(Identifier path, boolean coloured) {
+        String base = MiscUtils.getTextBetween(path.getPath(), "", "/");
+        if(base.isEmpty()) throw new IllegalStateException("Error loading "+path.toString(), new Throwable("Texture paths must be prefixed, eg ui/test.png"));
+        Identifier newPath = Identifier.fromNamespaceAndPath(path.getNamespace(), MiscUtils.replaceTextBetween(path.getPath(), "", "/", ""));
+        ItemGuiTexture texture = new ItemGuiTexture(newPath, base, coloured);
+        ITEM_GUI_TEXTURES.add(texture);
+        if(!base.equals("ui")) atlasAdditions.add(path.toString());
+        return blank().model(Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     public static MutableComponent colourText(MutableComponent texts, int colour) {
@@ -325,11 +360,11 @@ public class GuiUtils {
         }
     }
 
-    public static void toast(ServerPlayer player, ItemStack icon, Component title, Component description, Identifier background) {
+    public static void toast(ServerPlayer player, ItemStack icon, Component title, Identifier background) {
         AdvancementProgress progress = new AdvancementProgress();
         progress.update(AdvancementRequirements.allOf(Set.of("toast")));
         progress.grantProgress("toast");
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(icon, title, description, Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(icon, title, Component.empty(), Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
         player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "toast"), progress), true));
         player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "toast")), Map.of(), false));
     }

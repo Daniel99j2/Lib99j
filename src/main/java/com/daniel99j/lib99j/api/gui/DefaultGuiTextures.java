@@ -14,7 +14,9 @@ import java.util.Optional;
 
 public class DefaultGuiTextures {
     public static final GuiElement INVISIBLE;
-    public static final GuiElementBuilder SOLID_COLOUR = GuiUtils.blank().model(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "/ui/solid_colour")).setItemName(Component.nullToEmpty("==NOT SET=="));
+    public static final GuiElementBuilder SOLID_COLOUR = GuiUtils.generateColourableTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour"));
+
+    public static final GuiElementBuilder TEST_UI = GuiUtils.generateTexture(Identifier.withDefaultNamespace("gui/sprites/container/slot/sword"));
 
     //textures from polydex
     public static final GuiElementBuilder HEAD_PREVIOUS_PAGE = GuiUtils.head("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzEwODI5OGZmMmIyNjk1MWQ2ODNlNWFkZTQ2YTQyZTkwYzJmN2M3ZGQ0MWJhYTkwOGJjNTg1MmY4YzMyZTU4MyJ9fX0");

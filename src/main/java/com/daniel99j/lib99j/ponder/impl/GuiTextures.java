@@ -6,7 +6,7 @@ import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.resources.Identifier;
 
 public class GuiTextures {
-    public static final GuiElementBuilder TEST = GuiUtils.generateTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "test"));
+    public static final GuiElementBuilder TEST = GuiUtils.generateTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/test"));
 
     public static void init() {
 

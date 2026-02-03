@@ -13,7 +13,7 @@ public class GameProperties {
     /**
      * This value represents if a content mod is loaded.
      * <p>You should turn this on if your mod is not a library
-     * <p>It enables things like warden camerashake roars, /vfx, etc
+     * <p>It enables things like /vfx, etc
      * <p>When disabled, you wouldn't even know the mod was installed
      */
     public static boolean contentModsLoaded = FabricLoader.getInstance().isDevelopmentEnvironment();

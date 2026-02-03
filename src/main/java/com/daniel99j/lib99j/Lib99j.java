@@ -4,6 +4,7 @@ import com.daniel99j.lib99j.api.ChunkSenderUtil;
 import com.daniel99j.lib99j.api.CustomEvents;
 import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.ServerParticleCommand;
@@ -70,7 +71,6 @@ import java.util.Set;
  * A library for all of Daniel99j's mods
  * @see GameProperties Enabling content mod settings
  * @see com.daniel99j.lib99j.api External API's
- * @see <a href="https://github.com/Daniel99j2/Starbound">Starbound, a good example of usage</a>
  */
 public class Lib99j implements ModInitializer {
     public static final String MOD_ID = "lib99j";
@@ -133,136 +133,148 @@ public class Lib99j implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.contentModsLoaded) ServerParticleCommand.register(dispatcher);
             if (GameProperties.contentModsLoaded) VfxCommand.register(dispatcher);
-            dispatcher.getRoot().addChild(Commands.literal("translationcheck")
-                    .executes((context) -> {
-                        GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray", "test", "controls.reset", "vanilla1", "addServer.add", "hacks1", "x13.mod.xray", "test1", "controls.reset", "vanilla2", "addServer.add", "hacks2", "x13.mod.xray", "test2", "controls.reset"), (e) -> {
-                            for (String s : e.matches()) context.getSource().getPlayer().sendSystemMessage(Component.literal("match: " + s));
-                            for (String s : e.misses()) context.getSource().getPlayer().sendSystemMessage(Component.literal("miss: " + s));
-                            context.getSource().getPlayer().sendSystemMessage(Component.literal("failed: " + e.checkFailed()));
-                            context.getSource().getPlayer().sendSystemMessage(Component.literal("blocked: " + e.translationCheckBlocked()));
-                        });
-                        return 1;
-                    })
-                    .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("toast")
-                            .then(Commands.argument("icon", ItemArgument.item(registryAccess))
-                                    .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
-                                            .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
-                    .executes((context) -> {
-                        GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2,  true), ComponentArgument.getRawComponent(context, "title"), ComponentArgument.getRawComponent(context, "desc"), Identifier.withDefaultNamespace("test"));
-                        return 1;
-                    })))).build());
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                dispatcher.getRoot().addChild(Commands.literal("translationcheck")
+                        .executes((context) -> {
+                            GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray", "test", "controls.reset", "vanilla1", "addServer.add", "hacks1", "x13.mod.xray", "test1", "controls.reset", "vanilla2", "addServer.add", "hacks2", "x13.mod.xray", "test2", "controls.reset"), (e) -> {
+                                for (String s : e.matches())
+                                    context.getSource().getPlayer().sendSystemMessage(Component.literal("match: " + s));
+                                for (String s : e.misses())
+                                    context.getSource().getPlayer().sendSystemMessage(Component.literal("miss: " + s));
+                                context.getSource().getPlayer().sendSystemMessage(Component.literal("failed: " + e.checkFailed()));
+                                context.getSource().getPlayer().sendSystemMessage(Component.literal("blocked: " + e.translationCheckBlocked()));
+                            });
+                            return 1;
+                        })
+                        .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("clientexplode")
-                    .executes((context) -> {
-                        ArrayList<ServerPlayer> players = new ArrayList<>();
-                        players.add(context.getSource().getPlayer());
-                        VFXUtils.clientSideExplode(players, new ExplosionDamageCalculator(), context.getSource().getPosition().x(), context.getSource().getPosition().y(), context.getSource().getPosition().z(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE, true);
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("toast")
+                        .then(Commands.argument("icon", ItemArgument.item(registryAccess))
+                                .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
+                                        .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
+                                                .executes((context) -> {
+                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2, true), ComponentArgument.getRawComponent(context, "title"), ComponentArgument.getRawComponent(context, "desc"), Identifier.withDefaultNamespace("test"));
+                                                    return 1;
+                                                })))).build());
 
-            dispatcher.getRoot().addChild(Commands.literal("tplockedcamera")
-                    .executes((context) -> {
-                        Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
-                        ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
-                        context.getSource().getPlayer().connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(pos, Vec3.ZERO, 0, 0), Set.of())));
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("clientexplode")
+                        .executes((context) -> {
+                            ArrayList<ServerPlayer> players = new ArrayList<>();
+                            players.add(context.getSource().getPlayer());
+                            VFXUtils.clientSideExplode(players, new ExplosionDamageCalculator(), context.getSource().getPosition().x(), context.getSource().getPosition().y(), context.getSource().getPosition().z(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE, true);
+                            return 1;
+                        })
+                        .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("noponder")
-                    .executes((context) -> {
-                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-                        VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
-                        PolymerUtils.reloadWorld(context.getSource().getPlayer());
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("tplockedcamera")
+                        .executes((context) -> {
+                            Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
+                            ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
+                            context.getSource().getPlayer().connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(pos, Vec3.ZERO, 0, 0), Set.of())));
+                            return 1;
+                        })
+                        .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("ghostblock")
-                    .executes((context) -> {
-                        context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("testrandomcode")
+                        .executes((context) -> {
+                            context.getSource().getPlayer().getInventory().add(DefaultGuiTextures.TEST_UI.asStack());
+                            return 1;
+                        })
+                        .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("reloadworld")
-                    .executes((context) -> {
-                        PolymerUtils.reloadWorld(context.getSource().getPlayer());
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("noponder")
+                        .executes((context) -> {
+                            VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+                            VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
+                            PolymerUtils.reloadWorld(context.getSource().getPlayer());
+                            return 1;
+                        })
+                        .build());
 
-            dispatcher.getRoot().addChild(Commands.literal("singleponder")
-                    .executes((context) -> {
-                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-                        VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
+                dispatcher.getRoot().addChild(Commands.literal("ghostblock")
+                        .executes((context) -> {
+                            context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
+                            return 1;
+                        })
+                        .build());
 
-                        ServerPlayer realPlayer = context.getSource().getPlayer();
+                dispatcher.getRoot().addChild(Commands.literal("reloadworld")
+                        .executes((context) -> {
+                            PolymerUtils.reloadWorld(context.getSource().getPlayer());
+                            return 1;
+                        })
+                        .build());
 
-                        BlockPos renderPos = new BlockPos((int) (100000), 60, 0);
-                        VFXUtils.setCameraPos(realPlayer, Vec3.atLowerCornerOf(renderPos));
-                        realPlayer.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(renderPos.getX()), SectionPos.blockToSectionCoord(renderPos.getZ()) ));
-                        realPlayer.connection.send(ClientboundPlayerPositionPacket.of(-69, new PositionMoveRotation(Vec3.atLowerCornerOf(renderPos), Vec3.ZERO, 0, 0), Set.of(Relative.X, Relative.Y, Relative.Z)));
+                dispatcher.getRoot().addChild(Commands.literal("singleponder")
+                        .executes((context) -> {
+                            VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+                            VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
 
-                        ServerLevel serverWorld = Lib99j.getServerOrThrow().getLevel(Level.NETHER);
+                            ServerPlayer realPlayer = context.getSource().getPlayer();
 
-                        Creeper creeper = new Creeper(EntityType.CREEPER, serverWorld) {
-                            @Override
-                            public void tick() {
-                                super.tick();
-                                this.tickCount++;
-                                if(this.tickCount == 200) {
-                                    ChunkSenderUtil.sendRegion(realPlayer, new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) - 1, SectionPos.blockToSectionCoord(renderPos.getZ()) - 1), new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) + 1, SectionPos.blockToSectionCoord(renderPos.getZ()) + 1), serverWorld);
-                                    this.discard();
+                            BlockPos renderPos = new BlockPos((int) (100000), 60, 0);
+                            VFXUtils.setCameraPos(realPlayer, Vec3.atLowerCornerOf(renderPos));
+                            realPlayer.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(renderPos.getX()), SectionPos.blockToSectionCoord(renderPos.getZ())));
+                            realPlayer.connection.send(ClientboundPlayerPositionPacket.of(-69, new PositionMoveRotation(Vec3.atLowerCornerOf(renderPos), Vec3.ZERO, 0, 0), Set.of(Relative.X, Relative.Y, Relative.Z)));
+
+                            ServerLevel serverWorld = Lib99j.getServerOrThrow().getLevel(Level.NETHER);
+
+                            Creeper creeper = new Creeper(EntityType.CREEPER, serverWorld) {
+                                @Override
+                                public void tick() {
+                                    super.tick();
+                                    this.tickCount++;
+                                    if (this.tickCount == 200) {
+                                        ChunkSenderUtil.sendRegion(realPlayer, new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) - 1, SectionPos.blockToSectionCoord(renderPos.getZ()) - 1), new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) + 1, SectionPos.blockToSectionCoord(renderPos.getZ()) + 1), serverWorld);
+                                        this.discard();
+                                    }
                                 }
-                            }
-                        };
-                        creeper.setPosRaw(realPlayer.position().x(), realPlayer.position().y(), realPlayer.position().z());
-                        creeper.setPersistenceRequired();
-                        creeper.setNoGravity(true);
-                        realPlayer.level().addFreshEntity(creeper);
+                            };
+                            creeper.setPosRaw(realPlayer.position().x(), realPlayer.position().y(), realPlayer.position().z());
+                            creeper.setPersistenceRequired();
+                            creeper.setNoGravity(true);
+                            realPlayer.level().addFreshEntity(creeper);
 
-                        context.getSource().sendSystemMessage(Component.nullToEmpty("done"));
+                            context.getSource().sendSystemMessage(Component.nullToEmpty("done"));
 
-                        return 1;
-                    }).build());
+                            return 1;
+                        }).build());
 
-            //old
+                //old
 
-            dispatcher.getRoot().addChild(Commands.literal("ponder")
-                    .executes((context) -> {
-                        context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
-                        PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.defaultBlockState(), Blocks.DIAMOND_BLOCK.defaultBlockState()).defaultBiome(Biomes.BASALT_DELTAS)
-                                .wait(100)
-                                .instruction(new ExecuteCodeInstruction((scene) -> {
-                                    scene.getWorld().setBlockAndUpdate(scene.getOrigin(), Blocks.PISTON.defaultBlockState());
-                                }))
-                                .wait(100)
-                                .instruction(new ExecuteCodeInstruction((scene) -> {
-                                    scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(0, 1, 0), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                                    Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
-                                    creeper.setPosRaw(scene.getOrigin().getX()-5, scene.getOrigin().getY()+10, scene.getOrigin().getZ()-5);
-                                    creeper.setPersistenceRequired();
-                                    scene.getWorld().addFreshEntity(creeper);
-                                }))
-                                .wait(100)
-                                .instruction(new ShowItemInstruction(1000, Items.PISTON.getDefaultInstance()))
-                                .instruction(new ShowLineInstruction(1000, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
-                                .wait(200)
-                                .finishStep(Component.literal("Step Title"), Component.literal("Step Description"))
-                                .wait(100)
-                                .instruction(new ShowItemInstruction(1000, Items.STICKY_PISTON.getDefaultInstance()))
-                                .instruction(new ShowLineInstruction(1000, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-                                .wait(200)
-                                .finishStep(Component.literal("Step Title2"), Component.literal("Step Description2"))
-                                .build()
-                                .startPondering(context.getSource().getPlayerOrException());
-                        return 1;
-                    })
-                    .build());
+                dispatcher.getRoot().addChild(Commands.literal("ponder")
+                        .executes((context) -> {
+                            context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
+                            PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.defaultBlockState(), Blocks.DIAMOND_BLOCK.defaultBlockState()).defaultBiome(Biomes.BASALT_DELTAS)
+                                    .wait(100)
+                                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin(), Blocks.PISTON.defaultBlockState());
+                                    }))
+                                    .wait(100)
+                                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(0, 1, 0), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
+                                        creeper.setPosRaw(scene.getOrigin().getX() - 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() - 5);
+                                        creeper.setPersistenceRequired();
+                                        scene.getWorld().addFreshEntity(creeper);
+                                    }))
+                                    .wait(100)
+                                    .instruction(new ShowItemInstruction(1000, Items.PISTON.getDefaultInstance()))
+                                    .instruction(new ShowLineInstruction(1000, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
+                                    .wait(200)
+                                    .finishStep(Component.literal("Step Title"), Component.literal("Step Description"))
+                                    .wait(100)
+                                    .instruction(new ShowItemInstruction(1000, Items.STICKY_PISTON.getDefaultInstance()))
+                                    .instruction(new ShowLineInstruction(1000, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
+                                    .wait(200)
+                                    .finishStep(Component.literal("Step Title2"), Component.literal("Step Description2"))
+                                    .build()
+                                    .startPondering(context.getSource().getPlayerOrException());
+                            return 1;
+                        })
+                        .build());
+            }
         });
 
         LOGGER.info("Ready to rumble!");

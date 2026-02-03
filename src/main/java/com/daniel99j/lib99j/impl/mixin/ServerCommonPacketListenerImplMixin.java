@@ -63,6 +63,8 @@ public abstract class ServerCommonPacketListenerImplMixin {
                     ci.cancel();
                 else if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION) && effectId == MobEffects.NIGHT_VISION)
                     ci.cancel();
+                else if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.DARKNESS) && effectId == MobEffects.DARKNESS)
+                    ci.cancel();
             } else if (packet instanceof ClientboundSetEntityDataPacket trackerUpdateS2CPacket && trackerUpdateS2CPacket.id() == player.getId() && (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.SNOW) || VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.FIRE))) {
                 ci.cancel();
                 ArrayList<SynchedEntityData.DataValue<?>> out = new ArrayList<>();
