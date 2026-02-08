@@ -8,6 +8,9 @@ This is a mod used as a base for all my mods. Feel free to use it if you wish.
 - More...
 
 ## Usage
+### Installation
+//TODO
+
 ### Gui Utils
 - By default, Lib99j generates a font space range of -256 to 256 (Note, when using eg, space=270, it uses a combo of 256 and 14!). Use GuiUtils.getSpace() and related functions
 - GuiUtils.nextPage(), GuiUtils.previousPage(), and GuiUtils.head() create player heads for use in guis
