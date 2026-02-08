@@ -220,22 +220,22 @@ public class GuiUtils {
     }
 
     public static MutableComponent colourText(MutableComponent texts, int colour) {
-        MutableComponent newText = Component.literal(texts.toString()).withStyle(texts.getStyle()).withColor(colour);
+        MutableComponent newText = Component.literal(texts.getString()).withStyle(texts.getStyle()).withColor(colour);
         for (Component text : texts.getSiblings()) {
             MutableComponent text1 = null;
             if(text instanceof MutableComponent) text1 = (MutableComponent) text;
-            else text1 = Component.literal(text1.getString()).withStyle(text1.getStyle());
+            else text1 = Component.literal(text.getString()).withStyle(text.getStyle());
             newText.append(text1.withColor(colour));
         }
         return newText;
     }
 
     public static MutableComponent styleText(MutableComponent texts, Style style) {
-        MutableComponent newText = Component.literal(texts.toString()).withStyle(style);
+        MutableComponent newText = Component.literal(texts.getString()).withStyle(style);
         for (Component text : texts.getSiblings()) {
             MutableComponent text1 = null;
             if(text instanceof MutableComponent) text1 = (MutableComponent) text;
-            else text1 = Component.literal(text1.getString()).withStyle(style);
+            else text1 = Component.literal(text.getString()).withStyle(style);
             newText.append(text1);
         }
         return newText;
