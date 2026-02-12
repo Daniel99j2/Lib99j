@@ -18,8 +18,10 @@ import com.daniel99j.lib99j.ponder.impl.instruction.ExecuteCodeInstruction;
 import com.daniel99j.lib99j.ponder.impl.instruction.ShowItemInstruction;
 import com.daniel99j.lib99j.ponder.impl.instruction.ShowLineInstruction;
 import com.daniel99j.lib99j.testmod.TestingElements;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -27,6 +29,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
@@ -35,6 +38,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -50,6 +54,7 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
@@ -62,10 +67,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A library for all of Daniel99j's mods
@@ -134,10 +136,12 @@ public class Lib99j implements ModInitializer {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.contentModsLoaded) ServerParticleCommand.register(dispatcher);
             if (GameProperties.contentModsLoaded) VfxCommand.register(dispatcher);
 
+            LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
+            
             if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                dispatcher.getRoot().addChild(Commands.literal("translationcheck")
+                builder.then(Commands.literal("translationcheck")
                         .executes((context) -> {
-                            GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray", "test", "controls.reset", "vanilla1", "addServer.add", "hacks1", "x13.mod.xray", "test1", "controls.reset", "vanilla2", "addServer.add", "hacks2", "x13.mod.xray", "test2", "controls.reset"), (e) -> {
+                            GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray"), (e) -> {
                                 for (String s : e.matches())
                                     context.getSource().getPlayer().sendSystemMessage(Component.literal("match: " + s));
                                 for (String s : e.misses())
@@ -149,16 +153,24 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("toast")
+                builder.then(Commands.literal("textcheck")
+                        .executes((context) -> {
+                            context.getSource().sendSystemMessage(GuiUtils.styleText(Component.literal("test").append(Component.literal("aa").setStyle(Style.EMPTY.withBold(true))), Style.EMPTY.withUnderlined(true)));
+                            context.getSource().sendSystemMessage(GuiUtils.colourText(Component.literal("test").append(Component.literal("aa").setStyle(Style.EMPTY.withBold(true))), 0xff00ff));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("toast")
                         .then(Commands.argument("icon", ItemArgument.item(registryAccess))
                                 .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
                                         .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
                                                 .executes((context) -> {
-                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(2, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
+                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
                                                     return 1;
                                                 })))).build());
 
-                dispatcher.getRoot().addChild(Commands.literal("clientexplode")
+                builder.then(Commands.literal("clientexplode")
                         .executes((context) -> {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
@@ -167,7 +179,25 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("tplockedcamera")
+                builder.then(Commands.literal("firework")
+                        .executes((context) -> {
+                            ArrayList<ServerPlayer> players = new ArrayList<>();
+                            players.add(context.getSource().getPlayer());
+                            VFXUtils.fireworkExplode(players, List.of(new FireworkExplosion(FireworkExplosion.Shape.STAR, IntList.of(0x0000ff), IntList.of(0xff0000), true, true)), context.getSource().getPosition(), new Vec3(1, -1, 0), 69, 42);
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("lightning")
+                        .executes((context) -> {
+                            ArrayList<ServerPlayer> players = new ArrayList<>();
+                            players.add(context.getSource().getPlayer());
+                            VFXUtils.sendFakeEntity(players, context.getSource().getPosition(), EntityType.LIGHTNING_BOLT);
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("tplockedcamera")
                         .executes((context) -> {
                             Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
                             ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
@@ -176,14 +206,14 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("testrandomcode")
+                builder.then(Commands.literal("testrandomcode")
                         .executes((context) -> {
                             context.getSource().getPlayer().getInventory().add(DefaultGuiTextures.TEST_UI.asStack());
                             return 1;
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("noponder")
+                builder.then(Commands.literal("noponder")
                         .executes((context) -> {
                             VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
                             VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
@@ -192,21 +222,21 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("ghostblock")
+                builder.then(Commands.literal("ghostblock")
                         .executes((context) -> {
                             context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
                             return 1;
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("reloadworld")
+                builder.then(Commands.literal("reloadworld")
                         .executes((context) -> {
                             PolymerUtils.reloadWorld(context.getSource().getPlayer());
                             return 1;
                         })
                         .build());
 
-                dispatcher.getRoot().addChild(Commands.literal("singleponder")
+                builder.then(Commands.literal("singleponder")
                         .executes((context) -> {
                             VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
                             VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
@@ -243,7 +273,7 @@ public class Lib99j implements ModInitializer {
 
                 //old
 
-                dispatcher.getRoot().addChild(Commands.literal("ponder")
+                builder.then(Commands.literal("ponder")
                         .executes((context) -> {
                             context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
                             PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.defaultBlockState(), Blocks.DIAMOND_BLOCK.defaultBlockState()).defaultBiome(Biomes.BASALT_DELTAS)
@@ -274,6 +304,8 @@ public class Lib99j implements ModInitializer {
                             return 1;
                         })
                         .build());
+
+                dispatcher.getRoot().addChild(builder.build());
             }
         });
 

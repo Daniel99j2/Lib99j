@@ -3,6 +3,7 @@ package com.daniel99j.lib99j.api.gui;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.daniel99j.lib99j.impl.mixin.StyleAccessor;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
@@ -220,25 +221,37 @@ public class GuiUtils {
     }
 
     public static MutableComponent colourText(MutableComponent texts, int colour) {
-        MutableComponent newText = Component.literal(texts.getString()).withStyle(texts.getStyle()).withColor(colour);
+        return styleText(texts, Style.EMPTY.withColor(colour));
+    }
+
+    public static MutableComponent styleText(MutableComponent texts, Style overlay) {
+        MutableComponent newText = styleSingleText(texts, overlay);
         for (Component text : texts.getSiblings()) {
-            MutableComponent text1 = null;
+            MutableComponent text1;
             if(text instanceof MutableComponent) text1 = (MutableComponent) text;
-            else text1 = Component.literal(text.getString()).withStyle(text.getStyle());
-            newText.append(text1.withColor(colour));
+            else text1 = Component.literal(text.getString());
+            newText.append(styleSingleText(text1, overlay));
         }
         return newText;
     }
 
-    public static MutableComponent styleText(MutableComponent texts, Style style) {
-        MutableComponent newText = Component.literal(texts.getString()).withStyle(style);
-        for (Component text : texts.getSiblings()) {
-            MutableComponent text1 = null;
-            if(text instanceof MutableComponent) text1 = (MutableComponent) text;
-            else text1 = Component.literal(text.getString()).withStyle(style);
-            newText.append(text1);
-        }
-        return newText;
+    private static MutableComponent styleSingleText(MutableComponent singleWithSiblings, Style overlay) {
+        MutableComponent single = singleWithSiblings.copy();
+        single.getSiblings().removeIf((c) -> true);
+        Style old = single.getStyle();
+        Style newStyle = Style.EMPTY;
+
+        StyleAccessor accessor = (StyleAccessor) (Object) overlay;
+        if(accessor.getColor() != null) newStyle = newStyle.withColor(overlay.getColor());
+        if(accessor.getShadowColor() != null) newStyle = newStyle.withShadowColor(overlay.getShadowColor());
+        if(accessor.getBold() != null) newStyle = newStyle.withBold(overlay.isBold());
+        if(accessor.getItalic() != null) newStyle = newStyle.withItalic(overlay.isItalic());
+        if(accessor.getUnderlined() != null) newStyle = newStyle.withUnderlined(overlay.isUnderlined());
+        if(accessor.getStrikethrough() != null) newStyle = newStyle.withStrikethrough(overlay.isStrikethrough());
+        if(accessor.getObfuscated() != null) newStyle = newStyle.withObfuscated(overlay.isObfuscated());
+        newStyle = newStyle.withFont(overlay.getFont());
+
+        return single.withStyle(newStyle);
     }
 
     public static GuiElementBuilder blank() {
@@ -384,7 +397,7 @@ public class GuiUtils {
     }
 
     @ApiStatus.Internal
-    public record PlayerTranslationCheckerData(List<Map.Entry<String, String>> translations, List<String> results, Consumer<GuiUtils.PlayerTranslationsResponse> output, MutableInt remainingTries) {
+    public record PlayerTranslationCheckerData(List<Map.Entry<String, String>> translations, List<String> results, Consumer<PlayerTranslationsResponse> output, MutableInt remainingTries) {
 
     }
 }

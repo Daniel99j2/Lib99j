@@ -86,9 +86,10 @@ public abstract class ServerPlayerMixin
         }
         if(lib99j$isModCheckerRunning()) {
             this.lib99j$modTranslationCheckerTimeout--;
-            if (this.lib99j$modTranslationCheckerTimeout == 0 && this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() == 0) {
+            if (this.lib99j$modTranslationCheckerTimeout == 0 && this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() <= 0) {
                 Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName() + " timed out too many times");
                 this.lib99j$getActiveTranslationChecker().output().accept(new GuiUtils.PlayerTranslationsResponse(false, true, new ArrayList<>(), new ArrayList<>()));
+                this.lib99j$activeTranslationCheckers.removeFirst();
             } else {
                 Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName() + " timed out (tries remaining: " + this.lib99j$getActiveTranslationChecker().remainingTries().get() + ")");
                 this.lib99j$getActiveTranslationChecker().remainingTries().setValue(this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() - 1);
@@ -182,10 +183,12 @@ public abstract class ServerPlayerMixin
         ArrayList<String> misses = new ArrayList<>();
         boolean workedAtAll = false;
 
+        //loop through translations
         for (Map.Entry<String, String> entry : lib99j$getActiveTranslationChecker().translations()) {
             String mod = entry.getKey();
             String missingText = entry.getValue();
 
+            //if the results contains the raw string, its not valid for them
             boolean isMissing = false;
             for (String text : lib99j$getActiveTranslationChecker().results()) {
                 if (text.contains(missingText)) {
@@ -202,7 +205,7 @@ public abstract class ServerPlayerMixin
                 else matches.add(mod);
             }
         }
-        this.lib99j$getActiveTranslationChecker().output().accept(new GuiUtils.PlayerTranslationsResponse(workedAtAll, false, misses, matches));
+        this.lib99j$getActiveTranslationChecker().output().accept(new GuiUtils.PlayerTranslationsResponse(!workedAtAll, false, misses, matches));
 
         this.lib99j$activeTranslationCheckers.removeFirst();
         if(!this.lib99j$activeTranslationCheckers.isEmpty()) this.lib99j$checkMods(this.lib99j$getActiveTranslationChecker());
@@ -217,7 +220,7 @@ public abstract class ServerPlayerMixin
         int total = entries.size();
         int lines = 3;
         int count = (int) Math.ceil((double) total / lines);
-        BlockPos pos = new BlockPos(player.blockPosition().getX(), player.level().getMinY(), player.blockPosition().getZ());
+        BlockPos pos = new BlockPos(player.blockPosition().getX(), 0, player.blockPosition().getZ());
 
         for (int i = 0; i < count; i++) {
             CompoundTag nbt = new CompoundTag();

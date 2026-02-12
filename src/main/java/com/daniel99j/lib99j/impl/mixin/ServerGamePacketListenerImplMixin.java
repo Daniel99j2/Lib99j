@@ -65,16 +65,16 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
         if(packet.getPos().getY() == 0) {
             if ((Objects.equals(packet.getLines()[3], "lib99j$checker") || Objects.equals(packet.getLines()[3], "lib99j$final"))) {
                 for (int i = 0; i < 3; i++) {
-                    if(((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker() != null) ((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker().results().add(packet.getLines()[i]);
+                    if(((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning()) ((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker().results().add(packet.getLines()[i]);
                 }
                 ci.cancel();
 
                 //For the sneaky players doing random stuff...
                 //I can remove it if it actually causes problems
                 //But it's a good deterrent for silly players
-                if (player.level().getBlockEntity(packet.getPos()) instanceof SignBlockEntity && ((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker() == null) {
-                    disconnect(Component.nullToEmpty("Do not try and spoof the mod checker!"));
-                    Lib99j.LOGGER.warn(player.getName() + " tried to spoof the mod checker!");
+                if (player.level().getBlockEntity(packet.getPos()) instanceof SignBlockEntity && !((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning()) {
+                    disconnect(Component.literal("Do not try and spoof the mod checker!"));
+                    Lib99j.LOGGER.warn(player.getName().getString() + " tried to spoof the mod checker!");
                 }
             }
             if (Objects.equals(packet.getLines()[3], "lib99j$final")) {

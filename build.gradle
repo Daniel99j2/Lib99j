@@ -71,7 +71,7 @@ dependencies {
 
 	modImplementation ("com.terraformersmc:modmenu:17.0.0-beta.2")
 
-	modImplementation include("de.tomalbrc:blockbench-import-library:1.8.0+1.21.11")
+	modCompileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
 }
 
 processResources {
