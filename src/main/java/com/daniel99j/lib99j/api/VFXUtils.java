@@ -37,11 +37,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 @SuppressWarnings({"unused"})
 public class VFXUtils {
     private static final List<CameraShakeInstance> cameraShakeInstances = new ArrayList<>();
     private static final List<GenericScreenEffectInstance> genericScreenEffectInstances = new ArrayList<>();
+    private static final Map<Identifier, BiConsumer<ServerPlayer, ServerboundMovePlayerPacket>> cameraLockEventHandlers = new HashMap<>();
 
     @ApiStatus.Internal
     public static void tick() {
@@ -75,6 +77,14 @@ public class VFXUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Creates a handler for whenever the player tries to move their positon or camera whilst camera locked with the matching source id
+     */
+    public static void registerCameraLockHandler(Identifier source, BiConsumer<ServerPlayer, ServerboundMovePlayerPacket> event) {
+        if(cameraLockEventHandlers.containsKey(source)) throw new IllegalStateException("Camera handler '" + source.toString() + "' is already registered");
+        cameraLockEventHandlers.put(source, event);
     }
 
     public static void shake(ServerPlayer player, int ticks, float strength, Identifier source) {
@@ -258,7 +268,7 @@ public class VFXUtils {
     }
 
     public static boolean hasGenericScreenEffectSource(ServerPlayer player, GENERIC_SCREEN_EFFECT effect, Identifier source) {
-        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && instance.source == source && !instance.isFinished());
+        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && instance.source.equals(source) && !instance.isFinished());
     }
 
     public static List<GenericScreenEffectInstance> getGenericScreenEffectInstances() {
@@ -325,6 +335,15 @@ public class VFXUtils {
                     pos.x, pos.y, pos.z, 0, 0,
                     entityType, 0, Vec3.ZERO, 0d));
         };
+    }
+
+    @ApiStatus.Internal
+    public static void handleMovePacket(ServerboundMovePlayerPacket packet, ServerPlayer player) {
+        cameraLockEventHandlers.forEach(((identifier, serverPlayerObjectBiConsumer) -> {
+            genericScreenEffectInstances.stream().filter(instance -> instance.player == player && instance.source.equals(identifier) && instance.effect == GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS && !instance.isFinished()).forEach((match) -> {
+                serverPlayerObjectBiConsumer.accept(player, packet);
+            });
+        }));
     }
 
     public enum GENERIC_SCREEN_EFFECT {

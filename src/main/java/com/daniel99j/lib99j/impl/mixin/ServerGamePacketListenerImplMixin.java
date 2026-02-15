@@ -37,6 +37,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
     private void disablePlayerMove(ServerboundMovePlayerPacket packet, CallbackInfo ci) {
         PacketUtils.ensureRunningOnSameThread(packet, (ServerGamePacketListener) this, this.server.packetProcessor());
         if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
+            VFXUtils.handleMovePacket(packet, this.player);
             ci.cancel();
         }
         if (PonderManager.isPondering(this.player)) {

@@ -14,6 +14,7 @@ import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.DisplayElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -122,6 +123,8 @@ public abstract class ServerPlayerMixin
         this.lib99j$cameraPoint.setInvisible(true);
         this.lib99j$holder.addElement(this.lib99j$cameraPoint);
         getPlayer().connection.send(VirtualEntityUtils.createSetCameraEntityPacket(this.lib99j$cameraPoint.getEntityId()));
+        getPlayer().connection.send(VirtualEntityUtils.createRidePacket(this.lib99j$cameraPoint.getEntityId(), IntList.of(getId())));
+        getPlayer().connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
         getPlayer().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SPECTATOR.getId()));
         lib99j$setCameraPos(getPlayer().getEyePosition());
     }

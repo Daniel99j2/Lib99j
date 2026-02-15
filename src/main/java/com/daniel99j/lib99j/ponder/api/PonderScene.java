@@ -3,7 +3,6 @@ package com.daniel99j.lib99j.ponder.api;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
-import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
 import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
@@ -82,7 +81,7 @@ public class PonderScene {
 
         this.player = player;
         this.player.connection.send(new ClientboundSetTitleTextPacket(Component.nullToEmpty("FADE EFFECT")));
-        this.player.connection.send(new ClientboundSetSubtitleTextPacket(GuiUtils.colourText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), 0x000000)));
+        this.player.connection.send(new ClientboundSetSubtitleTextPacket(DefaultGuiTextures.BIG_WHITE_SQUARE.text().withColor(0x000000)));
         this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 10000, 5));
 
         this.builder = builder;

@@ -38,7 +38,6 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -139,6 +138,10 @@ public class Lib99j implements ModInitializer {
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
             
             if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                VFXUtils.registerCameraLockHandler(Identifier.fromNamespaceAndPath("ponder", "ponder_lock"), ((player, serverboundMovePlayerPacket) -> {
+                    LOGGER.info("xrot: {}, yrot: {}", serverboundMovePlayerPacket.getXRot(0), serverboundMovePlayerPacket.getYRot(0));
+                }));
+
                 builder.then(Commands.literal("translationcheck")
                         .executes((context) -> {
                             GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray"), (e) -> {
@@ -149,15 +152,7 @@ public class Lib99j implements ModInitializer {
                                 context.getSource().getPlayer().sendSystemMessage(Component.literal("failed: " + e.checkFailed()));
                                 context.getSource().getPlayer().sendSystemMessage(Component.literal("blocked: " + e.translationCheckBlocked()));
                             });
-                            return 1;
-                        })
-                        .build());
-
-                builder.then(Commands.literal("textcheck")
-                        .executes((context) -> {
-                            context.getSource().sendSystemMessage(GuiUtils.styleText(Component.literal("test").append(Component.literal("aa").setStyle(Style.EMPTY.withBold(true))), Style.EMPTY.withUnderlined(true)));
-                            context.getSource().sendSystemMessage(GuiUtils.colourText(Component.literal("test").append(Component.literal("aa").setStyle(Style.EMPTY.withBold(true))), 0xff00ff));
-                            return 1;
+                              return 1;
                         })
                         .build());
 

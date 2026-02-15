@@ -10,8 +10,7 @@
     "PlayerListAccessor",
     "ServerCommonPacketListenerImplMixin",
     "ServerGamePacketListenerImplMixin",
-    "ServerPlayerMixin",
-    "StyleAccessor"
+    "ServerPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
