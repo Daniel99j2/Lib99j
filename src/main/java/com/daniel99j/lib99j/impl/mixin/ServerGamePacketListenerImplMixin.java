@@ -48,7 +48,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
     @Inject(method = "handlePlayerAction", at = @At("HEAD"), cancellable = true)
     private void onAction(ServerboundPlayerActionPacket packet, CallbackInfo ci) {
         if ((packet.getAction() == ServerboundPlayerActionPacket.Action.DROP_ITEM || packet.getAction() == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) && PonderManager.isPondering(this.player)) {
-            PonderManager.activeScenes.get(this.player).stopPondering();
+            PonderManager.activeScenes.get(this.player).stopPonderingSafely();
             ci.cancel();
         }
     }
@@ -74,7 +74,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
                 //I can remove it if it actually causes problems
                 //But it's a good deterrent for silly players
                 if (player.level().getBlockEntity(packet.getPos()) instanceof SignBlockEntity && !((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning()) {
-                    disconnect(Component.literal("Do not try and spoof the mod checker!"));
+                    disconnect(Component.translatable("multiplayer.disconnect.spoof_mod_checker"));
                     Lib99j.LOGGER.warn(player.getName().getString() + " tried to spoof the mod checker!");
                 }
             }

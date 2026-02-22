@@ -60,9 +60,11 @@ public class Lib99jClient implements ClientModInitializer {
                             CommandBlockEntity be = new CommandBlockEntity(BlockPos.ZERO, Blocks.REPEATING_COMMAND_BLOCK.defaultBlockState());
                             be.setAutomatic(true);
                             be.setPowered(true);
-                            be.conditionMet = true;
+                            be.conditionMet = false;
+                            be.setChanged();;
                             be.getCommandBlock().setCommand("setblock ~ ~ ~ " + block.properties().id.identifier());
                             TagValueOutput view = TagValueOutput.createWithoutContext(null);
+                            var t = "/setblock -3 0 -2 minecraft:repeating_command_block[conditional=false,facing=south]{Command:\"setblock ~ ~ ~ minecraft:light_blue_wall_banner\",SuccessCount:0,TrackOutput:1b,UpdateLastExecution:1b,auto:1b,components:{\"minecraft:item_name\":{translate:\"block.minecraft.light_blue_banner\"}},conditionMet:0b,powered:0b}";
                             be.saveWithFullMetadata(view);
                             stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BlockEntityType.COMMAND_BLOCK, CustomData.of(view.buildResult()).copyTag()));
                             entries.accept(stack);

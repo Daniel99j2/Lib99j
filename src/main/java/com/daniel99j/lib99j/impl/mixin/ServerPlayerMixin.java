@@ -4,6 +4,7 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.daniel99j.lib99j.impl.PlayerElementHolder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.polymer.core.api.entity.PolymerEntity;
@@ -47,7 +48,7 @@ import java.util.function.Consumer;
 
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerMixin
-        extends Player implements PolymerEntity, Lib99jPlayerUtilController {
+        extends Player implements PolymerEntity, Lib99jPlayerUtilController, PlayerElementHolder {
     @Shadow
     private @Nullable Entity camera;
     @Unique
@@ -71,7 +72,6 @@ public abstract class ServerPlayerMixin
         VFXUtils.stopAllShaking(getPlayer());
         VFXUtils.clearGenericScreenEffects(getPlayer());
     }
-
     @Unique
     private ServerPlayer getPlayer() {
         Player player = this;
@@ -80,6 +80,8 @@ public abstract class ServerPlayerMixin
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void tick(CallbackInfo ci) {
+        //Might be janky but it works.
+        //The constructor doesn't work because the player isn't initialised
         if (this.lib99j$holder == null) {
             this.lib99j$holder = new ElementHolder();
             this.lib99j$holder.setAttachment(new EntityAttachment(this.lib99j$holder, getPlayer(), true));
@@ -263,5 +265,10 @@ public abstract class ServerPlayerMixin
     @Override
     public Vec3 lib99j$getCameraWorldPos() {
         return this.lib99j$cameraPoint.getOffset();
+    }
+
+    @Override
+    public ElementHolder lib99j$getPlayerElementHolder() {
+        return this.lib99j$holder;
     }
 }

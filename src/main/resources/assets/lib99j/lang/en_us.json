@@ -1,3 +1,7 @@
 {
-  "lib99j.translations_available": "Yep they are available!"
+  "lib99j.translations_available": "Yep they are available!",
+  "lib99j.q_to_stop_pondering": "Press %1$s to stop pondering",
+  "multiplayer.disconnect.spoof_mod_checker": "Do not try and spoof the mod checker!",
+  "commands.lib99j.vfx.success": "Started vfx",
+  "commands.lib99j.vfx.success_clear": "Cleared Vfx"
 }

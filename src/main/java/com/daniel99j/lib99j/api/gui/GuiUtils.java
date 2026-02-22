@@ -25,6 +25,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomModelData;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -199,6 +200,8 @@ public class GuiUtils {
             else assetWriter.accept("assets/" + texture.path().getNamespace() + "/items/gen/" + texture.base() + "/" + texture.path().getPath() + ".json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(texture.path().getNamespace(), baseAndPath), List.of())).toJson().getBytes());
 
         }
+
+        assetWriter.accept("assets/lib99j/items/gen/ui/solid_colour_box.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour_box"), List.of())).toJson().getBytes());
     }
 
     public static GuiElementBuilder generateTexture(Identifier path) {
@@ -207,6 +210,15 @@ public class GuiUtils {
 
     public static GuiElementBuilder generateColourableTexture(Identifier path) {
         return generateTextureInternal(path, true);
+    }
+
+    public static ItemStack colourItemData(ItemStack stack, int colour) {
+        CustomModelData data = stack.has(DataComponents.CUSTOM_MODEL_DATA) ? stack.get(DataComponents.CUSTOM_MODEL_DATA) : new CustomModelData(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        List<Integer> tints = new ArrayList<>(data.colors());
+        if(tints.isEmpty()) tints.add(colour);
+        else tints.set(0, colour);
+        stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(data.floats(), data.flags(), data.strings(), tints));
+        return stack;
     }
 
     private static GuiElementBuilder generateTextureInternal(Identifier path, boolean coloured) {

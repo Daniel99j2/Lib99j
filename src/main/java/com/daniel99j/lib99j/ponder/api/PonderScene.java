@@ -2,7 +2,10 @@ package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.*;
+import com.daniel99j.lib99j.api.gui.BackgroundTexture;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
+import com.daniel99j.lib99j.api.gui.GuiUtils;
+import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
 import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
@@ -10,6 +13,8 @@ import com.mojang.serialization.Lifecycle;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
+import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -18,6 +23,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.configuration.ClientboundRegistryDataPacket;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -25,18 +31,22 @@ import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.RandomSequences;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
@@ -64,6 +74,7 @@ public class PonderScene {
     private final ServerPlayer packetRedirector;
     private final BlockPos origin;
     private boolean isToBeRemoved = false;
+    private boolean isToBeStopped = false;
     private final ServerBossEvent displayTopBar;
     private Vec3 cameraPos = Vec3.ZERO;
     private Vec2 cameraRotation = new Vec2(45, -45);
@@ -98,6 +109,8 @@ public class PonderScene {
         VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
         VFXUtils.addGenericScreenEffect(player, -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
 
+        this.player.connection.send(new ClientboundSetActionBarTextPacket(Component.translatable("lib99j.q_to_stop_pondering", Component.keybind("key.drop"))));
+
         BlockPos farPos = EntityUtils.getFarPos(player);
         this.origin = new BlockPos(farPos.getX(), builder.y, farPos.getZ());
         this.cameraPos = Vec3.atCenterOf(this.origin).add(-builder.sizeX/4.0f, builder.sizeY/2.0f, -builder.sizeZ/4.0f);
@@ -106,7 +119,7 @@ public class PonderScene {
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
 
         this.worldKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ponder", "scene_" + this.uuid));
-        this.world = new ServerLevel(Lib99j.getServerOrThrow(), Lib99j.getServerOrThrow().executor, Lib99j.getServerOrThrow().storageSource, new PrimaryLevelData(new LevelSettings("Ponder (Temporary world)", GameType.CREATIVE, player.level().getLevelData().isHardcore(), player.level().getDifficulty(), true, player.level().getGameRules(), WorldDataConfiguration.DEFAULT), new WorldOptions(0, false, false), PrimaryLevelData.SpecialWorldProperty.FLAT, Lifecycle.experimental()), worldKey, new LevelStem(player.level().dimensionTypeRegistration(), new EmptyChunkGenerator(Biomes.THE_VOID, 0)), false, 0, List.of(), true, new RandomSequences()) {
+        this.world = new ServerLevel(Lib99j.getServerOrThrow(), Lib99j.getServerOrThrow().executor, Lib99j.getServerOrThrow().storageSource, new PrimaryLevelData(new LevelSettings("Ponder (Temporary world)", GameType.CREATIVE, player.level().getLevelData().isHardcore(), player.level().getDifficulty(), true, player.level().getGameRules(), WorldDataConfiguration.DEFAULT), new WorldOptions(0, false, false), PrimaryLevelData.SpecialWorldProperty.FLAT, Lifecycle.experimental()), worldKey, new LevelStem(player.level().dimensionTypeRegistration(), new EmptyChunkGenerator(builder.defaultBiome, 0)), false, 0, List.of(), true, new RandomSequences()) {
             @Override
             public boolean noSave() {
                 return true;
@@ -119,46 +132,9 @@ public class PonderScene {
 
         this.packetRedirector.updateOptions(new ClientInformation("ponder", 32, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, true, false, ParticleStatus.ALL));
 
-        try {
-//            LocalChannel channel = new LocalChannel();
-//            ((LocalChannelAccessor) channel).lib99j$setState("CONNECTED");
-//
-//            channel.unsafe().register(new DefaultEventLoop(), new DefaultChannelPromise(channel));
-
-//            EmbeddedChannel channel = new EmbeddedChannel(new ChannelInboundHandlerAdapter() {
-//                @Override
-//                public void channelRead(ChannelHandlerContext ctx, Object msg) {
-//                    // swallow
-//                    ReferenceCountUtil.release(msg);
-//                }
-//            });
-//            channel.pipeline().fireChannelActive();
-//
-//            this.packetRedirector.networkHandler.connection.channel = channel;
-        } catch (Exception e) {
-            throw e;
-            //e.printStackTrace();
-        }
-
-        //Lib99j.getServerOrThrow().getPlayerManager().players.add(this.packetRedirector);
-        //Lib99j.getServerOrThrow().getPlayerManager().playerMap.put(this.packetRedirector.getUuid(), this.packetRedirector);
-
         CommonListenerCookie connectedClientData = CommonListenerCookie.createInitial(this.packetRedirector.getGameProfile(), false);
 
-//        this.packetRedirector.networkHandler.connection.transitionOutbound(PlayStateFactories.S2C.bind(RegistryByteBuf.makeFactory(Lib99j.getServerOrThrow().getRegistryManager())));
-//        this.packetRedirector.networkHandler.connection.transitionInbound(ConfigurationStates.C2S, new ServerConfigurationNetworkHandler(Lib99j.getServerOrThrow(), this.packetRedirector.networkHandler.connection, connectedClientData));
-
         ServerConfigurationPacketListenerImpl serverConfigurationNetworkHandler = new ServerConfigurationPacketListenerImpl(Lib99j.getServerOrThrow(), this.packetRedirector.connection.connection, connectedClientData);
-
-        //player.networkHandler.sendPacket(PlayerListS2CPacket.entryFromPlayer(List.of(this.packetRedirector)));
-
-        //world.getChunkManager().chunkLoadingManager.playerChunkWatchingManager.add(this.packetRedirector, false);
-
-        //world.addPlayer(this.packetRedirector);
-
-        //player.networkHandler.sendPacket(PlayerPositionLookS2CPacket.of(-1, new EntityPosition(Vec3d.of(renderPos), Vec3d.ZERO, 0, 0), Set.of(PositionFlag.X, PositionFlag.Y, PositionFlag.Z)));
-
-        //player.networkHandler.sendPacket(new PlayerRespawnS2CPacket(player.createCommonPlayerSpawnInfo(serverWorld), PlayerRespawnS2CPacket.KEEP_ALL));
 
         for (int i = 0; i < builder.sizeX; i++) {
             for (int j = 0; j < builder.sizeZ; j++) {
@@ -167,9 +143,11 @@ public class PonderScene {
             }
         }
 
-        //player.networkHandler.sendPacket(new CloseScreenS2CPacket(0));
+        player.connection.send(new ClientboundContainerClosePacket(-1));
 
-        this.displayTopBar = new ServerBossEvent(this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_20);
+        this.displayTopBar = new ServerBossEvent(this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
+
+        ((BossBarVisibility) this.displayTopBar).lib99j$setVisible(false);
 
         this.elementHolder = new ElementHolder();
         this.elementHolder.setAttachment(ChunkAttachment.ofTicking(this.elementHolder, this.getWorld(), Vec3.ZERO));
@@ -200,10 +178,10 @@ public class PonderScene {
             @Override
             public void send(@NonNull Packet<?> packet) {
                 PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
-                if (info == null || !player1.connection.isAcceptingMessages() || !(info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT))) {
+                if (info == null || !player1.connection.isAcceptingMessages()) {
                     return;
-                }
-                ;
+                };
+                if(info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
                 player1.connection.send(new Lib99j.BypassPacket(packet));
             }
         };
@@ -212,14 +190,6 @@ public class PonderScene {
 
         world.addDuringTeleport(this.packetRedirector);
 
-//        connection.transitionInbound(
-//                PlayStateFactories.C2S.bind(RegistryByteBuf.makeFactory(Lib99j.getServerOrThrow().getRegistryManager()), this.packetRedirector.networkHandler), this.packetRedirector.networkHandler
-//        );
-//
-//        this.packetRedirector.networkHandler.enableFlush();
-
-        //FINISH
-
         this.packetRedirector.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(this.origin.getX()), SectionPos.blockToSectionCoord(this.origin.getZ())));
 
         this.packetRedirector.setPosRaw(this.origin.getX(), this.origin.getY(), this.origin.getZ());
@@ -227,11 +197,17 @@ public class PonderScene {
         this.packetRedirector.connection.send(ClientboundBossEventPacket.createAddPacket(this.displayTopBar));
         ChunkSenderUtil.sendRegion(this.packetRedirector, new ChunkPos(SectionPos.blockToSectionCoord(this.origin.getX()) - 5, SectionPos.blockToSectionCoord(this.origin.getZ()) - 5), new ChunkPos(SectionPos.blockToSectionCoord(this.origin.getX()) + 5, SectionPos.blockToSectionCoord(this.origin.getZ()) + 5), this.world);
 
-        //PolymerUtils.reloadWorld(this.packetRedirector);
-
         this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 0, 10));
 
         this.elementHolder.startWatching(player);
+
+        ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.asStack(), 0x111111));
+        background.setBrightness(new Brightness(0, 0));
+        background.setOverridePos(origin.getBottomCenter());
+        background.setTranslation(new Vector3f(builder.sizeX/2-10, builder.sizeY/2-10, builder.sizeZ/2-10));
+        background.setScale(new Vector3f(-builder.sizeX-20, -builder.sizeY-20, -builder.sizeZ-20));
+
+        this.elementHolder.addElement(background);
     }
 
     public ElementHolder getElementHolder() {
@@ -246,28 +222,35 @@ public class PonderScene {
         return this.origin;
     }
 
+    //Use this if you are for example, currently in a tick loop with entities to avoid ConcurrentModificationException
+    public void stopPonderingSafely() {
+        this.isToBeStopped = true;
+    }
+
     public void stopPondering() {
+        Lib99j.getServerOrThrow().getPlayerList().remove(this.packetRedirector);
         this.isToBeRemoved = true;
         VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
         VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
         this.elementHolder.destroy();
-        this.world.removePlayerImmediately(this.packetRedirector, Entity.RemovalReason.DISCARDED);
         this.player.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.posToSectionCoord(this.player.getX()), SectionPos.posToSectionCoord(this.player.getZ())));
         PolymerUtils.reloadWorld(this.player);
         this.player.connection.send(ClientboundBossEventPacket.createRemovePacket(this.displayTopBar.getId()));
         this.player.connection.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
 
+        Lib99j.getServerOrThrow().levels.remove(worldKey);
+
         try {
-            Files.walkFileTree(Lib99j.getServer().storageSource.getDimensionPath(worldKey), new SimpleFileVisitor<>() {
+            Files.walkFileTree(Lib99j.getServerOrThrow().storageSource.getDimensionPath(worldKey), new SimpleFileVisitor<>() {
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.deleteIfExists(file);
+                public @NotNull FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    Files.deleteIfExists(dir);
+                public @NotNull FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -295,7 +278,8 @@ public class PonderScene {
     }
 
     public void tick() {
-        if (this.isToBeRemoved()) return;
+        if(this.isToBeStopped) this.stopPondering();
+        if(this.isToBeRemoved()) return;
 
         this.activeInstructions.removeIf((instruction) -> instruction.isComplete(this));
 

@@ -301,19 +301,19 @@ public class VFXUtils {
         }
     }
 
-    public static void fireworkExplode(List<ServerPlayer> players, List<FireworkExplosion> explosions, Vec3 pos, Vec3 velocity) {
-        fireworkExplode(players, explosions, pos, velocity, 123456, 0);
+    public static void fireworkExplode(List<ServerPlayer> players, List<FireworkExplosion> explosions, Vec3 pos) {
+        fireworkExplode(players, explosions, pos, new Vec3(0, 1, 0));
     }
 
-    public static void fireworkExplode(List<ServerPlayer> players, List<FireworkExplosion> explosions, Vec3 pos, Vec3 velocity, float pitch, float yaw) {
-        boolean angle = pitch != 123456;
+    public static void fireworkExplode(List<ServerPlayer> players, List<FireworkExplosion> explosions, Vec3 pos, Vec3 velocity) {
+        boolean angle = !velocity.equals(new Vec3(0, 1, 0));
         ItemStack fireworkStack = Items.FIREWORK_ROCKET.getDefaultInstance();
         fireworkStack.set(DataComponents.FIREWORKS, new Fireworks(1, explosions));
         fireworkStack.set(DataComponents.ITEM_MODEL, Identifier.withDefaultNamespace("air"));
 
         int id = VirtualEntityUtils.requestEntityId();
         ClientboundBundlePacket bundle = new ClientboundBundlePacket(List.of(new ClientboundAddEntityPacket(id, UUID.randomUUID(),
-                        pos.x, pos.y, pos.z, angle ? pitch : 0,  angle ? yaw : 0,
+                        pos.x, pos.y, pos.z, 0, 0,
                         EntityType.FIREWORK_ROCKET, 0, velocity, 0d),
                 new ClientboundSetEntityDataPacket(id, List.of(
                         SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, fireworkStack),

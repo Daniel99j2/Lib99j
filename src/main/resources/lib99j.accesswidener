@@ -39,3 +39,7 @@ accessible field net/minecraft/server/players/PlayerList players Ljava/util/List
 accessible field net/minecraft/server/players/PlayerList playersByUUID Ljava/util/Map;
 accessible method net/minecraft/server/level/ServerLevel addPlayer (Lnet/minecraft/server/level/ServerPlayer;)V
 accessible method net/minecraft/server/network/ServerCommonPacketListenerImpl createCookie (Lnet/minecraft/server/level/ClientInformation;)Lnet/minecraft/server/network/CommonListenerCookie;
+accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$Operation
+accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$AddOperation
+accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$UpdateStyleOperation
+accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$OperationType

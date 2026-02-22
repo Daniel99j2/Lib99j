@@ -1,8 +1,10 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.PlayPacketUtils;
 import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.ponder.impl.PonderManager;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import io.netty.channel.ChannelFutureListener;
@@ -13,6 +15,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -29,22 +32,48 @@ import java.util.ArrayList;
 @Mixin(ServerCommonPacketListenerImpl.class)
 public abstract class ServerCommonPacketListenerImplMixin {
 
-    @Shadow public abstract void resumeFlushing();
-
     @Shadow public abstract void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener);
-
-    @Shadow public abstract void send(Packet<?> packet);
-
-    @Unique
-    private volatile boolean lib99j$fromThis; //volatile makes it so all the threads have the same value
 
     @Inject(method = "send", at = @At("HEAD"), cancellable = true, order = 1001)
     private void cancelUnwantedPackets(Packet<?> packet, CallbackInfo ci) {
-        if (this instanceof ServerPlayerConnection networkHandler && !lib99j$fromThis) {
+        if (packet instanceof Lib99j.BypassPacket(Packet<?> packet1)) {
+            ci.cancel();
+            send(packet1, null);
+        } else if (this instanceof ServerPlayerConnection networkHandler) {
             ServerPlayer player = networkHandler.getPlayer();
+
+            if(PonderManager.isPondering(player)) {
+                PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
+                //dont send world packets, but update display entities so that vfx still works!
+                if (info != null && info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT) && !info.hasTag(PlayPacketUtils.PacketTag.ENTITY)) {
+                    ci.cancel();
+                    return;
+                }
+            }
+
+            if(GameProperties.isHideableBossBar() && packet instanceof ClientboundBossEventPacket clientboundBossEventPacket && clientboundBossEventPacket instanceof BossBarVisibility visibility) {
+                if(((BossbarAccessor) clientboundBossEventPacket).getOperation().getType() == ClientboundBossEventPacket.OperationType.ADD) {
+                    BossEvent.BossBarColor colour = ((BossbarAccessor2) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).getColor();
+                    if(!visibility.lib99j$isVisible()) {
+                        ((BossbarAccessor2) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).setColor(BossEvent.BossBarColor.YELLOW);
+                    } else if(visibility.lib99j$isVisible() && colour == BossEvent.BossBarColor.YELLOW) {
+                        ((BossbarAccessor2) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).setColor(BossEvent.BossBarColor.WHITE);
+                    }
+                }
+
+                if(((BossbarAccessor) clientboundBossEventPacket).getOperation().getType() == ClientboundBossEventPacket.OperationType.UPDATE_STYLE) {
+                    BossEvent.BossBarColor colour = ((BossbarAccessor3) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).getColor();
+                    if(!visibility.lib99j$isVisible()) {
+                        ((BossbarAccessor3) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).setColor(BossEvent.BossBarColor.YELLOW);
+                    } else if(visibility.lib99j$isVisible() && colour == BossEvent.BossBarColor.YELLOW) {
+                        ((BossbarAccessor3) ((BossbarAccessor) clientboundBossEventPacket).getOperation()).setColor(BossEvent.BossBarColor.WHITE);
+                    }
+                }
+            }
+
             if (packet instanceof ClientboundSetBorderWarningDistancePacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.RED_TINT))
                 ci.cancel();
-            else if (packet instanceof ClientboundUpdateMobEffectPacket || packet instanceof ClientboundRemoveMobEffectPacket entityStatusEffectS2CPacket2 && VFXUtils.hasEffectEffect(player)) {
+            else if (packet instanceof ClientboundUpdateMobEffectPacket || packet instanceof ClientboundRemoveMobEffectPacket && VFXUtils.hasEffectEffect(player)) {
                 Holder<MobEffect> effectId;
                 if (packet instanceof ClientboundUpdateMobEffectPacket) {
                     effectId = ((ClientboundUpdateMobEffectPacket) packet).getEffect();
@@ -80,26 +109,11 @@ public abstract class ServerCommonPacketListenerImplMixin {
                 ci.cancel();
             else if (packet instanceof ClientboundSetCameraPacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS))
                 ci.cancel();
-
-
-
-            if (packet instanceof Lib99j.BypassPacket(Packet<?> packet1)) {
-                ci.cancel();
-                send(packet1, null);
-            } else if(PonderManager.isPondering(player)) {
-                PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
-                //dont send world packets, but update display entities so that vfx still works!
-                if (info != null && info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT) && !info.hasTag(PlayPacketUtils.PacketTag.ENTITY)) {
-                    ci.cancel();
-                }
-            }
         }
     }
 
     @Unique
     private void sendFromThis(Packet<?> packet) {
-        lib99j$fromThis = true;
-        ((ServerCommonPacketListenerImpl) (Object) this).send(packet);
-        lib99j$fromThis = false;
+        ((ServerCommonPacketListenerImpl) (Object) this).send(new Lib99j.BypassPacket(packet));
     }
 }

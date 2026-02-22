@@ -3,16 +3,26 @@
   "package": "com.daniel99j.lib99j.impl.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BossbarAccessor",
+    "BossbarAccessor2",
+    "BossbarAccessor3",
+    "BossbarMixin",
+    "BossbarPacketMixin",
     "CommandsMixin",
     "CommandSourceStackMixin",
     "DamageSourceMixin",
     "LivingEntityMixin",
     "PlayerListAccessor",
+    "RegistrySynchronizationMixin",
     "ServerCommonPacketListenerImplMixin",
+    "ServerConfigPacketListenerImplMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "client": [
+    "GoAwayExperimentalWarningMixin"
+  ]
 }

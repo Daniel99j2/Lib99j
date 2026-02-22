@@ -16,14 +16,14 @@ import java.util.ArrayList;
 
 public class PonderBuilder {
     protected ArrayList<PonderStep> steps = new ArrayList<>();
-    protected Component title = Component.nullToEmpty("Title not specified");
+    protected Component title = Component.literal("Title not specified");
     protected int sizeX = 10;
     protected int sizeY = 10;
     protected int sizeZ = 10;
     protected int y = 60;
     protected ResourceKey<Biome> defaultBiome = Biomes.PLAINS;
     protected BlockState state1 = Blocks.SNOW_BLOCK.defaultBlockState();
-    protected BlockState state2 = Blocks.GRAY_CONCRETE.defaultBlockState();
+    protected BlockState state2 = Blocks.COAL_BLOCK.defaultBlockState();
     
     private boolean done = false;
     private ArrayList<PonderInstruction> currentStepInstructions = new ArrayList<>();
@@ -35,7 +35,7 @@ public class PonderBuilder {
     }
 
     public PonderBuilder instruction(PonderInstruction instruction) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.currentStepInstructions.add(instruction);
         if(instruction instanceof WaitInstruction) {
             Lib99j.LOGGER.warn("builder.wait() should be used instead of adding a WaitInstruction");
@@ -44,7 +44,7 @@ public class PonderBuilder {
     }
 
     public PonderBuilder size(int sizeX, int sizeY, int sizeZ) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
@@ -52,51 +52,51 @@ public class PonderBuilder {
     }
 
     public PonderBuilder defaultBiome(ResourceKey<Biome> defaultBiome) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.defaultBiome = defaultBiome;
         return this;
     }
 
     public PonderBuilder title(String title) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.title = Component.literal(title);
         return this;
     }
 
     public PonderBuilder title(Component title) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.title = title;
         return this;
     }
 
     public PonderBuilder floorBlocks(BlockState state1, BlockState state2) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.state1 = state1;
         this.state2 = state2;
         return this;
     }
 
     public PonderBuilder yLevel(int level) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.y = level;
         return this;
     }
 
     public PonderBuilder wait(int time) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.currentStepInstructions.add(new WaitInstruction(time));
         return this;
     }
 
     public PonderBuilder finishStep(Component title, Component description) {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         this.steps.add(new PonderStep(title, description, new ArrayList<>(this.currentStepInstructions)));
         this.currentStepInstructions.clear();
         return this;
     }
     
     public PonderBuilder build() {
-        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+        this.throwIfBuilt();
         if(!this.currentStepInstructions.isEmpty()) {
             throw new IllegalStateException("Run builder.finishStep() before builder.build()");
         }
@@ -108,4 +108,8 @@ public class PonderBuilder {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
         return new PonderScene(player, this);
     };
+    
+    private void throwIfBuilt() {
+        if(this.done) throw new IllegalStateException("PonderBuilder has already been built");
+    }
 }

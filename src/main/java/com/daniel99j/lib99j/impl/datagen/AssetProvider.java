@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.impl.datagen;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.SoundUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.ServerParticleManager;
@@ -12,6 +13,7 @@ import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.util.Util;
+import net.minecraft.world.BossEvent;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +55,15 @@ public class AssetProvider implements DataProvider {
         });
 
         assetWriter.accept("assets/" + Lib99j.MOD_ID + "/sounds.json", sounds.toString().getBytes(StandardCharsets.UTF_8));
+
+        if(GameProperties.isHideableBossBar()) {
+            try {
+                assetWriter.accept("assets/minecraft/textures/gui/sprites/boss_bar/yellow_progress.png", Lib99j.class.getResourceAsStream("/assets/lib99j/textures/asset/boss_bar/yellow_progress.png").readAllBytes());
+                assetWriter.accept("assets/minecraft/textures/gui/sprites/boss_bar/yellow_background.png", Lib99j.class.getResourceAsStream("/assets/lib99j/textures/asset/boss_bar/yellow_background.png").readAllBytes());
+            } catch (IOException e) {
+                Lib99j.LOGGER.error("Failed to load invisible bossbar", e);
+            }
+        }
     }
 
     @Override

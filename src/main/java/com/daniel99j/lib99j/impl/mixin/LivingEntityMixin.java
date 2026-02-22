@@ -16,7 +16,7 @@ public abstract class LivingEntityMixin {
     private void lib99j$stopPondering(ServerLevel world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if(((Object) this) instanceof ServerPlayer player) {
             if(PonderManager.isPondering(player)) {
-                PonderManager.activeScenes.get(player).stopPondering();
+                PonderManager.activeScenes.get(player).stopPonderingSafely();
             }
         }
     }

@@ -1,9 +1,6 @@
 package com.daniel99j.lib99j;
 
-import com.daniel99j.lib99j.api.ChunkSenderUtil;
-import com.daniel99j.lib99j.api.CustomEvents;
-import com.daniel99j.lib99j.api.GameProperties;
-import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
@@ -34,16 +31,21 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistrySynchronization;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
+import net.minecraft.network.protocol.configuration.ClientboundRegistryDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -57,6 +59,7 @@ import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec2;
@@ -88,12 +91,24 @@ public class Lib99j implements ModInitializer {
         return server;
     }
 
+    public static void debug(String s) {
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            Lib99j.LOGGER.info(s);
+        }
+    }
+
+    public static void debug(String s, Object o) {
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            Lib99j.LOGGER.info(s, o);
+        }
+    }
+
     @Override
     public void onInitialize() {
         String[] list = FabricLoader.getInstance().getLaunchArguments(true);
         for (int i = 0; i < list.length; i++) {
             if(Objects.equals(list[i], "--gameDir") && list.length > i+1 && list[i+1].endsWith("\\build\\datagen")) {
-                GameProperties.runningDataGen = true;
+                GameProperties.markRunningDataGen();
                 break;
             };
         }
@@ -101,7 +116,17 @@ public class Lib99j implements ModInitializer {
         ServerParticleManager.load();
         GuiUtils.load();
 
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) TestingElements.init();
+        CustomEvents.GAME_LOADED.register(() -> {
+            if(RegUtil.currentNamespace() != null) {
+                throw new IllegalStateException("The current namespace was not cleared (currently set to {}".replace("{}", RegUtil.currentNamespace()));
+            }
+        });
+
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            RegUtil.currentModNamespace("lib99jtestelements");
+            TestingElements.init();
+            RegUtil.finishedWithNamespace("lib99jtestelements");
+        };
 
         ServerLifecycleEvents.SERVER_STARTED.register((server1) -> server = server1);
 
@@ -131,17 +156,25 @@ public class Lib99j implements ModInitializer {
             Lib99j.server = null;
         });
 
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            RegistryPacketUtils.addRegistryModification(Registries.BIOME.registry(), (id, tag) -> {
+                if(id.equals(Identifier.withDefaultNamespace("plains"))) {
+                    if (tag instanceof CompoundTag compound) {
+                        compound.putFloat("temperature", 0.0F);
+                    }
+                    return true;
+                }
+                return false;
+            });
+        }
+
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.contentModsLoaded) ServerParticleCommand.register(dispatcher);
-            if (GameProperties.contentModsLoaded) VfxCommand.register(dispatcher);
+            if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
+            if (GameProperties.areContentModsLoaded()) VfxCommand.register(dispatcher);
 
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
             
             if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                VFXUtils.registerCameraLockHandler(Identifier.fromNamespaceAndPath("ponder", "ponder_lock"), ((player, serverboundMovePlayerPacket) -> {
-                    LOGGER.info("xrot: {}, yrot: {}", serverboundMovePlayerPacket.getXRot(0), serverboundMovePlayerPacket.getYRot(0));
-                }));
-
                 builder.then(Commands.literal("translationcheck")
                         .executes((context) -> {
                             GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray"), (e) -> {
@@ -159,11 +192,10 @@ public class Lib99j implements ModInitializer {
                 builder.then(Commands.literal("toast")
                         .then(Commands.argument("icon", ItemArgument.item(registryAccess))
                                 .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
-                                        .then(Commands.argument("desc", ComponentArgument.textComponent(registryAccess))
                                                 .executes((context) -> {
                                                     GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
                                                     return 1;
-                                                })))).build());
+                                                }))).build());
 
                 builder.then(Commands.literal("clientexplode")
                         .executes((context) -> {
@@ -178,7 +210,16 @@ public class Lib99j implements ModInitializer {
                         .executes((context) -> {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
-                            VFXUtils.fireworkExplode(players, List.of(new FireworkExplosion(FireworkExplosion.Shape.STAR, IntList.of(0x0000ff), IntList.of(0xff0000), true, true)), context.getSource().getPosition(), new Vec3(1, -1, 0), 69, 42);
+                            VFXUtils.fireworkExplode(players, List.of(new FireworkExplosion(FireworkExplosion.Shape.BURST, IntList.of(0x0000ff), IntList.of(0xff0000), true, true)), context.getSource().getPosition());
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("fireworkangle")
+                        .executes((context) -> {
+                            ArrayList<ServerPlayer> players = new ArrayList<>();
+                            players.add(context.getSource().getPlayer());
+                            VFXUtils.fireworkExplode(players, List.of(new FireworkExplosion(FireworkExplosion.Shape.BURST, IntList.of(0x0000ff), IntList.of(0xff0000), true, true)), context.getSource().getPosition(), new Vec3(1, -1, 0));
                             return 1;
                         })
                         .build());
@@ -208,15 +249,6 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                builder.then(Commands.literal("noponder")
-                        .executes((context) -> {
-                            VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-                            VFXUtils.removeGenericScreenEffect(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
-                            PolymerUtils.reloadWorld(context.getSource().getPlayer());
-                            return 1;
-                        })
-                        .build());
-
                 builder.then(Commands.literal("ghostblock")
                         .executes((context) -> {
                             context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
@@ -231,56 +263,19 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
-                builder.then(Commands.literal("singleponder")
-                        .executes((context) -> {
-                            VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-                            VFXUtils.addGenericScreenEffect(context.getSource().getPlayer(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.NIGHT_VISION, Identifier.fromNamespaceAndPath("ponder", "ponder_bright"));
-
-                            ServerPlayer realPlayer = context.getSource().getPlayer();
-
-                            BlockPos renderPos = new BlockPos((int) (100000), 60, 0);
-                            VFXUtils.setCameraPos(realPlayer, Vec3.atLowerCornerOf(renderPos));
-                            realPlayer.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(renderPos.getX()), SectionPos.blockToSectionCoord(renderPos.getZ())));
-                            realPlayer.connection.send(ClientboundPlayerPositionPacket.of(-69, new PositionMoveRotation(Vec3.atLowerCornerOf(renderPos), Vec3.ZERO, 0, 0), Set.of(Relative.X, Relative.Y, Relative.Z)));
-
-                            ServerLevel serverWorld = Lib99j.getServerOrThrow().getLevel(Level.NETHER);
-
-                            Creeper creeper = new Creeper(EntityType.CREEPER, serverWorld) {
-                                @Override
-                                public void tick() {
-                                    super.tick();
-                                    this.tickCount++;
-                                    if (this.tickCount == 200) {
-                                        ChunkSenderUtil.sendRegion(realPlayer, new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) - 1, SectionPos.blockToSectionCoord(renderPos.getZ()) - 1), new ChunkPos(SectionPos.blockToSectionCoord(renderPos.getX()) + 1, SectionPos.blockToSectionCoord(renderPos.getZ()) + 1), serverWorld);
-                                        this.discard();
-                                    }
-                                }
-                            };
-                            creeper.setPosRaw(realPlayer.position().x(), realPlayer.position().y(), realPlayer.position().z());
-                            creeper.setPersistenceRequired();
-                            creeper.setNoGravity(true);
-                            realPlayer.level().addFreshEntity(creeper);
-
-                            context.getSource().sendSystemMessage(Component.nullToEmpty("done"));
-
-                            return 1;
-                        }).build());
-
-                //old
-
                 builder.then(Commands.literal("ponder")
                         .executes((context) -> {
                             context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
-                            PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).floorBlocks(Blocks.TNT.defaultBlockState(), Blocks.DIAMOND_BLOCK.defaultBlockState()).defaultBiome(Biomes.BASALT_DELTAS)
+                            PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).defaultBiome(Biomes.BASALT_DELTAS)
                                     .wait(100)
                                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin(), Blocks.PISTON.defaultBlockState());
+                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 0, 4), Blocks.PISTON.defaultBlockState());
                                     }))
                                     .wait(100)
                                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(0, 1, 0), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
                                         Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
-                                        creeper.setPosRaw(scene.getOrigin().getX() - 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() - 5);
+                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
                                         creeper.setPersistenceRequired();
                                         scene.getWorld().addFreshEntity(creeper);
                                     }))
@@ -304,9 +299,11 @@ public class Lib99j implements ModInitializer {
             }
         });
 
-        LOGGER.info("Ready to rumble!");
-
         GuiTextures.init();
+
+        GameProperties.markHideableBossBar();
+
+        LOGGER.info("Ready to rumble!");
     }
 
     public record BypassPacket(Packet<?> packet) implements Packet {

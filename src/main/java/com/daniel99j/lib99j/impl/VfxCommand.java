@@ -55,7 +55,7 @@ public class VfxCommand {
             return 0;
         }
         VFXUtils.addGenericScreenEffect(source.getPlayer(), IntegerArgumentType.getInteger(context, "ticks"), type, Identifier.withDefaultNamespace("command"));
-        source.sendSuccess(() -> Component.literal("Started vfx"), true);
+        source.sendSuccess(() -> Component.translatable("commands.lib99j.vfx.success"), true);
         return 1;
     }
 
@@ -64,7 +64,7 @@ public class VfxCommand {
         CommandSourceStack source = context.getSource();
         VFXUtils.clearGenericScreenEffects(source.getPlayer());
         VFXUtils.stopAllShaking(source.getPlayer());
-        source.sendSuccess(() -> Component.literal("Cleared vfx"), true);
+        source.sendSuccess(() -> Component.translatable("commands.lib99j.vfx.success_clear"), true);
         return 1;
     }
 }
