@@ -7,8 +7,8 @@ public class ShowItemInstruction extends PonderInstruction {
     private final int displayTime;
     private ItemStack stack;
 
-    public ShowItemInstruction(int displayTime, ItemStack stack) {
-        this.displayTime = displayTime;
+    public ShowItemInstruction(float displayTime, ItemStack stack) {
+        this.displayTime = (int) (displayTime*20);
         this.stack = stack;
     }
 

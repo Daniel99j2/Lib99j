@@ -43,3 +43,4 @@ accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$
 accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$AddOperation
 accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$UpdateStyleOperation
 accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$OperationType
+accessible field net/minecraft/server/network/ServerGamePacketListenerImpl waitingForSwitchToConfig Z

@@ -24,6 +24,7 @@ public class PonderBuilder {
     protected ResourceKey<Biome> defaultBiome = Biomes.PLAINS;
     protected BlockState state1 = Blocks.SNOW_BLOCK.defaultBlockState();
     protected BlockState state2 = Blocks.COAL_BLOCK.defaultBlockState();
+    protected boolean roof = true;
     
     private boolean done = false;
     private ArrayList<PonderInstruction> currentStepInstructions = new ArrayList<>();
@@ -82,15 +83,26 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderBuilder wait(int time) {
+    public PonderBuilder roof(boolean roof) {
+        this.throwIfBuilt();
+        this.roof = roof;
+        return this;
+    }
+
+
+    public PonderBuilder noRoof() {
+        return roof(false);
+    }
+
+    public PonderBuilder waitFor(float time) {
         this.throwIfBuilt();
         this.currentStepInstructions.add(new WaitInstruction(time));
         return this;
     }
 
-    public PonderBuilder finishStep(Component title, Component description) {
+    public PonderBuilder finishStep(String name) {
         this.throwIfBuilt();
-        this.steps.add(new PonderStep(title, description, new ArrayList<>(this.currentStepInstructions)));
+        this.steps.add(new PonderStep(name, new ArrayList<>(this.currentStepInstructions), steps.size()));
         this.currentStepInstructions.clear();
         return this;
     }

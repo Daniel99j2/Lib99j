@@ -3,10 +3,10 @@ package com.daniel99j.lib99j.ponder.impl.instruction;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 
 public class WaitInstruction extends PonderInstruction {
-    private final int waitTime;
+    public final int waitTime;
 
-    public WaitInstruction(int waitTime) {
-        this.waitTime = waitTime;
+    public WaitInstruction(float waitTime) {
+        this.waitTime = (int) (waitTime*20);
     }
 
     public boolean isComplete(PonderScene scene) {

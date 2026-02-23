@@ -1,7 +1,5 @@
 package com.daniel99j.lib99j.api;
 
-import net.fabricmc.loader.api.FabricLoader;
-
 /**
  * Many game properties such as data gen etc.
  * <p>Most are just well-educated guesses, or a flag set by a mod
@@ -20,8 +18,14 @@ public class GameProperties {
 
     private static boolean hideableBossBar = false;
 
+    private static boolean customEffectBadLuck = false;
+
     public static boolean isHideableBossBar() {
         return hideableBossBar;
+    }
+
+    public static boolean isBadLuckCustomEffect() {
+        return customEffectBadLuck;
     }
 
     public static boolean isRunningDataGen() {
@@ -32,7 +36,7 @@ public class GameProperties {
         return contentModsLoaded;
     }
 
-    public static void markHideableBossBar() {
+    public static void enableHideableBossBar() {
         GameProperties.hideableBossBar = true;
     }
 
@@ -42,5 +46,13 @@ public class GameProperties {
 
     public static void markRunningDataGen() {
         GameProperties.runningDataGen = true;
+    }
+
+    public static void enableCustomEffectBadLuck() {
+        GameProperties.customEffectBadLuck = true;
+    }
+
+    public static void enableHideableScreenBackgrounds() {
+
     }
 }

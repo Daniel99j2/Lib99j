@@ -31,8 +31,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.RegistrySynchronization;
-import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -40,30 +38,25 @@ import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
-import net.minecraft.network.protocol.configuration.ClientboundRegistryDataPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
-import net.minecraft.network.protocol.game.ClientboundSetChunkCacheCenterPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.FireworkExplosion;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -76,11 +69,13 @@ import java.util.*;
  * @see GameProperties Enabling content mod settings
  * @see com.daniel99j.lib99j.api External API's
  */
+@ApiStatus.Internal
 public class Lib99j implements ModInitializer {
     public static final String MOD_ID = "lib99j";
     public static final Logger LOGGER = LoggerFactory.getLogger("Lib99j");
     @Nullable
     private static MinecraftServer server = null;
+    public static ArrayList<ServerPlayer> additionalPlayers = new ArrayList<>();
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -151,6 +146,12 @@ public class Lib99j implements ModInitializer {
             PonderManager.tick();
         });
 
+        ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {
+            PonderManager.activeScenes.forEach(((player, ponderScene) -> {
+                ponderScene.stopPondering(true);
+            }));
+        });
+
         ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
             ServerParticleManager.clearParticles();
             Lib99j.server = null;
@@ -170,7 +171,7 @@ public class Lib99j implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
-            if (GameProperties.areContentModsLoaded()) VfxCommand.register(dispatcher);
+            if (GameProperties.areContentModsLoaded() || FabricLoader.getInstance().isDevelopmentEnvironment()) VfxCommand.register(dispatcher);
 
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
             
@@ -202,6 +203,13 @@ public class Lib99j implements ModInitializer {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
                             VFXUtils.clientSideExplode(players, new ExplosionDamageCalculator(), context.getSource().getPosition().x(), context.getSource().getPosition().y(), context.getSource().getPosition().z(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE, true);
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("clearparticles")
+                        .executes((context) -> {
+                            VFXUtils.clearParticles(context.getSource().getPlayer());
                             return 1;
                         })
                         .build());
@@ -267,28 +275,46 @@ public class Lib99j implements ModInitializer {
                         .executes((context) -> {
                             context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
                             PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).defaultBiome(Biomes.BASALT_DELTAS)
-                                    .wait(100)
+                                    .waitFor(1)
                                     .instruction(new ExecuteCodeInstruction((scene) -> {
                                         scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 0, 4), Blocks.PISTON.defaultBlockState());
                                     }))
-                                    .wait(100)
+                                    .waitFor(1)
                                     .instruction(new ExecuteCodeInstruction((scene) -> {
                                         scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
                                         Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
                                         creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
                                         creeper.setPersistenceRequired();
                                         scene.getWorld().addFreshEntity(creeper);
+                                        //scene.fastForwardUntil(2);
                                     }))
-                                    .wait(100)
-                                    .instruction(new ShowItemInstruction(1000, Items.PISTON.getDefaultInstance()))
-                                    .instruction(new ShowLineInstruction(1000, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
-                                    .wait(200)
-                                    .finishStep(Component.literal("Step Title"), Component.literal("Step Description"))
-                                    .wait(100)
-                                    .instruction(new ShowItemInstruction(1000, Items.STICKY_PISTON.getDefaultInstance()))
-                                    .instruction(new ShowLineInstruction(1000, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-                                    .wait(200)
-                                    .finishStep(Component.literal("Step Title2"), Component.literal("Step Description2"))
+                                    .waitFor(1)
+                                    .instruction(new ShowItemInstruction(1, Items.PISTON.getDefaultInstance()))
+                                    .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
+                                    .waitFor(2)
+                                    .finishStep("creeper_boom")
+                                    .waitFor(1)
+                                    .instruction(new ShowItemInstruction(1, Items.STICKY_PISTON.getDefaultInstance()))
+                                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
+                                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                                        Cow creeper = new Cow(EntityType.COW, scene.getWorld());
+                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
+                                        creeper.setPersistenceRequired();
+                                        scene.getWorld().addFreshEntity(creeper);
+                                    }))
+                                    .waitFor(2)
+                                    .finishStep("cow_moo")
+                                    .waitFor(1)
+                                    .instruction(new ShowItemInstruction(1, Items.TNT.getDefaultInstance()))
+                                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
+                                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                                        Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getWorld());
+                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
+                                        creeper.setPersistenceRequired();
+                                        scene.getWorld().addFreshEntity(creeper);
+                                    }))
+                                    .waitFor(30)
+                                    .finishStep("chicken_yum")
                                     .build()
                                     .startPondering(context.getSource().getPlayerOrException());
                             return 1;
@@ -301,7 +327,9 @@ public class Lib99j implements ModInitializer {
 
         GuiTextures.init();
 
-        GameProperties.markHideableBossBar();
+        GameProperties.enableHideableBossBar();
+
+        GameProperties.enableCustomEffectBadLuck();
 
         LOGGER.info("Ready to rumble!");
     }

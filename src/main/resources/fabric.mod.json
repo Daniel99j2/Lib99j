@@ -20,6 +20,9 @@
     ],
     "client": [
       "com.daniel99j.lib99j.Lib99jClient"
+    ],
+    "modmenu": [
+      "com.daniel99j.lib99j.impl.config.ModMenuIntegration"
     ]
   },
   "mixins": [

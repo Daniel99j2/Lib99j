@@ -2,7 +2,6 @@ package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.mojang.serialization.MapCodec;
-import eu.pb4.factorytools.api.item.FactoryBlockItem;
 import eu.pb4.polymer.core.api.block.SimplePolymerBlock;
 import eu.pb4.polymer.core.api.entity.PolymerEntityUtils;
 import eu.pb4.polymer.core.api.item.PolymerBlockItem;
@@ -19,7 +18,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
@@ -32,7 +30,6 @@ import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 public class RegUtil {
     private static String currentModNamespace = null;
@@ -74,7 +71,7 @@ public class RegUtil {
 
     // ITEM MODIFIERS
 
-    private static <T extends LootItemFunction> LootItemFunctionType<T> registerItemModifier(String id, MapCodec<T> codec) {
+    public static <T extends LootItemFunction> LootItemFunctionType<T> registerItemModifier(String id, MapCodec<T> codec) {
         LootItemFunctionType<T> out = (LootItemFunctionType) Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), id), new LootItemFunctionType(codec));
         RegistrySyncUtils.setServerEntry(BuiltInRegistries.LOOT_FUNCTION_TYPE, out);
         return out;
@@ -82,7 +79,7 @@ public class RegUtil {
 
     // ITEMS
 
-    private static Function<Item.Properties, Item> createBlockItemWithCustomItemName(Block block) {
+    public static Function<Item.Properties, Item> createBlockItemWithCustomItemName(Block block) {
         return (properties) -> new BlockItem(block, properties.useItemDescriptionPrefix());
     }
 
@@ -94,7 +91,7 @@ public class RegUtil {
         return ResourceKey.create(Registries.ITEM, resourceKey.identifier());
     }
 
-    private static Item registerSpawnEgg(EntityType<?> entityType) {
+    public static Item registerSpawnEgg(EntityType<?> entityType) {
         return registerItem(ResourceKey.create(Registries.ITEM, EntityType.getKey(entityType).withSuffix("_spawn_egg")), SpawnEggItem::new, (new Item.Properties()).spawnEgg(entityType));
     }
 

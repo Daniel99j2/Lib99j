@@ -40,7 +40,11 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
             VFXUtils.handleMovePacket(packet, this.player);
             ci.cancel();
         }
-        if (PonderManager.isPondering(this.player)) {
+    }
+
+    @Inject(method = "handleInteract", at = @At("HEAD"), cancellable = true, order = 10000)
+    private void disablePlayerInteract(ServerboundInteractPacket serverboundInteractPacket, CallbackInfo ci) {
+        if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
             ci.cancel();
         }
     }

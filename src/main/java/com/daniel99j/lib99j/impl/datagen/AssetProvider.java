@@ -13,7 +13,6 @@ import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.util.Util;
-import net.minecraft.world.BossEvent;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -62,6 +61,15 @@ public class AssetProvider implements DataProvider {
                 assetWriter.accept("assets/minecraft/textures/gui/sprites/boss_bar/yellow_background.png", Lib99j.class.getResourceAsStream("/assets/lib99j/textures/asset/boss_bar/yellow_background.png").readAllBytes());
             } catch (IOException e) {
                 Lib99j.LOGGER.error("Failed to load invisible bossbar", e);
+            }
+        }
+
+        if(GameProperties.isBadLuckCustomEffect()) {
+            try {
+                assetWriter.accept("assets/minecraft/textures/mob_effect/unluck.png", Lib99j.class.getResourceAsStream("/assets/lib99j/textures/asset/custom_effect.png").readAllBytes());
+                assetWriter.accept("assets/minecraft/lang/en_us.json", "{\"effect.minecraft.unluck\": \"Custom Effect (/polymer effects)\"}".getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                Lib99j.LOGGER.error("Failed to make bad luck a custom effect", e);
             }
         }
     }

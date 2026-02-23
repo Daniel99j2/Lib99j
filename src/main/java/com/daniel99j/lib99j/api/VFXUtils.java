@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -344,6 +345,10 @@ public class VFXUtils {
                 serverPlayerObjectBiConsumer.accept(player, packet);
             });
         }));
+    }
+
+    public static void clearParticles(ServerPlayer player) {
+        ParticleHelper.spawnParticlesAtPosition(player.level, player.position().add(0, -5, 0), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
     }
 
     public enum GENERIC_SCREEN_EFFECT {

@@ -16,11 +16,11 @@ public class ShowLineInstruction extends PonderInstruction {
 
     private ItemDisplayElement itemDisplayElement;
 
-    public ShowLineInstruction(int displayTime, int colour, Vec2 start, Vec2 end, float thickness) {
+    public ShowLineInstruction(float displayTime, int colour, Vec2 start, Vec2 end, float thickness) {
         this.colour = colour;
         this.start = start;
         this.end = end;
-        this.displayTime = displayTime;
+        this.displayTime = (int) (displayTime*20);
         this.thickness = thickness;
     }
 

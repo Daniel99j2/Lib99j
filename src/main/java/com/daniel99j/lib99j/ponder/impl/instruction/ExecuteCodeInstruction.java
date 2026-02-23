@@ -28,8 +28,8 @@ public class ExecuteCodeInstruction extends PonderInstruction {
     };
 
     @Override
-    public WaitInstruction clone() {
-        return (WaitInstruction) super.clone();
+    public ExecuteCodeInstruction clone() {
+        return (ExecuteCodeInstruction) super.clone();
     }
 
     @Override

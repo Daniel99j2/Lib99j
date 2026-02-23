@@ -5,6 +5,7 @@ import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.PlayerElementHolder;
+import com.daniel99j.lib99j.impl.PlayerListAdder;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.polymer.core.api.entity.PolymerEntity;
@@ -48,7 +49,7 @@ import java.util.function.Consumer;
 
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerMixin
-        extends Player implements PolymerEntity, Lib99jPlayerUtilController, PlayerElementHolder {
+        extends Player implements PolymerEntity, Lib99jPlayerUtilController, PlayerElementHolder, PlayerListAdder {
     @Shadow
     private @Nullable Entity camera;
     @Unique
@@ -59,6 +60,8 @@ public abstract class ServerPlayerMixin
     private final ArrayList<GuiUtils.PlayerTranslationCheckerData> lib99j$activeTranslationCheckers = new ArrayList<>();
     @Unique
     private int lib99j$modTranslationCheckerTimeout = 0;
+    @Unique
+    private boolean lib99j$shouldAddToPlayerList = false;
 
     public ServerPlayerMixin(Level world, GameProfile gameProfile) {
         super(world, gameProfile);
@@ -270,5 +273,17 @@ public abstract class ServerPlayerMixin
     @Override
     public ElementHolder lib99j$getPlayerElementHolder() {
         return this.lib99j$holder;
+    }
+
+    @Override
+    public void lib99j$setAddToPlayerList(boolean should) {
+        this.lib99j$shouldAddToPlayerList = should;
+        if(!should) Lib99j.additionalPlayers.remove(this);
+        if(should) Lib99j.additionalPlayers.add((getPlayer()));
+    }
+
+    @Override
+    public boolean lib99j$shouldAddToPlayerList() {
+        return this.lib99j$shouldAddToPlayerList;
     }
 }

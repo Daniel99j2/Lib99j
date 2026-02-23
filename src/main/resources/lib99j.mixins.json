@@ -12,11 +12,13 @@
     "CommandSourceStackMixin",
     "DamageSourceMixin",
     "LivingEntityMixin",
+    "MinecraftServerMixin",
     "PlayerListAccessor",
     "RegistrySynchronizationMixin",
     "ServerCommonPacketListenerImplMixin",
     "ServerConfigPacketListenerImplMixin",
     "ServerGamePacketListenerImplMixin",
+    "ServerLevelMixin",
     "ServerPlayerMixin"
   ],
   "injectors": {
