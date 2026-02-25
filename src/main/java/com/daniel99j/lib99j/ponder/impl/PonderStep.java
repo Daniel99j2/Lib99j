@@ -1,6 +1,6 @@
 package com.daniel99j.lib99j.ponder.impl;
 
-import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 

@@ -126,6 +126,18 @@ public class GuiUtils {
         return (allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Component.nullToEmpty("Previous Page"));
     }
 
+    public static MutableComponent styleText(MutableComponent component, Style style, boolean editFont) {
+        Style newStyle = editFont ? style : style.withFont(component.getStyle().getFont());
+        MutableComponent c = component.setStyle(newStyle);
+        for (Component sibling : component.getSiblings()) {
+            if(sibling instanceof MutableComponent mutableComponent) {
+                newStyle = editFont ? style : style.withFont(mutableComponent.getStyle().getFont());
+                mutableComponent.setStyle(newStyle);
+            } else throw new IllegalStateException("All component parts must be mutable");
+        }
+        return c;
+    }
+
     @ApiStatus.Internal
     public static List<ItemGuiTexture> getItemGuiTextures() {
         return ITEM_GUI_TEXTURES;

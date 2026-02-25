@@ -1,9 +1,9 @@
 package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.WaitInstruction;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
-import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
-import com.daniel99j.lib99j.ponder.impl.instruction.WaitInstruction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -117,8 +117,12 @@ public class PonderBuilder {
     }
 
     public PonderScene startPondering(ServerPlayer player) {
+        return startPonderingFromGoTo(player, null, -1);
+    };
+
+    protected PonderScene startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
-        return new PonderScene(player, this);
+        return new PonderScene(player, this, from, goTo);
     };
     
     private void throwIfBuilt() {

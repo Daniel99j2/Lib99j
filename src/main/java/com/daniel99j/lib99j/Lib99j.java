@@ -9,11 +9,11 @@ import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.daniel99j.lib99j.impl.VfxCommand;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
+import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.ShowLineInstruction;
 import com.daniel99j.lib99j.ponder.impl.GuiTextures;
 import com.daniel99j.lib99j.ponder.impl.PonderManager;
-import com.daniel99j.lib99j.ponder.impl.instruction.ExecuteCodeInstruction;
-import com.daniel99j.lib99j.ponder.impl.instruction.ShowItemInstruction;
-import com.daniel99j.lib99j.ponder.impl.instruction.ShowLineInstruction;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
@@ -285,6 +285,7 @@ public class Lib99j implements ModInitializer {
                                         Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
                                         creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
                                         creeper.setPersistenceRequired();
+                                        creeper.ignite();
                                         scene.getWorld().addFreshEntity(creeper);
                                         //scene.fastForwardUntil(2);
                                     }))
@@ -312,9 +313,13 @@ public class Lib99j implements ModInitializer {
                                         creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
                                         creeper.setPersistenceRequired();
                                         scene.getWorld().addFreshEntity(creeper);
+
+                                        scene.getWorld().setBlockAndUpdate(new BlockPos(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 6, scene.getOrigin().getZ() + 5), Blocks.LAVA.defaultBlockState());
                                     }))
-                                    .waitFor(30)
+                                    .waitFor(10)
                                     .finishStep("chicken_yum")
+                                    .waitFor(30)
+                                    .finishStep("demo_complete")
                                     .build()
                                     .startPondering(context.getSource().getPlayerOrException());
                             return 1;

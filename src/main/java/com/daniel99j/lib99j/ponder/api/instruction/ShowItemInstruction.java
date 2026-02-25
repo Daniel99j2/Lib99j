@@ -1,4 +1,4 @@
-package com.daniel99j.lib99j.ponder.impl.instruction;
+package com.daniel99j.lib99j.ponder.api.instruction;
 
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.world.item.ItemStack;

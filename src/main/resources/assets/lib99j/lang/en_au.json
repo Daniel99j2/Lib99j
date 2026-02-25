@@ -4,9 +4,9 @@
   "multiplayer.disconnect.spoof_mod_checker": "Do not try and spoof the mod checker!",
   "commands.lib99j.vfx.success": "Started vfx",
   "commands.lib99j.vfx.success_clear": "Cleared Vfx",
-  "ponder.scene.step.creeper_boom": "Creepers blow up",
-  "ponder.scene.step.cow_moo": "Cows go moo",
-  "ponder.scene.step.chicken_yum": "Chickens are tasty",
-  "ponder.scene.step.demo_complete": "Demo complete!",
+  "ponder.scene.step.creeper_boom": "Creepers blow up auzzie",
+  "ponder.scene.step.cow_moo": "Cows go moo aaa",
+  "ponder.scene.step.chicken_yum": "Chickens are tasty test",
+  "ponder.scene.step.demo_complete": "Demo complete!1",
   "ponder.scene.paused": "[Paused]"
 }

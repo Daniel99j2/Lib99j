@@ -10,10 +10,10 @@
     import com.daniel99j.lib99j.impl.BossBarVisibility;
     import com.daniel99j.lib99j.impl.PlayerListAdder;
     import com.daniel99j.lib99j.impl.mixin.PlayerListAccessor;
+    import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
+    import com.daniel99j.lib99j.ponder.api.instruction.WaitInstruction;
     import com.daniel99j.lib99j.ponder.impl.PonderManager;
     import com.daniel99j.lib99j.ponder.impl.PonderStep;
-    import com.daniel99j.lib99j.ponder.impl.instruction.PonderInstruction;
-    import com.daniel99j.lib99j.ponder.impl.instruction.WaitInstruction;
     import com.mojang.serialization.Lifecycle;
     import eu.pb4.polymer.core.api.utils.PolymerUtils;
     import eu.pb4.polymer.virtualentity.api.ElementHolder;
@@ -21,11 +21,9 @@
     import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
     import net.fabricmc.loader.api.FabricLoader;
     import net.minecraft.core.BlockPos;
-    import net.minecraft.core.Holder;
     import net.minecraft.core.SectionPos;
     import net.minecraft.core.registries.Registries;
     import net.minecraft.network.Connection;
-    import net.minecraft.network.chat.ClickEvent;
     import net.minecraft.network.chat.Component;
     import net.minecraft.network.chat.MutableComponent;
     import net.minecraft.network.chat.Style;
@@ -34,9 +32,6 @@
     import net.minecraft.network.protocol.game.*;
     import net.minecraft.resources.Identifier;
     import net.minecraft.resources.ResourceKey;
-    import net.minecraft.server.dialog.*;
-    import net.minecraft.server.dialog.action.StaticAction;
-    import net.minecraft.server.dialog.input.NumberRangeInput;
     import net.minecraft.server.level.*;
     import net.minecraft.server.network.CommonListenerCookie;
     import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -44,6 +39,7 @@
     import net.minecraft.world.BossEvent;
     import net.minecraft.world.RandomSequences;
     import net.minecraft.world.entity.Display;
+    import net.minecraft.world.entity.Entity;
     import net.minecraft.world.entity.HumanoidArm;
     import net.minecraft.world.entity.player.ChatVisiblity;
     import net.minecraft.world.level.GameType;
@@ -52,6 +48,7 @@
     import net.minecraft.world.level.WorldDataConfiguration;
     import net.minecraft.world.level.block.Block;
     import net.minecraft.world.level.block.Blocks;
+    import net.minecraft.world.level.block.state.BlockState;
     import net.minecraft.world.level.chunk.ChunkAccess;
     import net.minecraft.world.level.dimension.LevelStem;
     import net.minecraft.world.level.gamerules.GameRules;
@@ -62,6 +59,7 @@
     import org.jetbrains.annotations.NotNull;
     import org.joml.Vector3f;
     import org.jspecify.annotations.NonNull;
+    import org.jspecify.annotations.Nullable;
     import org.lwjgl.glfw.GLFW;
 
     import java.io.IOException;
@@ -72,7 +70,6 @@
     import java.nio.file.attribute.BasicFileAttributes;
     import java.util.ArrayList;
     import java.util.List;
-    import java.util.Optional;
     import java.util.UUID;
     import java.util.concurrent.atomic.AtomicBoolean;
     import java.util.concurrent.atomic.AtomicInteger;
@@ -98,6 +95,7 @@
         private Vec3 cameraPos = Vec3.ZERO;
         private Vec2 cameraRotation = new Vec2(45, -45);
         private int stepFFTo = -1;
+        private boolean showingLoadingScreen;
 
         protected int inputCooldown = 0;
 
@@ -107,7 +105,15 @@
 
         private int tickSyncVerify = 0;
 
-        protected PonderScene(ServerPlayer player, PonderBuilder builder) {
+        protected PonderScene(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
+            if((goTo == -1) != (oldAfterStep == null)) throw new IllegalStateException("oldAfterStep is for fast-forward");
+            if(oldAfterStep != null) {
+                this.showingLoadingScreen = oldAfterStep.showingLoadingScreen;
+                this.paused = oldAfterStep.paused;
+                this.inputCooldown = oldAfterStep.inputCooldown;
+                this.selectedStep = oldAfterStep.selectedStep;
+            }
+
             double time = GLFW.glfwGetTime();
             if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering(true);
 
@@ -122,9 +128,7 @@
             this.player = player;
             this.player.getInventory().setSelectedSlot(4);
             this.player.connection.send(new ClientboundSetHeldSlotPacket(4));
-            this.player.connection.send(new ClientboundSetTitleTextPacket(Component.nullToEmpty("FADE EFFECT")));
-            this.player.connection.send(new ClientboundSetSubtitleTextPacket(DefaultGuiTextures.BIG_WHITE_SQUARE.text().withColor(0x000000)));
-            this.player.connection.send(new ClientboundSetTitlesAnimationPacket(5, 10000, 0));
+            this.showLoadingScreen();
 
             this.builder = builder;
             ArrayList<PonderStep> copiedSteps = new ArrayList<>();
@@ -166,6 +170,18 @@
                 public void sendPacketToServer(Packet<?> packet) {
                     super.tick((() -> true));
                 }
+
+                @Override
+                public boolean setBlock(BlockPos blockPos, BlockState blockState, @Block.UpdateFlags int i, int j) {
+                    if(blockPos.getY() < origin.getY()) return false;
+                    return super.setBlock(blockPos, blockState, i, j);
+                }
+
+                @Override
+                public boolean destroyBlock(BlockPos blockPos, boolean bl, @Nullable Entity entity, int i) {
+                    if(blockPos.getY() < origin.getY()) return false;
+                    return super.destroyBlock(blockPos, bl, entity, i);
+                }
             };
 
             this.world.getGameRules().set(GameRules.ADVANCE_TIME, false, null);
@@ -179,7 +195,7 @@
 
             Lib99j.getServerOrThrow().levels.put(worldKey, world);
 
-            this.packetRedirector = EntityUtils.fakeServerPlayerAddToWorld(world, BlockPos.ZERO, GameType.CREATIVE, UUID.randomUUID(), "ponder_scene_", true);
+            this.packetRedirector = EntityUtils.fakeServerPlayer(world, BlockPos.ZERO, GameType.CREATIVE, UUID.randomUUID(), "ponder_scene_", true);
 
             this.packetRedirector.setGameMode(GameType.SURVIVAL);
 
@@ -231,27 +247,24 @@
                     this.packetRedirector,
                     CommonListenerCookie.createInitial(this.packetRedirector.getGameProfile(), false)
             ) {
-
-                @Override
-                public boolean isAcceptingMessages() {
-                    return true;
-                }
-
                 @Override
                 public void send(@NonNull Packet<?> packet) {
                     PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
                     if (info == null || !player1.connection.isAcceptingMessages()) {
                         return;
-                    }
-                    ;
+                    };
                     if (info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
                     player1.connection.send(new Lib99j.BypassPacket(packet));
+
+                    //simulate the client accepting the server's chunks
+                    if(packet instanceof ClientboundChunkBatchFinishedPacket) {
+                        //the float is the desired chunks/tick (64 is max)
+                        this.handleChunkBatchReceived(new ServerboundChunkBatchReceivedPacket(64));
+                    }
                 }
             };
 
-            this.packetRedirector.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
-
-            world.addDuringTeleport(this.packetRedirector);
+            world.addNewPlayer(this.packetRedirector);
 
             this.packetRedirector.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(this.origin.getX()), SectionPos.blockToSectionCoord(this.origin.getZ())));
 
@@ -271,7 +284,7 @@
 
             Lib99j.LOGGER.info("Stage {} took {}", "Region", GLFW.glfwGetTime()-time); time = GLFW.glfwGetTime();
 
-            this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 0, 5));
+            if(goTo <= 0) this.hideLoadingScreen(); //if were going to the first step then it wont ff
 
             this.elementHolder.startWatching(player);
 
@@ -286,6 +299,8 @@
             this.elementHolder.addElement(background);
 
             Lib99j.LOGGER.info("Stage {} took {}", "Finish", GLFW.glfwGetTime()-time); time = GLFW.glfwGetTime();
+
+            if(goTo != -1) this.fastForwardUntil(goTo);
         }
 
         public ElementHolder getElementHolder() {
@@ -308,6 +323,7 @@
         public void stopPondering(boolean stopVfx) {
             this.packetRedirector.discard();
             ((PlayerListAdder) this.packetRedirector).lib99j$setAddToPlayerList(false);
+            this.world.removePlayerImmediately(this.packetRedirector, Entity.RemovalReason.DISCARDED);
 
             this.isToBeRemoved = true;
             if(stopVfx) VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
@@ -340,6 +356,8 @@
             } catch (Exception e) {
                 Lib99j.LOGGER.error("Failed to remove save data for temporary level " + this.worldKey.identifier(), e);
             }
+
+            VFXUtils.clearParticles(this.player);
         }
 
         public boolean isToBeRemoved() {
@@ -368,10 +386,15 @@
             if(tickToSimulate <= 0) return;
             if(this.isToBeStopped) this.stopPondering(true);
             if(this.isToBeRemoved()) return;
+            if(this.player.hasDisconnected() || this.player.isRemoved()) {
+                this.stopPondering(true);
+                return;
+            };
             //dont check paused here so inputs and disconnections still are checked
 
             if(this.player.getInventory().getSelectedSlot() != 4) {
-                this.setSelectedStep(this.selectedStep+this.player.getInventory().getSelectedSlot()-4);
+                if(this.player.getInventory().getSelectedSlot() > 4) this.addToSelectedStep(1);
+                if(this.player.getInventory().getSelectedSlot() < 4) this.addToSelectedStep(-1);
                 this.player.getInventory().setSelectedSlot(4);
                 this.player.connection.send(new ClientboundSetHeldSlotPacket(4));
             }
@@ -391,17 +414,17 @@
                 }
             } else if (this.inputCooldown > 0) this.inputCooldown--;
 
-            if(this.player.hasDisconnected() || this.player.isRemoved()) this.stopPondering(true);
-
             int ticksToRun = tickToSimulate;
             while (ticksToRun-- > 0 && !this.isToBeRemoved() && (!paused || this.stepFFTo != -1)) {
                 if(stepFFTo == this.currentStep) {
                     stepFFTo = -1;
                     VFXUtils.clearParticles(this.packetRedirector);
+                    VFXUtils.clearParticles(this.player);
+                    this.hideLoadingScreen();
                     break; //dont go past the step!
                 }
 
-                this.world.sendPacketToServer(null);
+                this.world.sendPacketToServer(null); //tick it
 
                 this.activeInstructions.removeIf((instruction) -> instruction.isComplete(this));
 
@@ -558,29 +581,34 @@
 
         public void goTo(int step) {
             if(step <= this.currentStep) {
+                this.showLoadingScreen();
                 this.stopPondering(false);
-                PonderScene scene = this.builder.startPondering(this.player);
-                scene.fastForwardUntil(step);
-                scene.inputCooldown = this.inputCooldown;
-                scene.selectedStep = this.selectedStep;
-                scene.paused = this.paused;
+                this.builder.startPonderingFromGoTo(this.player, this, step);
             } else if(step > this.currentStep) {
+                this.showLoadingScreen();
                 fastForwardUntil(step);
             }
         }
 
-        private void openControls() {
-            paused = true;
-            Input test = new Input("hej", new NumberRangeInput(512, Component.literal("hi"), "heyy", new NumberRangeInput.RangeInfo(1, 10, Optional.empty(), Optional.empty())));
-            CommonDialogData dialogData = new CommonDialogData(Component.literal("hi"), Optional.empty(), false, false, DialogAction.CLOSE, List.of(), List.of(test));
-            Dialog dialog = new MultiActionDialog(dialogData, List.of(new ActionButton(new CommonButtonData(Component.literal("boomba"), 512), Optional.empty())), Optional.of(new ActionButton(new CommonButtonData(Component.literal("okie"), 512), Optional.of(new StaticAction(new ClickEvent.RunCommand("/summon cow"))))), 1);
-            player.openDialog(Holder.direct(dialog));
-            //player.connection
+        private void showLoadingScreen() {
+            if(!this.showingLoadingScreen) {
+                this.showingLoadingScreen = true;
+                this.player.connection.send(new ClientboundSetSubtitleTextPacket(Component.nullToEmpty("Loading...")));
+                this.player.connection.send(new ClientboundSetTitleTextPacket(GuiUtils.styleText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), Style.EMPTY.withColor(0x58638e), false)));
+                this.player.connection.send(new ClientboundSetTitlesAnimationPacket(5, 10000, 0));
+            }
         }
 
-        public void setSelectedStep(int selectedStep) {
+        private void hideLoadingScreen() {
+            if(this.showingLoadingScreen) {
+                this.showingLoadingScreen = false;
+                this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 1, 5));
+            }
+        }
+
+        public void addToSelectedStep(int selectedStep) {
             if(this.selectedStep+selectedStep < 0) this.selectedStep = this.steps.size()+selectedStep;
-            else this.selectedStep = selectedStep % (this.steps.size());
+            else this.selectedStep = (this.selectedStep+selectedStep) % (this.steps.size());
         }
 
         public void updateTickStatus() {
