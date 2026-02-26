@@ -7,6 +7,9 @@ import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import eu.pb4.polymer.virtualentity.mixin.accessors.EntityAccessor;
+import net.fabricmc.fabric.impl.networking.server.ServerNetworkingImpl;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -17,6 +20,8 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.PlayerAdvancements;
+import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerLevel;
@@ -34,6 +39,7 @@ import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -230,7 +236,7 @@ public class EntityUtils {
      * Creates a fake server-player
      */
     public static ServerPlayer fakeServerPlayer(ServerLevel world, BlockPos pos) {
-        return fakeServerPlayerInternal(world, pos, GameType.SURVIVAL, UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER", true, true);
+        return fakeServerPlayerInternal(world, pos, GameType.SURVIVAL, UUID.fromString("58067007-10db-47f1-8844-b142275b76f1"), "LIB99j FAKE PLAYER", true);
     }
 
     /**
@@ -238,25 +244,45 @@ public class EntityUtils {
      * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
      */
     public static ServerPlayer fakeServerPlayer(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name, boolean autoEditName) {
-        return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, true, autoEditName);
-    }
-
-    /**
-     * Creates a fake server-player, but does NOT delete the entity from the world.
-     * <p>Only use this if you know what you are doing, as the player will stay loaded in memory.
-     * @param autoEditName specifies if a prefix on an integer is permitted so the GameProfile is always unique.
-     */
-    public static ServerPlayer fakeServerPlayerAddToWorld(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name, boolean autoEditName) {
-        return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, false, autoEditName);
+        return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, autoEditName);
     }
 
     @ApiStatus.Internal
-    private static ServerPlayer fakeServerPlayerInternal(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name1, boolean remove, boolean autoEditName) {
+    private static ServerPlayer fakeServerPlayerInternal(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name1, boolean autoEditName) {
         String name = autoEditName ? name1 + playerIdPrefix++ : name1;
         if(name.length() > 16) throw new IllegalStateException("Player name is too long");
-        if(Lib99j.getServer() != null && Lib99j.getServer().getPlayerList().getPlayerByName(name) != null) {
+        if(Lib99j.getServerOrThrow().getPlayerList().getPlayerByName(name) != null) {
             throw new IllegalStateException("Player name is already taken");
         }
+
+        //this only exists for whilst the player is initialised so it has a fake advancement tracker
+        //if remove, it is deleted from the list
+        //else, it stays but does nothing
+        PlayerAdvancements customAdvancementTracker = new PlayerAdvancements(Lib99j.getServerOrThrow().getFixerUpper(), Lib99j.getServerOrThrow().getPlayerList(), Lib99j.getServerOrThrow().getAdvancements(), Lib99j.getServerOrThrow().getWorldPath(LevelResource.PLAYER_ADVANCEMENTS_DIR).resolve("fake_player_please_delete_and_create_issue.json"), null) {
+            @Override
+            public void save() {
+
+            }
+
+            @Override
+            public boolean award(AdvancementHolder advancementHolder, String string) {
+                return false;
+            }
+
+            @Override
+            public void reload(ServerAdvancementManager serverAdvancementManager) {
+
+            }
+
+            @Override
+            public AdvancementProgress getOrStartProgress(AdvancementHolder advancementHolder) {
+                return new AdvancementProgress();
+            }
+        };
+        PlayerListAccessor playerManagerAccessor = ((PlayerListAccessor) Lib99j.getServerOrThrow().getPlayerList());
+
+        playerManagerAccessor.getAdvancements().put(uuid, customAdvancementTracker);
+
         ServerPlayer player = new ServerPlayer(Lib99j.getServerOrThrow(), world, new GameProfile(uuid, name), new ClientInformation("bot", 0, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, false, false, ParticleStatus.MINIMAL));
         player.connection = new ServerGamePacketListenerImpl(Lib99j.getServerOrThrow(),
                 new Connection(PacketFlow.CLIENTBOUND),
@@ -273,24 +299,40 @@ public class EntityUtils {
                 return false;
             }
         };
-        if(!remove) world.addNewPlayer(player);
-        if(remove) world.removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+
+        playerManagerAccessor.getAdvancements().remove(uuid);
+
         player.gameMode.changeGameModeForPlayer(gameMode);
+
+        removeAllReferences(player);
+        world.removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
+
         player.getAdvancements().stopListening();
-        PlayerListAccessor playerManagerAccessor = ((PlayerListAccessor) Lib99j.getServerOrThrow().getPlayerList());
-        if(remove) playerManagerAccessor.getPlayers().remove(player);
-        else playerManagerAccessor.getPlayers().add(player);
         UUID uUID = player.getUUID();
         ServerPlayer serverPlayerEntity = playerManagerAccessor.getPlayersByUUID().get(uUID);
         if (serverPlayerEntity == player) {
-            if(remove) playerManagerAccessor.getPlayersByUUID().remove(uUID);
-            else playerManagerAccessor.getPlayersByUUID().put(uUID, player);
-            playerManagerAccessor.getStats().remove(uUID);
-            playerManagerAccessor.getAdvancements().remove(uUID);
+            if(true) {
+                playerManagerAccessor.getPlayersByUUID().remove(uUID);
+                playerManagerAccessor.getStats().remove(uUID);
+                playerManagerAccessor.getAdvancements().remove(uUID);
+            } else playerManagerAccessor.getPlayersByUUID().put(uUID, player);
         }
         player.connection.resumeFlushing();
         player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
         return player;
+    }
+
+    public static void removeAllReferences(ServerPlayer player) {
+        PlayerListAccessor playerManagerAccessor = ((PlayerListAccessor) Lib99j.getServerOrThrow().getPlayerList());
+        UUID uUID = player.getUUID();
+        playerManagerAccessor.getPlayers().remove(player);
+        playerManagerAccessor.getPlayersByUUID().remove(uUID);
+        playerManagerAccessor.getStats().remove(uUID);
+        playerManagerAccessor.getAdvancements().remove(uUID);
+        //this is fabric's custom networking handler.
+        //the issue is that it stores all players
+        //this means the fake player is never removed
+        ServerNetworkingImpl.getAddon(player.connection).endSession();
     }
 
     /**

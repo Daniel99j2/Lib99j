@@ -8,12 +8,9 @@ import com.daniel99j.lib99j.impl.ServerParticleCommand;
 import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.daniel99j.lib99j.impl.VfxCommand;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
-import com.daniel99j.lib99j.ponder.api.PonderBuilder;
-import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.ShowLineInstruction;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.GuiTextures;
-import com.daniel99j.lib99j.ponder.impl.PonderManager;
+import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
@@ -46,15 +43,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.animal.chicken.Chicken;
-import net.minecraft.world.entity.animal.cow.Cow;
-import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.biome.Biomes;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -172,6 +162,7 @@ public class Lib99j implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
             if (GameProperties.areContentModsLoaded() || FabricLoader.getInstance().isDevelopmentEnvironment()) VfxCommand.register(dispatcher);
+            PonderCommand.register(dispatcher, registryAccess);
 
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
             
@@ -203,6 +194,13 @@ public class Lib99j implements ModInitializer {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
                             VFXUtils.clientSideExplode(players, new ExplosionDamageCalculator(), context.getSource().getPosition().x(), context.getSource().getPosition().y(), context.getSource().getPosition().z(), 5, true, ParticleTypes.EXPLOSION_EMITTER, ParticleTypes.EXPLOSION, SoundEvents.GENERIC_EXPLODE, true);
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("garbagecollect")
+                        .executes((context) -> {
+                            System.gc();
                             return 1;
                         })
                         .build());
@@ -267,61 +265,6 @@ public class Lib99j implements ModInitializer {
                 builder.then(Commands.literal("reloadworld")
                         .executes((context) -> {
                             PolymerUtils.reloadWorld(context.getSource().getPlayer());
-                            return 1;
-                        })
-                        .build());
-
-                builder.then(Commands.literal("ponder")
-                        .executes((context) -> {
-                            context.getSource().sendSystemMessage(Component.nullToEmpty("Pondering"));
-                            PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).defaultBiome(Biomes.BASALT_DELTAS)
-                                    .waitFor(1)
-                                    .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 0, 4), Blocks.PISTON.defaultBlockState());
-                                    }))
-                                    .waitFor(1)
-                                    .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
-                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                                        creeper.setPersistenceRequired();
-                                        creeper.ignite();
-                                        scene.getWorld().addFreshEntity(creeper);
-                                        //scene.fastForwardUntil(2);
-                                    }))
-                                    .waitFor(1)
-                                    .instruction(new ShowItemInstruction(1, Items.PISTON.getDefaultInstance()))
-                                    .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
-                                    .waitFor(2)
-                                    .finishStep("creeper_boom")
-                                    .waitFor(1)
-                                    .instruction(new ShowItemInstruction(1, Items.STICKY_PISTON.getDefaultInstance()))
-                                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-                                    .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        Cow creeper = new Cow(EntityType.COW, scene.getWorld());
-                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                                        creeper.setPersistenceRequired();
-                                        scene.getWorld().addFreshEntity(creeper);
-                                    }))
-                                    .waitFor(2)
-                                    .finishStep("cow_moo")
-                                    .waitFor(1)
-                                    .instruction(new ShowItemInstruction(1, Items.TNT.getDefaultInstance()))
-                                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-                                    .instruction(new ExecuteCodeInstruction((scene) -> {
-                                        Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getWorld());
-                                        creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                                        creeper.setPersistenceRequired();
-                                        scene.getWorld().addFreshEntity(creeper);
-
-                                        scene.getWorld().setBlockAndUpdate(new BlockPos(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 6, scene.getOrigin().getZ() + 5), Blocks.LAVA.defaultBlockState());
-                                    }))
-                                    .waitFor(10)
-                                    .finishStep("chicken_yum")
-                                    .waitFor(30)
-                                    .finishStep("demo_complete")
-                                    .build()
-                                    .startPondering(context.getSource().getPlayerOrException());
                             return 1;
                         })
                         .build());

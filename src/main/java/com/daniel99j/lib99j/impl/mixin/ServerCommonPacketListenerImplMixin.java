@@ -5,7 +5,7 @@ import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.PlayPacketUtils;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.BossBarVisibility;
-import com.daniel99j.lib99j.ponder.impl.PonderManager;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import io.netty.channel.ChannelFutureListener;
 import net.minecraft.core.Holder;

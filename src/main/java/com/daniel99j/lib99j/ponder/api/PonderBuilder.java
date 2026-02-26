@@ -11,10 +11,24 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
+/**
+ * The ponder builder
+ * <p>See TestingElements for a simple example of how to make one</p>
+ * <p>Things to note:</p>
+ * <p>1. The scene is NOT at 0,0,0. Use scene.getOrigin to find the origin point. Some common methods like setBlock() or addFreshEntity() auto-convert, so usage varies (see PonderLevel for method overrides)</p>
+ * <p>2. Scenes create a new world every time that it starts</p>
+ * <p>3. Replaying/going back steps creates a new scene, then fast-forwards to the point</p>
+ * <p>4. In a scene there is a fake player called packetRedirector. This entity is added to the player list through mixins and receives, then redirects to the real player, all outgoing packets</p>
+ * <p>5. DO NOT EVER store the packet redirector, scene world, or active scene outside of a method where it will be automatically de-referenced</p>
+ * <p>6. As the ponder world is only temporary, feel free to edit things like gamerules, time, weather etc</p>
+ */
 public class PonderBuilder {
+    protected @Nullable String sourceNamespace = null;
+    protected boolean registered = false;
     protected ArrayList<PonderStep> steps = new ArrayList<>();
     protected Component title = Component.literal("Title not specified");
     protected int sizeX = 10;
@@ -25,6 +39,7 @@ public class PonderBuilder {
     protected BlockState state1 = Blocks.SNOW_BLOCK.defaultBlockState();
     protected BlockState state2 = Blocks.COAL_BLOCK.defaultBlockState();
     protected boolean roof = true;
+    protected boolean hideFromCommands = false;
     
     private boolean done = false;
     private ArrayList<PonderInstruction> currentStepInstructions = new ArrayList<>();
@@ -94,6 +109,11 @@ public class PonderBuilder {
         return roof(false);
     }
 
+    public PonderBuilder hideFromCommands() {
+        this.hideFromCommands = true;
+        return this;
+    }
+
     public PonderBuilder waitFor(float time) {
         this.throwIfBuilt();
         this.currentStepInstructions.add(new WaitInstruction(time));
@@ -117,6 +137,11 @@ public class PonderBuilder {
     }
 
     public PonderScene startPondering(ServerPlayer player) {
+        if(!this.registered) throw new IllegalStateException("You have not registered your ponder scene yet");
+        return startPonderingIgnoreRegistration(player);
+    };
+
+    public PonderScene startPonderingIgnoreRegistration(ServerPlayer player) {
         return startPonderingFromGoTo(player, null, -1);
     };
 

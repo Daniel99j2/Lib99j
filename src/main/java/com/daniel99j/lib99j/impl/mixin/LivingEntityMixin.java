@@ -1,6 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
-import com.daniel99j.lib99j.ponder.impl.PonderManager;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;

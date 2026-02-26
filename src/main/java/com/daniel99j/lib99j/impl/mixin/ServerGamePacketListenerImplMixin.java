@@ -3,7 +3,7 @@ package com.daniel99j.lib99j.impl.mixin;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
-import com.daniel99j.lib99j.ponder.impl.PonderManager;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketUtils;
