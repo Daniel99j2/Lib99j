@@ -39,6 +39,7 @@ import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -363,7 +364,21 @@ public class EntityUtils {
     }
 
     public static BlockPos getFarPos(Entity entity) {
-        int far = 1000;
+        return getFarPos(entity, 10_000_000);
+    };
+
+    public static BlockPos getFarPos(Entity entity, int far) {
+        return getFarPos(entity.blockPosition(), BlockPos.ZERO, far);
+    };
+
+    public static BlockPos getFarPos(Entity entity, WorldBorder worldBorder) {
+        //7  thenths so that you arent right next to the wordborder
+        int far = (int) (worldBorder.getSize()/2*7/10);
+        BlockPos center = new BlockPos((int) worldBorder.getCenterX(), 0, (int) worldBorder.getCenterZ());
+        return getFarPos(entity.blockPosition(), center, far);
+    };
+
+    public static BlockPos getFarPos(BlockPos current, BlockPos center, int far) {
         BlockPos[] corners = {
                 new BlockPos( far, 0,  far),
                 new BlockPos(-far, 0,  far),
@@ -374,11 +389,11 @@ public class EntityUtils {
         BlockPos furthest = BlockPos.ZERO;
         double furthestDistance = 0;
 
-        for (int i = 0; i < corners.length; i++) {
-            double distance = entity.blockPosition().distToLowCornerSqr(corners[i].getX(), corners[i].getY(), corners[i].getZ());
+        for (BlockPos corner : corners) {
+            double distance = current.distToLowCornerSqr(corner.getX(), corner.getY(), corner.getZ());
             if (distance > furthestDistance) {
                 furthestDistance = distance;
-                furthest = corners[i];
+                furthest = corner;
             }
         }
         return furthest;
@@ -386,5 +401,26 @@ public class EntityUtils {
 
     public static boolean exists(Entity e) {
         return !(e == null || e.isRemoved() || e.touchingUnloadedChunk());
+    }
+
+    public static float getDistanceToGround(Entity e) {
+        return getDistanceToGround(e, 99999);
+    }
+
+    public static float getDistanceToGround(Entity e, int limit) {
+        ValueHolder<Integer> i = new ValueHolder<>();
+        i.object = 0;
+        getDistanceToGroundRec(i, e.blockPosition(), (ServerLevel) e.level, 0, limit);
+        return i.object;
+    }
+
+    private static void getDistanceToGroundRec(ValueHolder<Integer> val, BlockPos currentPos, ServerLevel level, int current, int limit) {
+        if(current > limit) {
+            val.object = 999999999;
+        } else if(level.getMinY() > currentPos.getY() && !level.getBlockState(currentPos).getCollisionShape(level, currentPos).isEmpty()) {
+            val.object = current;
+        } else {
+            getDistanceToGroundRec(val, currentPos.below(), level, current+1, limit);
+        }
     }
 }

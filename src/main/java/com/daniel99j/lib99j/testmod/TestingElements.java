@@ -1,11 +1,14 @@
 package com.daniel99j.lib99j.testmod;
 
+import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.RegUtil;
+import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.ShowLineInstruction;
+import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
@@ -22,7 +25,9 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec2;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class TestingElements {
     public static final Block TEST = RegUtil.registerBlock(
             "test_block",
@@ -30,109 +35,98 @@ public class TestingElements {
             BlockBehaviour.Properties.ofFullCopy(Blocks.WHITE_WOOL).pushReaction(PushReaction.DESTROY).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
     );
 
-    public static final PonderBuilder TEST_PONDER = PonderManager.registerIdToBuilder(Identifier.fromNamespaceAndPath("lib99j_test", "testponder0"),
-            PonderBuilder.create().title("Dev ponder menu").size(20, 20, 20).defaultBiome(Biomes.BASALT_DELTAS)
-            .waitFor(1)
-            .instruction(new ExecuteCodeInstruction((scene) -> {
-                scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 0, 4), Blocks.PISTON.defaultBlockState());
-            }))
-            .waitFor(1)
-            .instruction(new ExecuteCodeInstruction((scene) -> {
-                scene.getWorld().setBlockAndUpdate(scene.getOrigin().offset(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
-                creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                creeper.setPersistenceRequired();
-                creeper.ignite();
-                scene.getWorld().addFreshEntity(creeper);
-                //scene.fastForwardUntil(2);
-            }))
-            .waitFor(1)
-            .instruction(new ShowItemInstruction(1, Items.PISTON.getDefaultInstance()))
-            .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
-            .waitFor(2)
-            .finishStep("creeper_boom")
-            .waitFor(1)
-            .instruction(new ShowItemInstruction(1, Items.STICKY_PISTON.getDefaultInstance()))
-            .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-            .instruction(new ExecuteCodeInstruction((scene) -> {
-                Cow creeper = new Cow(EntityType.COW, scene.getWorld());
-                creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                creeper.setPersistenceRequired();
-                scene.getWorld().addFreshEntity(creeper);
-            }))
-            .waitFor(2)
-            .finishStep("cow_moo")
-            .waitFor(1)
-            .instruction(new ShowItemInstruction(1, Items.TNT.getDefaultInstance()))
-            .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
-            .instruction(new ExecuteCodeInstruction((scene) -> {
-                Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getWorld());
-                creeper.setPosRaw(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 10, scene.getOrigin().getZ() + 5);
-                creeper.setPersistenceRequired();
-                scene.getWorld().addFreshEntity(creeper);
-
-                scene.getWorld().setBlockAndUpdate(new BlockPos(scene.getOrigin().getX() + 5, scene.getOrigin().getY() + 6, scene.getOrigin().getZ() + 5), Blocks.LAVA.defaultBlockState());
-            }))
-            .waitFor(10)
-            .finishStep("chicken_yum")
-            .waitFor(30)
-            .finishStep("demo_complete")
-            .build()
+    public static final Block TEST_POLYMER_ADVANCED_BVE = RegUtil.registerBlock(
+            "blockbound_virtual_entity_test",
+            PolymerTestPlanetsBlock::new,
+            BlockBehaviour.Properties.ofFullCopy(Blocks.WHITE_WOOL).pushReaction(PushReaction.DESTROY).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
     );
 
-    public static final PonderBuilder TEST_PONDER1 = PonderManager.registerIdToBuilder(Identifier.fromNamespaceAndPath("lib99j_test", "testponder1"),
-            PonderBuilder.create().title("Dev ponder menu 1").size(20, 20, 20).defaultBiome(Biomes.BASALT_DELTAS)
-                    .waitFor(1)
+    public static final PonderBuilder TEST_PONDER = PonderManager.registerIdToBuilder(Identifier.fromNamespaceAndPath("lib99j_test", "testponder1"),
+            PonderBuilder.create().title("Dev ponder menu 1").size(20, 20, 20).defaultBiome(Biomes.FOREST)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                        scene.getWorld().setBlockAndUpdate(new BlockPos(4, 0, 4), Blocks.PISTON.defaultBlockState());
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(4, 0, 4), Blocks.PISTON.defaultBlockState());
                     }))
                     .waitFor(1)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                        scene.getWorld().setBlockAndUpdate(new BlockPos(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getWorld());
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
                         creeper.setPersistenceRequired();
                         creeper.ignite();
-                        scene.getWorld().addFreshEntity(creeper);
+                        scene.getLevel().addFreshEntity(creeper);
                         //scene.fastForwardUntil(2);
                     }))
                     .waitFor(1)
                     .instruction(new ShowItemInstruction(1, Items.PISTON.getDefaultInstance()))
-                    .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(10, 10), 10))
+                    .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(20, 10), 10))
                     .waitFor(2)
-                    .finishStep("creeper_boom")
+                    .finishStep()
                     .waitFor(1)
                     .instruction(new ShowItemInstruction(1, Items.STICKY_PISTON.getDefaultInstance()))
-                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                        Cow creeper = new Cow(EntityType.COW, scene.getWorld());
+                        Cow creeper = new Cow(EntityType.COW, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
                         creeper.setPersistenceRequired();
-                        scene.getWorld().addFreshEntity(creeper);
+                        scene.getLevel().addFreshEntity(creeper);
+
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(10, 6, 10), TestingElements.TEST_POLYMER_ADVANCED_BVE.defaultBlockState());
+
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(15, 6, 10), TestingElements.TEST_POLYMER_ADVANCED_BVE.defaultBlockState().setValue(PolymerTestPlanetsBlock.CAN_FALL, true));
                     }))
                     .waitFor(2)
-                    .finishStep("cow_moo")
+                    .finishStep()
                     .waitFor(1)
                     .instruction(new ShowItemInstruction(1, Items.TNT.getDefaultInstance()))
-                    .instruction(new ShowLineInstruction(1, 0x00FF00, Vec2.ZERO, new Vec2(20, 20), 5))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                        Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getWorld());
+                        Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
                         creeper.setPersistenceRequired();
-                        scene.getWorld().addFreshEntity(creeper);
+                        scene.getLevel().addFreshEntity(creeper);
 
-                        scene.getWorld().setBlockAndUpdate(new BlockPos(5, 6, 5), Blocks.LAVA.defaultBlockState());
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(5, 6, 5), Blocks.LAVA.defaultBlockState());
                     }))
                     .waitFor(10)
-                    .finishStep("chicken_yum")
+                    .finishStep()
                     .waitFor(30)
-                    .finishStep("demo_complete")
+                    .finishStep()
                     .build()
     );
 
-    public static final Item TEST_BLOCKITEM = RegUtil.registerBlockItem(
-            TEST
+    public static final PonderBuilder TEST_ITEM_PONDER = PonderManager.registerItemToBuilder(Items.TNT, Identifier.fromNamespaceAndPath("lib99j_test", "tnt_explodes"),
+            PonderBuilder.create().title("Tnt explodes!").size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.TERRACOTTA.defaultBlockState(), Blocks.TERRACOTTA.defaultBlockState())
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.setCanBreakFloor(true);
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(2, 0, 2), Blocks.TNT.defaultBlockState());
+                    }))
+                    .waitFor(3)
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(3, 0, 2), Blocks.REDSTONE_TORCH.defaultBlockState());
+                    }))
+                    .waitFor(6)
+                    .finishStep()
+                    .build()
     );
+
+    public static final PonderBuilder TEST_ITEM_PONDER2 = PonderManager.registerItemToBuilder(Items.TNT, Identifier.fromNamespaceAndPath("lib99j_test", "tnt_doesnt_explode_underwater"),
+            PonderBuilder.create().title("Tnt doesn't explode underwater").size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.CLAY.defaultBlockState(), Blocks.CLAY.defaultBlockState())
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().fillBlocks(new BlockPos(-5, -5, -5), new BlockPos(10, 10, 10), Blocks.WATER.defaultBlockState());
+                        scene.setCanBreakFloor(true);
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(2, 0, 2), Blocks.TNT.defaultBlockState());
+                    }))
+                    .waitFor(3)
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(3, 0, 2), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                    }))
+                    .waitFor(6)
+                    .finishStep()
+                    .build()
+    );
+
+    public static final GuiElementBuilder TEST_UI_ITEM = GuiUtils.generateTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/testing_element_item"));
+    public static final GuiElementBuilder TEST_VANILLA_GUI_ITEM = GuiUtils.generateTexture(Identifier.withDefaultNamespace("gui/sprites/container/slot/sword"));
+
+    public static final Item TEST_BLOCKITEM = RegUtil.registerBlockItem(TEST);
 
     public static void init() {}
 }

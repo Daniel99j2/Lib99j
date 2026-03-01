@@ -32,11 +32,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class EmptyChunkGenerator extends ChunkGenerator {
-    private final int seaLevel;
+    private final Holder<Biome> biomeHolder;
 
-    public EmptyChunkGenerator(ResourceKey<Biome> filledBiome, int seaLevel) {
+    public EmptyChunkGenerator(ResourceKey<Biome> filledBiome) {
         super(new FixedBiomeSource(Lib99j.getServerOrThrow().registryAccess().getOrThrow(filledBiome)));
-        this.seaLevel = seaLevel;
+        this.biomeHolder = Lib99j.getServerOrThrow().registryAccess().get(filledBiome).get();
     }
 
     @Override
@@ -76,6 +76,7 @@ public class EmptyChunkGenerator extends ChunkGenerator {
 
     @Override
     public CompletableFuture<ChunkAccess> createBiomes(RandomState noiseConfig, Blender blender, StructureManager structureAccessor, ChunkAccess chunk) {
+        chunk.fillBiomesFromNoise((i, j, k, sampler) -> biomeHolder, noiseConfig.sampler());
         return CompletableFuture.completedFuture(chunk);
     }
 
@@ -86,7 +87,7 @@ public class EmptyChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getSeaLevel() {
-        return this.seaLevel;
+        return 0;
     }
 
     @Override

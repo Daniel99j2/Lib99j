@@ -12,16 +12,8 @@ public abstract class PonderInstruction implements Cloneable {
         return true;
     };
 
-    //if it can be ignored if going forward/back
-    public boolean canIgnore(PonderScene scene) {
-        return false;
-    }
-
     //when it is triggered
     public abstract void start(PonderScene scene);
-
-    //when it needs deleting
-    public abstract void cleanup(PonderScene scene);
 
     public void tick(PonderScene scene) {
         this.time++;

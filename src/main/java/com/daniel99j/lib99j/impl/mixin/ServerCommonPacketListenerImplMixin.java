@@ -34,7 +34,7 @@ public abstract class ServerCommonPacketListenerImplMixin {
 
     @Shadow public abstract void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener);
 
-    @Inject(method = "send", at = @At("HEAD"), cancellable = true, order = 1001)
+    @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true, order = 1001)
     private void cancelUnwantedPackets(Packet<?> packet, CallbackInfo ci) {
         if (packet instanceof Lib99j.BypassPacket(Packet<?> packet1)) {
             ci.cancel();
@@ -70,6 +70,12 @@ public abstract class ServerCommonPacketListenerImplMixin {
                     }
                 }
             }
+
+            //hide particle swirls
+//            if (GameProperties.isBadLuckCustomEffect() && packet instanceof ClientboundUpdateMobEffectPacket mobEffectPacket && mobEffectPacket.getEffect() == MobEffects.UNLUCK && mobEffectPacket.isEffectVisible()) {
+//                ci.cancel();
+//                this.send(new ClientboundUpdateMobEffectPacket(mobEffectPacket.getEntityId(), new MobEffectInstance(mobEffectPacket.getEffect(), mobEffectPacket.getEffectDurationTicks(), mobEffectPacket.getEffectAmplifier(), mobEffectPacket.isEffectAmbient(), false, mobEffectPacket.effectShowsIcon(), null), false));
+//            }
 
             if (packet instanceof ClientboundSetBorderWarningDistancePacket && VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.RED_TINT))
                 ci.cancel();

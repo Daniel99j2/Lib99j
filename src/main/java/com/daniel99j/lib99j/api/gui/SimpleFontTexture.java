@@ -7,18 +7,18 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
-public class BackgroundTexture {
+public class SimpleFontTexture {
     final char character = GuiUtils.getNextGuiChar();
     final int width;
     final Identifier path;
     final int offset;
 
-    public BackgroundTexture(Identifier path, int width) {
-        this(path, width, 13, 256, 8);
+    public SimpleFontTexture background(Identifier path, int width) {
+        return new SimpleFontTexture(path, width, 13, 256, 8);
     }
 
-    public BackgroundTexture(Identifier path, int width, int ascent, int height, int offset) {
-        this.width = width;
+    public SimpleFontTexture(Identifier path, int widthCorrection, int ascent, int height, int offset) {
+        this.width = widthCorrection;
         this.path = path;
         this.offset = offset;
         GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
@@ -29,6 +29,6 @@ public class BackgroundTexture {
         text.append(Component.literal(Character.toString(character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
         GuiUtils.appendSpace(offset, text);
         GuiUtils.appendSpace(-width, text);
-        return text;
+        return GuiUtils.compactText(text);
     }
 }

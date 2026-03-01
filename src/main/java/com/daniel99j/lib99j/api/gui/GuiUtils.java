@@ -19,6 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,14 +43,15 @@ import java.util.function.Consumer;
 public class GuiUtils {
     private static final int SPACES_RANGE = 256;
     protected static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
-    private static final Map<Integer, Character> SPACES = new HashMap<>();
+    private static final Map<Integer, Character> SPACES = new HashMap<>(); //this is faster than using a recursive function to find which char is valid
     private static final ArrayList<Character> blacklistedChars = new ArrayList<>();
     private static final List<ItemGuiTexture> ITEM_GUI_TEXTURES = new ArrayList<>();
     private static final List<GuiTexture> GUI_TEXTURES = new ArrayList<>();
     private static final List<GuiBarTexture> GUI_BAR_TEXTURES = new ArrayList<>();
     private static char currentGuiChar = '*';
-    private static char currentSpaceChar = '*';
     private static final List<String> atlasAdditions = new ArrayList<>();
+    //Dont use a HashMap of component to component as they are mutable
+    private static final Map<String, MutableComponent> optimisedTextCache = new HashMap<>();
 
     private static final String BASIC_ITEM_TEMPLATE = """
             {
@@ -68,22 +70,14 @@ public class GuiUtils {
     @ApiStatus.Internal
     public static void load() {
         currentGuiChar = '*';
-        currentSpaceChar = '*';
-        blacklistedChars.clear();
         blacklistedChars.add('§');
         blacklistedChars.add('&'); //incase client mods are bad and use & as a formatting symbol
         blacklistedChars.add('\\');
         SPACES.clear();
         for (int i = -SPACES_RANGE; i <= SPACES_RANGE; i++) {
-            SPACES.put(i, getNextSpaceChar());
+            SPACES.put(i, getNextGuiChar());
         }
         DefaultGuiTextures.load();
-    }
-
-    private static char getNextSpaceChar() {
-        char c = currentSpaceChar++;
-        if (blacklistedChars.contains(c)) c = getNextSpaceChar();
-        return c;
     }
 
     static char getNextGuiChar() {
@@ -97,17 +91,27 @@ public class GuiUtils {
     }
 
     public static MutableComponent appendSpace(int pixels, MutableComponent text) {
-        int repeats = Math.floorDiv(pixels, SPACES_RANGE);
-        int extra = pixels % SPACES_RANGE;
+        if (pixels == 0) return text;
+
+        int negative = pixels < 0 ? -1 : 1;
+        int absPixels = Math.abs(pixels);
+
+        int repeats = absPixels / SPACES_RANGE;
+        int extra = absPixels % SPACES_RANGE;
+
+        // full bits of 256
         for (int i = 0; i < repeats; i++) {
-            MutableComponent space = getSpaceThrows(256);
-            if(text == null) text = space;
+            MutableComponent space = getSpaceThrows(SPACES_RANGE * negative);
+            if (text == null) text = space;
             else text.append(space);
         }
 
-        MutableComponent space = getSpaceThrows(extra);
-        if(text == null) text = space;
-        else text.append(space);
+        if (extra != 0) {
+            MutableComponent space = getSpaceThrows(extra * negative);
+            if (text == null) text = space;
+            else text.append(space);
+        }
+
         return text;
     }
 
@@ -115,7 +119,7 @@ public class GuiUtils {
         if (pixels > SPACES_RANGE || pixels < -SPACES_RANGE)
             throw new IndexOutOfBoundsException("Pixels must be between -" + SPACES_RANGE + " and " + SPACES_RANGE);
         if(pixels == 0) return Component.empty();
-        return Component.nullToEmpty(Character.toString(SPACES.get(pixels))).copy().withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "spaces"))));
+        return Component.nullToEmpty(Character.toString(SPACES.get(pixels))).copy().withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui"))));
     }
 
     public static GuiElementBuilder nextPage(boolean allowed) {
@@ -138,6 +142,70 @@ public class GuiUtils {
         return c;
     }
 
+    /**
+     * Merges all possible text parts of a MutableComponent (separate components with matching styling are merged into single components)
+     * <p>Unlike other text functions, this returns a new MutableComponent</p>
+     */
+    public static MutableComponent compactText(MutableComponent component) {
+        if(optimisedTextCache.containsKey(component.toString())) return optimisedTextCache.get(component.toString()).copy();
+
+        // add base to siblings
+        List<Component> all = new ArrayList<>();
+
+        MutableComponent base = MutableComponent.create(component.getContents());
+        base.setStyle(component.getStyle());
+        all.add(base);
+
+        for (Component sibling : component.getSiblings()) {
+            if (sibling instanceof MutableComponent mutableChild) {
+                sibling = compactText(mutableChild);
+            }
+            all.add(sibling);
+        }
+
+        List<Component> optimized = new ArrayList<>();
+        MutableComponent currentMerge = null;
+
+        for (Component sibling : all) {
+
+            if (sibling instanceof MutableComponent mutable
+                    && mutable.getContents() instanceof PlainTextContents literalA
+                    && currentMerge != null
+                    && currentMerge.getContents() instanceof PlainTextContents literalB
+                    && mutable.getStyle().equals(currentMerge.getStyle())) {
+
+                String merged = literalB.text() + literalA.text();
+                currentMerge = Component.literal(merged).setStyle(mutable.getStyle());
+
+                optimized.set(optimized.size() - 1, currentMerge);
+                continue;
+            }
+
+            if (sibling instanceof MutableComponent mutableComponent) {
+                currentMerge = mutableComponent;
+            } else {
+                currentMerge = null;
+            }
+
+            optimized.add(sibling);
+        }
+
+        // make the first one get changed to the base component
+        Component first = optimized.removeFirst();
+        MutableComponent result;
+
+        if (first instanceof MutableComponent mutable) {
+            result = mutable;
+        } else {
+            result = Component.empty().append(first);
+        }
+
+        result.getSiblings().addAll(optimized);
+
+        optimisedTextCache.put(component.toString(), result.copy());
+        return result;
+    }
+
     @ApiStatus.Internal
     public static List<ItemGuiTexture> getItemGuiTextures() {
         return ITEM_GUI_TEXTURES;
@@ -147,6 +215,13 @@ public class GuiUtils {
     public static void generateAssets(BiConsumer<String, byte[]> assetWriter) {
         var fontBase = new JsonObject();
         var providers = new JsonArray();
+
+        var spaces = new JsonObject();
+        spaces.addProperty("type", "space");
+        var advances = new JsonObject();
+        SPACES.forEach((integer, character) -> advances.addProperty(Character.toString(character), integer));
+        spaces.add("advances", advances);
+        providers.add(spaces);
 
         FONT_TEXTURES.forEach((entry) -> {
             var bitmap = new JsonObject();
@@ -178,25 +253,13 @@ public class GuiUtils {
 
         assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/ui.json", fontBase.toString().getBytes(StandardCharsets.UTF_8));
 
-        var spaceFontBase = new JsonObject();
-        var spaceProviders = new JsonArray();
-
-
-        var spaces = new JsonObject();
-        spaces.addProperty("type", "space");
-        var advances = new JsonObject();
-        SPACES.forEach((integer, character) -> advances.addProperty(Character.toString(character), integer));
-        spaces.add("advances", advances);
-        spaceProviders.add(spaces);
-
-        spaceFontBase.add("providers", spaceProviders);
-
-        assetWriter.accept("assets/" + Lib99j.MOD_ID + "/font/spaces.json", spaceFontBase.toString().getBytes(StandardCharsets.UTF_8));
-
-        String itemAtlas = "{\"sources\":[{\"type\":\"directory\",\"source\":\"ui\",\"prefix\":\"ui/\"}";
+        String itemAtlas = "{\"sources\":[";
+        boolean first = true;
 
         for (String s : atlasAdditions) {
-            itemAtlas += ",{\"type\":\"single\",\"resource\":\"%name%\"}".replace("%name%", s);
+            if(!first) itemAtlas += ",";
+            itemAtlas += "{\"type\":\"single\",\"resource\":\"%name%\"}".replace("%name%", s);
+            first = false;
         }
         itemAtlas += "]}";
 
@@ -239,7 +302,8 @@ public class GuiUtils {
         Identifier newPath = Identifier.fromNamespaceAndPath(path.getNamespace(), MiscUtils.replaceTextBetween(path.getPath(), "", "/", ""));
         ItemGuiTexture texture = new ItemGuiTexture(newPath, base, coloured);
         ITEM_GUI_TEXTURES.add(texture);
-        if(!base.equals("ui")) atlasAdditions.add(path.toString());
+        //add individual so it doesnt have huge assets from random folders that arent needed
+        atlasAdditions.add(path.toString());
         return blank().model(Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 

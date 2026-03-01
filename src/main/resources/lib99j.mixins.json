@@ -15,12 +15,14 @@
     "LivingEntityMixin",
     "MinecraftServerMixin",
     "PlayerListAccessor",
+    "PolymerEffectScreenMixin",
     "RegistrySynchronizationMixin",
     "ServerCommonPacketListenerImplMixin",
     "ServerConfigPacketListenerImplMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerLevelMixin",
-    "ServerPlayerMixin"
+    "ServerPlayerMixin",
+    "SystemLanguageMixin"
   ],
   "injectors": {
     "defaultRequire": 1

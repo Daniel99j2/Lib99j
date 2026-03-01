@@ -1,7 +1,6 @@
 package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.*;
-import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.ServerParticleCommand;
@@ -9,7 +8,6 @@ import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.daniel99j.lib99j.impl.VfxCommand;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
-import com.daniel99j.lib99j.ponder.impl.GuiTextures;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -33,6 +31,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -58,6 +57,7 @@ import java.util.*;
  * A library for all of Daniel99j's mods
  * @see GameProperties Enabling content mod settings
  * @see com.daniel99j.lib99j.api External API's
+ * @see TestingElements Example usage
  */
 @ApiStatus.Internal
 public class Lib99j implements ModInitializer {
@@ -66,6 +66,8 @@ public class Lib99j implements ModInitializer {
     @Nullable
     private static MinecraftServer server = null;
     public static ArrayList<ServerPlayer> additionalPlayers = new ArrayList<>();
+
+    public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -90,11 +92,16 @@ public class Lib99j implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        boolean isMyMachine = false;
         String[] list = FabricLoader.getInstance().getLaunchArguments(true);
         for (int i = 0; i < list.length; i++) {
-            if(Objects.equals(list[i], "--gameDir") && list.length > i+1 && list[i+1].endsWith("\\build\\datagen")) {
-                GameProperties.markRunningDataGen();
-                break;
+            if (Objects.equals(list[i], "--gameDir") && list.length > i + 1) {
+                if (list[i + 1].endsWith("\\build\\datagen")) {
+                    GameProperties.markRunningDataGen();
+                    break;
+                } else if(list[i + 1].contains("home/dj") && list[i + 1].contains("Coding/Lib99j")) {
+                    isMyMachine = true;
+                }
             };
         }
 
@@ -107,10 +114,25 @@ public class Lib99j implements ModInitializer {
             }
         });
 
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+        //only enable features on my machine so other mod developers do not forget to enable them for their mods
+        if(isMyMachine) {
+            GameProperties.enablePonder();
+            GameProperties.enableCustomEffectBadLuck();
+
             RegUtil.currentModNamespace("lib99jtestelements");
             TestingElements.init();
             RegUtil.finishedWithNamespace("lib99jtestelements");
+
+            //this one is just for me
+            RegistryPacketUtils.addRegistryModification(Registries.BIOME.registry(), (id, tag) -> {
+                if(id.equals(Identifier.withDefaultNamespace("plains"))) {
+                    if (tag instanceof CompoundTag compound) {
+                        compound.putFloat("temperature", 0.0F);
+                    }
+                    return true;
+                }
+                return false;
+            });
         };
 
         ServerLifecycleEvents.SERVER_STARTED.register((server1) -> server = server1);
@@ -146,18 +168,6 @@ public class Lib99j implements ModInitializer {
             ServerParticleManager.clearParticles();
             Lib99j.server = null;
         });
-
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            RegistryPacketUtils.addRegistryModification(Registries.BIOME.registry(), (id, tag) -> {
-                if(id.equals(Identifier.withDefaultNamespace("plains"))) {
-                    if (tag instanceof CompoundTag compound) {
-                        compound.putFloat("temperature", 0.0F);
-                    }
-                    return true;
-                }
-                return false;
-            });
-        }
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
@@ -239,6 +249,15 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
+                builder.then(Commands.literal("compacttext")
+                        .executes((context) -> {
+                            MutableComponent test = GuiUtils.compactText(Component.literal("testing").append("123").append(Component.literal("4")).append(Component.literal("5").withColor(0x00ff00)).append("6"));
+                            context.getSource().sendSystemMessage(test);
+                            context.getSource().sendSystemMessage(Component.literal(test.toString()));
+                            return 1;
+                        })
+                        .build());
+
                 builder.then(Commands.literal("tplockedcamera")
                         .executes((context) -> {
                             Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
@@ -250,7 +269,8 @@ public class Lib99j implements ModInitializer {
 
                 builder.then(Commands.literal("testrandomcode")
                         .executes((context) -> {
-                            context.getSource().getPlayer().getInventory().add(DefaultGuiTextures.TEST_UI.asStack());
+                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_UI_ITEM.asStack());
+                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_VANILLA_GUI_ITEM.asStack());
                             return 1;
                         })
                         .build());
@@ -272,12 +292,6 @@ public class Lib99j implements ModInitializer {
                 dispatcher.getRoot().addChild(builder.build());
             }
         });
-
-        GuiTextures.init();
-
-        GameProperties.enableHideableBossBar();
-
-        GameProperties.enableCustomEffectBadLuck();
 
         LOGGER.info("Ready to rumble!");
     }

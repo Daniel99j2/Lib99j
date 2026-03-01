@@ -15,16 +15,18 @@ public class ExecuteCodeInstruction extends PonderInstruction {
         return true;
     };
 
+    @Override
+    public boolean preventContinue(PonderScene scene) {
+        return false;
+    }
+
+    @Override
     public void start(PonderScene scene) {
         this.onExecute.accept(scene);
     }
 
-    public void cleanup(PonderScene scene) {
-
-    }
-
+    @Override
     public void tick(PonderScene scene) {
-        super.tick(scene);
     };
 
     @Override

@@ -8,35 +8,35 @@ public class ShowItemInstruction extends PonderInstruction {
     private ItemStack stack;
 
     public ShowItemInstruction(float displayTime, ItemStack stack) {
-        this.displayTime = (int) (displayTime*20);
+        this.displayTime = (int) (displayTime * 20);
         this.stack = stack;
     }
 
+    @Override
     public boolean isComplete(PonderScene scene) {
         return this.time > this.displayTime;
-    };
+    }
 
+    @Override
     public boolean preventContinue(PonderScene scene) {
         return false;
-    };
+    }
 
+    @Override
     public void start(PonderScene scene) {
     }
 
-    public void cleanup(PonderScene scene) {
-
-    }
-
+    @Override
     public void tick(PonderScene scene) {
         super.tick(scene);
-    };
+    }
 
-        @Override
-        public ShowItemInstruction clone() {
-            ShowItemInstruction clone = (ShowItemInstruction) super.clone();
-            clone.stack = stack.copy();
-            return clone;
-        }
+    @Override
+    public ShowItemInstruction clone() {
+        ShowItemInstruction clone = (ShowItemInstruction) super.clone();
+        clone.stack = stack.copy();
+        return clone;
+    }
 
     @Override
     public String toString() {

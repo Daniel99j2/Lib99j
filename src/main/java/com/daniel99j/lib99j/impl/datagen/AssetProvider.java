@@ -16,6 +16,8 @@ import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -25,6 +27,7 @@ import java.util.function.BiConsumer;
  */
 public class AssetProvider implements DataProvider {
     private final PackOutput output;
+    private static final Map<String, String> translationOverrides = new HashMap<>();
 
     public AssetProvider(FabricDataOutput output) {
         this.output = output;
@@ -67,7 +70,11 @@ public class AssetProvider implements DataProvider {
         if(GameProperties.isBadLuckCustomEffect()) {
             try {
                 assetWriter.accept("assets/minecraft/textures/mob_effect/unluck.png", Lib99j.class.getResourceAsStream("/assets/lib99j/textures/asset/custom_effect.png").readAllBytes());
-                assetWriter.accept("assets/minecraft/lang/en_us.json", "{\"effect.minecraft.unluck\": \"Custom Effect (/polymer effects)\"}".getBytes(StandardCharsets.UTF_8));
+                JsonObject json = new JsonObject();
+                translationOverrides.forEach(json::addProperty);
+                for (String supportedLanguage : Lib99j.SUPPORTED_LANGUAGES) {
+                    assetWriter.accept("assets/minecraft/lang/"+supportedLanguage+".json", json.toString().getBytes(StandardCharsets.UTF_8));
+                }
             } catch (IOException e) {
                 Lib99j.LOGGER.error("Failed to make bad luck a custom effect", e);
             }
@@ -91,5 +98,9 @@ public class AssetProvider implements DataProvider {
     @Override
     public String getName() {
         return "Assets";
+    }
+
+    public static void addOverrideTranslationAllSupportedLanguages(String key, String override) {
+        translationOverrides.put(key, override);
     }
 }

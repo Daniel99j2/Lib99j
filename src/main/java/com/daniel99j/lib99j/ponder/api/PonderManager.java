@@ -6,7 +6,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -14,7 +13,7 @@ public class PonderManager {
     public static Map<ServerPlayer, PonderScene> activeScenes = new HashMap<>();
 
     @ApiStatus.Internal
-    public static Map<Item, List<PonderBuilder>> itemToBuilders = new HashMap<>();
+    public static Map<Item, List<Identifier>> itemToBuilders = new HashMap<>();
     @ApiStatus.Internal
     public static Map<Identifier, PonderBuilder> idToBuilder = new HashMap<>();
 
@@ -26,7 +25,7 @@ public class PonderManager {
     public static void tick() {
         activeScenes.entrySet().removeIf((scene) -> {
             boolean toRemove = scene.getValue().isToBeRemoved();
-            if(toRemove) Lib99j.getServerOrThrow().levels.remove(scene.getValue().worldKey);
+            if(toRemove) Lib99j.getServerOrThrow().levels.remove(scene.getValue().levelKey);
             return toRemove;
         });
 
@@ -39,27 +38,24 @@ public class PonderManager {
      * Registers the builder from an item
      * <p>When pondering about an item, a set of rules is used to determine which ponder should show up first:</p>
      * <p>In general, the first registered association will be used</p>
-     * <p>If the Identifier other is not null and the item namespace is equal to the other namespace, this will take priority over other registered associations</p>
-     * @param other If not null, the ID to use in addition to the item. Also is used to determine source
+     * <p>If the item namespace is equal to the id namespace, this will take priority over other registered associations</p>
      */
-    public static PonderBuilder registerItemToBuilder(Item item, PonderBuilder builder, @Nullable Identifier other) {
+    public static PonderBuilder registerItemToBuilder(Item item, Identifier id, PonderBuilder builder) {
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
         boolean fromNameSpace = false;
-        if(other != null) {
-            //if the builder already has a source then dont try and override it
-            //you really shouldnt be using multiple namespaces on items for one ponder, but ill allow it
-            if(builder.sourceNamespace == null) {
-                builder.sourceNamespace = other.getNamespace();
-                if(Objects.equals(itemId.getNamespace(), other.getNamespace())) fromNameSpace = true;
-            };
-            registerIdToBuilder(other, builder);
+        //if the builder already has a source then dont try and override it
+        //you really shouldnt be using multiple namespaces on items for one ponder (the other way around is supported)
+        if (builder.sourceNamespace == null) {
+            builder.sourceNamespace = id.getNamespace();
+            if (Objects.equals(itemId.getNamespace(), id.getNamespace())) fromNameSpace = true;
         }
-        if(!itemToBuilders.containsKey(item)) {
+        registerIdToBuilder(id, builder);
+        if (!itemToBuilders.containsKey(item)) {
             itemToBuilders.put(item, new ArrayList<>());
-        };
-        if(fromNameSpace && !itemToBuilders.get(item).isEmpty() && (!Objects.equals(itemToBuilders.get(item).getFirst().sourceNamespace, itemId.getNamespace()))) {
-            itemToBuilders.get(item).addFirst(builder);
-        } else itemToBuilders.get(item).add(builder);
+        }
+        if (fromNameSpace && !itemToBuilders.get(item).isEmpty() && (!Objects.equals(PonderManager.idToBuilder.get(itemToBuilders.get(item).getFirst()).sourceNamespace, itemId.getNamespace()))) {
+            itemToBuilders.get(item).addFirst(id);
+        } else itemToBuilders.get(item).add(id);
         return builder;
     }
 

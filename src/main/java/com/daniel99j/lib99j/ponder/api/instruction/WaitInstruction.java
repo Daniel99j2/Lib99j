@@ -16,10 +16,6 @@ public class WaitInstruction extends PonderInstruction {
     public void start(PonderScene scene) {
     }
 
-    public void cleanup(PonderScene scene) {
-
-    }
-
     public void tick(PonderScene scene) {
         super.tick(scene);
     };

@@ -1,12 +1,17 @@
 package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.WaitInstruction;
+import com.daniel99j.lib99j.ponder.impl.PonderLevel;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
+import com.daniel99j.lib99j.testmod.TestingElements;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
@@ -17,20 +22,21 @@ import java.util.ArrayList;
 
 /**
  * The ponder builder
- * <p>See TestingElements for a simple example of how to make one</p>
+ * <p>See {@link TestingElements} for a simple example of how to make one</p>
  * <p>Things to note:</p>
- * <p>1. The scene is NOT at 0,0,0. Use scene.getOrigin to find the origin point. Some common methods like setBlock() or addFreshEntity() auto-convert, so usage varies (see PonderLevel for method overrides)</p>
+ * <p>1. The scene is NOT at 0,0,0. Use {@link PonderScene#getOrigin()} to find the origin point. Some common methods like {@link PonderLevel#getBlockState(BlockPos)} or {@link PonderLevel#addFreshEntity(Entity)} auto-convert, so usage varies (see {@link PonderLevel} for method overrides)</p>
  * <p>2. Scenes create a new world every time that it starts</p>
  * <p>3. Replaying/going back steps creates a new scene, then fast-forwards to the point</p>
  * <p>4. In a scene there is a fake player called packetRedirector. This entity is added to the player list through mixins and receives, then redirects to the real player, all outgoing packets</p>
- * <p>5. DO NOT EVER store the packet redirector, scene world, or active scene outside of a method where it will be automatically de-referenced</p>
+ * <p>5. DO NOT EVER store the packet redirector, scene world, or active scene outside of a method where it will be automatically de-referenced. This will cause memory leaks of 150mb+ PER SCENE!</p>
  * <p>6. As the ponder world is only temporary, feel free to edit things like gamerules, time, weather etc</p>
+ * <p>7. The bottom progress bar is translated using the server's language, utilizing Nucleoid Server Translation API. See <a href="https://github.com/NucleoidMC/Server-Translations">Link</a> for how to add translations</p>
  */
 public class PonderBuilder {
     protected @Nullable String sourceNamespace = null;
     protected boolean registered = false;
     protected ArrayList<PonderStep> steps = new ArrayList<>();
-    protected Component title = Component.literal("Title not specified");
+    protected Component title = Component.literal("Title not set");
     protected int sizeX = 10;
     protected int sizeY = 10;
     protected int sizeZ = 10;
@@ -47,6 +53,7 @@ public class PonderBuilder {
     private PonderBuilder() {}
 
     public static PonderBuilder create() {
+        GameProperties.throwIfPonderNotEnabled("Ponder has not been enabled! Use GameProperties.enablePonder()");
         return new PonderBuilder();
     }
 
@@ -120,9 +127,9 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderBuilder finishStep(String name) {
+    public PonderBuilder finishStep() {
         this.throwIfBuilt();
-        this.steps.add(new PonderStep(name, new ArrayList<>(this.currentStepInstructions), steps.size()));
+        this.steps.add(new PonderStep(new ArrayList<>(this.currentStepInstructions), steps.size()));
         this.currentStepInstructions.clear();
         return this;
     }
@@ -136,18 +143,22 @@ public class PonderBuilder {
         return this;
     }
 
-    public PonderScene startPondering(ServerPlayer player) {
+    public void startPondering(ServerPlayer player) {
         if(!this.registered) throw new IllegalStateException("You have not registered your ponder scene yet");
-        return startPonderingIgnoreRegistration(player);
+        startPonderingIgnoreRegistration(player);
     };
 
-    public PonderScene startPonderingIgnoreRegistration(ServerPlayer player) {
-        return startPonderingFromGoTo(player, null, -1);
+    public void startPonderingIgnoreRegistration(ServerPlayer player) {
+        startPonderingFromGoTo(player, null, -1);
     };
 
-    protected PonderScene startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
+    protected void startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
-        return new PonderScene(player, this, from, goTo);
+        PonderScene scene = new PonderScene(player, this, from, goTo);
+        //ensure scene is inited
+        if(from != null && from.isPaused() && goTo == 0) {
+            scene.tick(1, true);
+        };
     };
     
     private void throwIfBuilt() {

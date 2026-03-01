@@ -15,11 +15,12 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.ApiStatus;
 import xyz.nucleoid.packettweaker.PacketContext;
 
 import java.util.Objects;
 
-
+@ApiStatus.Internal
 public class TestBlock extends Block implements PolymerBlock, BlockWithElementHolder {
     public TestBlock(Properties settings) {
         super(settings);

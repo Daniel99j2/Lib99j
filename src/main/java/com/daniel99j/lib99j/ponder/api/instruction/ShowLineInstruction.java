@@ -24,14 +24,17 @@ public class ShowLineInstruction extends PonderInstruction {
         this.thickness = thickness;
     }
 
+    @Override
     public boolean isComplete(PonderScene scene) {
         return this.time > this.displayTime;
-    };
+    }
 
+    @Override
     public boolean preventContinue(PonderScene scene) {
         return false;
-    };
+    }
 
+    @Override
     public void start(PonderScene scene) {
         this.itemDisplayElement = new ItemDisplayElement(DefaultGuiTextures.SOLID_COLOUR.asStack());
         this.itemDisplayElement.setInitialPosition(Vec3.atLowerCornerOf(scene.getOrigin()));
@@ -41,10 +44,7 @@ public class ShowLineInstruction extends PonderInstruction {
         scene.getElementHolder().addElement(this.itemDisplayElement);
     }
 
-    public void cleanup(PonderScene scene) {
-
-    }
-
+    @Override
     public void tick(PonderScene scene) {
         super.tick(scene);
     };
