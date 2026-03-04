@@ -1,5 +1,10 @@
 package com.daniel99j.lib99j.api;
 
+import com.daniel99j.lib99j.Lib99j;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
+
 public class MiscUtils {
     public static String getTextBetween(String text, String start, String end) {
         int startIndex = text.indexOf(start);
@@ -22,5 +27,13 @@ public class MiscUtils {
 
         endIndex += end.length(); // include the end
         return text.substring(0, startIndex) + replacement + text.substring(endIndex);
+    }
+
+    public static void runOnMainThread(Runnable code) {
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            Minecraft.getInstance().execute(code);
+        } else {
+            Lib99j.getServerOrThrow().execute(code);
+        }
     }
 }

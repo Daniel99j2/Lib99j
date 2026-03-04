@@ -1,11 +1,13 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import com.daniel99j.lib99j.ponder.impl.PonderDevEdits;
+import com.daniel99j.lib99j.ponder.impl.PonderSceneMode;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
@@ -44,7 +46,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
     @Inject(method = "handleMovePlayer", at = @At("HEAD"), cancellable = true, order = 10000)
     private void disablePlayerMove(ServerboundMovePlayerPacket packet, CallbackInfo ci) {
         PacketUtils.ensureRunningOnSameThread(packet, (ServerGamePacketListener) this, this.server.packetProcessor());
-        if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
+        if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) {
             VFXUtils.handleMovePacket(packet, this.player);
             ci.cancel();
         }
@@ -76,6 +78,22 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
             PonderManager.activeScenes.get(this.player).stopPonderingSafely();
             ci.cancel();
         }
+
+
+        if ((serverboundPlayerActionPacket.getAction() == ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND) && PonderManager.isPondering(this.player)) {
+            if(PonderManager.activeScenes.get(this.player).getMode() == PonderSceneMode.IDENTIFYING) PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.PLAYING);
+            else PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.IDENTIFYING);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "handleSeenAdvancements", at = @At("HEAD"), cancellable = true, order = 0)
+    private void openPonderMenu(ServerboundSeenAdvancementsPacket serverboundSeenAdvancementsPacket, CallbackInfo ci) {
+        if (PonderManager.isPondering(this.player)) {
+            this.player.connection.send(new ClientboundContainerClosePacket(-1));
+            PonderManager.activeScenes.get(this.player).openMenu();
+            ci.cancel();
+        }
     }
 
     @Unique
@@ -105,7 +123,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
 
     @Inject(method = "handleInteract", at = @At("HEAD"), cancellable = true, order = 10000)
     private void disablePlayerInteract(ServerboundInteractPacket serverboundInteractPacket, CallbackInfo ci) {
-        if (VFXUtils.hasGenericScreenEffect(player, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
+        if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) {
             ci.cancel();
         }
     }

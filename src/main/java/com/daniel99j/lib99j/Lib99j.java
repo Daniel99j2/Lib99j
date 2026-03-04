@@ -2,11 +2,9 @@ package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
-import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
-import com.daniel99j.lib99j.impl.ServerParticleCommand;
-import com.daniel99j.lib99j.impl.ServerParticleManager;
-import com.daniel99j.lib99j.impl.VfxCommand;
+import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
+import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
@@ -29,11 +27,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.PacketListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.resources.Identifier;
@@ -69,6 +64,8 @@ public class Lib99j implements ModInitializer {
 
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
+    public static boolean isDaniel99jMachine = false;
+
     public static @Nullable MinecraftServer getServer() {
         return server;
     }
@@ -92,7 +89,6 @@ public class Lib99j implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        boolean isMyMachine = false;
         String[] list = FabricLoader.getInstance().getLaunchArguments(true);
         for (int i = 0; i < list.length; i++) {
             if (Objects.equals(list[i], "--gameDir") && list.length > i + 1) {
@@ -100,7 +96,7 @@ public class Lib99j implements ModInitializer {
                     GameProperties.markRunningDataGen();
                     break;
                 } else if(list[i + 1].contains("home/dj") && list[i + 1].contains("Coding/Lib99j")) {
-                    isMyMachine = true;
+                    isDaniel99jMachine = true;
                 }
             };
         }
@@ -115,7 +111,7 @@ public class Lib99j implements ModInitializer {
         });
 
         //only enable features on my machine so other mod developers do not forget to enable them for their mods
-        if(isMyMachine) {
+        if(isDaniel99jMachine) {
             GameProperties.enablePonder();
             GameProperties.enableCustomEffectBadLuck();
 
@@ -162,6 +158,8 @@ public class Lib99j implements ModInitializer {
             PonderManager.activeScenes.forEach(((player, ponderScene) -> {
                 ponderScene.stopPondering(true);
             }));
+            PonderManager.activeScenes.clear();
+            RunCodeClickEvent.clickEvents.clear();
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
@@ -293,18 +291,10 @@ public class Lib99j implements ModInitializer {
             }
         });
 
+        PonderBuilder.hotswapExample();
+
+        PonderManager.load();
         LOGGER.info("Ready to rumble!");
     }
 
-    public record BypassPacket(Packet<?> packet) implements Packet {
-        @Override
-        public PacketType<? extends Packet> type() {
-            return null;
-        }
-
-        @Override
-        public void handle(PacketListener listener) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

@@ -201,32 +201,32 @@ public class VFXUtils {
         }
     }
 
-    public static void addGenericScreenEffect(ServerPlayer player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
+    public static void addGenericScreenEffect(ServerPlayer player, int ticks, GenericScreenEffect effect, Identifier source) {
         GenericScreenEffectInstance instance = new GenericScreenEffectInstance(player, ticks, effect, source);
         genericScreenEffectInstances.add(instance);
     }
 
     public static void setCameraInterpolation(ServerPlayer player, int time) {
-        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        if(!hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
         ((Lib99jPlayerUtilController) player).lib99j$setCameraInterpolationTime(time);
     }
 
     public static void setCameraPos(ServerPlayer player, Vec3 pos) {
-        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        if(!hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
         ((Lib99jPlayerUtilController) player).lib99j$setCameraPos(pos);
     }
 
     public static void setCameraPitch(ServerPlayer player, float pitch) {
-        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        if(!hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
         ((Lib99jPlayerUtilController) player).lib99j$setCameraPitch(pitch);
     }
 
     public static void setCameraYaw(ServerPlayer player, float yaw) {
-        if(!hasGenericScreenEffect(player, GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
+        if(!hasGenericScreenEffect(player, GenericScreenEffect.LOCK_CAMERA_AND_POS)) throw new IllegalStateException("Camera must be locked");
         ((Lib99jPlayerUtilController) player).lib99j$setCameraYaw(yaw);
     }
 
-    public static void addGenericScreenEffectUnlessExists(ServerPlayer player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
+    public static void addGenericScreenEffectUnlessExists(ServerPlayer player, int ticks, GenericScreenEffect effect, Identifier source) {
         if (!hasGenericScreenEffectSource(player, effect, source))
             addGenericScreenEffect(player, ticks, effect, source);
     }
@@ -254,21 +254,26 @@ public class VFXUtils {
     @ApiStatus.Internal
     public static boolean hasEffectEffect(ServerPlayer player) {
         return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player  && !instance.isFinished() && (
-                instance.effect == GENERIC_SCREEN_EFFECT.NIGHT_VISION ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.DARKNESS ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.BLINDNESS ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.BLACK_HEARTS ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.GREEN_HEARTS ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.GREEN_HUNGER ||
-                        instance.effect == GENERIC_SCREEN_EFFECT.NAUSEA
+                instance.effect == GenericScreenEffect.NIGHT_VISION ||
+                        instance.effect == GenericScreenEffect.DARKNESS ||
+                        instance.effect == GenericScreenEffect.BLINDNESS ||
+                        instance.effect == GenericScreenEffect.BLACK_HEARTS ||
+                        instance.effect == GenericScreenEffect.GREEN_HEARTS ||
+                        instance.effect == GenericScreenEffect.GREEN_HUNGER ||
+                        instance.effect == GenericScreenEffect.NAUSEA
         ));
     }
 
-    public static boolean hasGenericScreenEffect(ServerPlayer player, GENERIC_SCREEN_EFFECT effect) {
+    public static boolean hasAnyGenericScreenEffect(ServerPlayer player) {
+        return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && !instance.isFinished());
+    }
+
+
+    public static boolean hasGenericScreenEffect(ServerPlayer player, GenericScreenEffect effect) {
         return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && !instance.isFinished());
     }
 
-    public static boolean hasGenericScreenEffectSource(ServerPlayer player, GENERIC_SCREEN_EFFECT effect, Identifier source) {
+    public static boolean hasGenericScreenEffectSource(ServerPlayer player, GenericScreenEffect effect, Identifier source) {
         return genericScreenEffectInstances.stream().anyMatch(instance -> instance.player == player && instance.effect == effect && instance.source.equals(source) && !instance.isFinished());
     }
 
@@ -341,7 +346,7 @@ public class VFXUtils {
     @ApiStatus.Internal
     public static void handleMovePacket(ServerboundMovePlayerPacket packet, ServerPlayer player) {
         cameraLockEventHandlers.forEach(((identifier, serverPlayerObjectBiConsumer) -> {
-            genericScreenEffectInstances.stream().filter(instance -> instance.player == player && instance.source.equals(identifier) && instance.effect == GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS && !instance.isFinished()).forEach((match) -> {
+            genericScreenEffectInstances.stream().filter(instance -> instance.player == player && instance.source.equals(identifier) && instance.effect == GenericScreenEffect.LOCK_CAMERA_AND_POS && !instance.isFinished()).forEach((match) -> {
                 serverPlayerObjectBiConsumer.accept(player, packet);
             });
         }));
@@ -349,20 +354,6 @@ public class VFXUtils {
 
     public static void clearParticles(ServerPlayer player) {
         ParticleHelper.spawnParticlesAtPosition(player.level, player.position().add(0, -5, 0), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
-    }
-
-    public enum GENERIC_SCREEN_EFFECT {
-        RED_TINT,
-        SNOW,
-        FIRE,
-        NAUSEA,
-        BLACK_HEARTS,
-        GREEN_HEARTS,
-        GREEN_HUNGER,
-        BLINDNESS,
-        NIGHT_VISION,
-        DARKNESS,
-        LOCK_CAMERA_AND_POS
     }
 
     public static class CameraShakeInstance {
@@ -387,12 +378,12 @@ public class VFXUtils {
         ServerPlayer player;
         int ticks;
         int remainingTicks;
-        GENERIC_SCREEN_EFFECT effect;
+        GenericScreenEffect effect;
         Identifier source;
         List<Packet<ClientGamePacketListener>> queuedPackets = new ArrayList<>();
         boolean finished;
 
-        private GenericScreenEffectInstance(ServerPlayer player, int ticks, GENERIC_SCREEN_EFFECT effect, Identifier source) {
+        private GenericScreenEffectInstance(ServerPlayer player, int ticks, GenericScreenEffect effect, Identifier source) {
             this.ticks = ticks;
             this.remainingTicks = ticks;
             this.player = player;
@@ -405,7 +396,7 @@ public class VFXUtils {
             return player;
         }
 
-        public GENERIC_SCREEN_EFFECT getEffect() {
+        public GenericScreenEffect getEffect() {
             return effect;
         }
 

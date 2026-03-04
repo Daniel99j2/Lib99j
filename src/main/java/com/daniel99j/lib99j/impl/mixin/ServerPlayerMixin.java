@@ -1,8 +1,10 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
+import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.PlayerElementHolder;
 import com.daniel99j.lib99j.impl.PlayerListAdder;
@@ -14,7 +16,6 @@ import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
 import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
-import eu.pb4.polymer.virtualentity.api.elements.DisplayElement;
 import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.BlockPos;
@@ -55,7 +56,7 @@ public abstract class ServerPlayerMixin
     @Unique
     private ElementHolder lib99j$holder;
     @Unique
-    private DisplayElement lib99j$cameraPoint;
+    private BlockDisplayElement lib99j$cameraPoint;
     @Unique
     private final ArrayList<GuiUtils.PlayerTranslationCheckerData> lib99j$activeTranslationCheckers = new ArrayList<>();
     @Unique
@@ -106,7 +107,7 @@ public abstract class ServerPlayerMixin
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true, order = 10000)
     private void disableAttacking(Entity target, CallbackInfo ci) {
-        if (VFXUtils.hasGenericScreenEffect(getPlayer(), VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS)) {
+        if (VFXUtils.hasGenericScreenEffect(getPlayer(), GenericScreenEffect.LOCK_CAMERA_AND_POS)) {
             ci.cancel();
         }
     }
@@ -127,10 +128,10 @@ public abstract class ServerPlayerMixin
         this.lib99j$cameraPoint.setOffset(new Vec3(0, getPlayer().getEyeHeight(), 0));
         this.lib99j$cameraPoint.setInvisible(true);
         this.lib99j$holder.addElement(this.lib99j$cameraPoint);
-        getPlayer().connection.send(VirtualEntityUtils.createSetCameraEntityPacket(this.lib99j$cameraPoint.getEntityId()));
-        getPlayer().connection.send(VirtualEntityUtils.createRidePacket(this.lib99j$cameraPoint.getEntityId(), IntList.of(getId())));
-        getPlayer().connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
-        getPlayer().connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SPECTATOR.getId()));
+        getPlayer().connection.send(new BypassPacket(VirtualEntityUtils.createSetCameraEntityPacket(this.lib99j$cameraPoint.getEntityId())));
+        getPlayer().connection.send(new BypassPacket(VirtualEntityUtils.createRidePacket(this.lib99j$cameraPoint.getEntityId(), IntList.of(getId()))));
+        getPlayer().connection.send(new BypassPacket(new ClientboundSetSubtitleTextPacket(Component.empty())));
+        getPlayer().connection.send(new BypassPacket(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SPECTATOR.getId())));
         lib99j$setCameraPos(getPlayer().getEyePosition());
     }
 
@@ -162,9 +163,9 @@ public abstract class ServerPlayerMixin
     @Override
     public void lib99j$unlockCamera() {
         if (this.lib99j$cameraPoint == null) return;
-        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundSetCameraPacket(this.camera == null ? getPlayer() : this.camera)));
-        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, getPlayer().gameMode.getGameModeForPlayer().getId())));
-        getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundSetEntityDataPacket(getPlayer().getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.POSE, getPlayer().getPose())))));
+        getPlayer().connection.send(new BypassPacket(new ClientboundSetCameraPacket(this.camera == null ? getPlayer() : this.camera)));
+        getPlayer().connection.send(new BypassPacket(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, getPlayer().gameMode.getGameModeForPlayer().getId())));
+        getPlayer().connection.send(new BypassPacket(new ClientboundSetEntityDataPacket(getPlayer().getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.POSE, getPlayer().getPose())))));
         this.lib99j$holder.removeElement(this.lib99j$cameraPoint);
         this.lib99j$cameraPoint = null;
     }
@@ -285,5 +286,10 @@ public abstract class ServerPlayerMixin
     @Override
     public boolean lib99j$shouldAddToPlayerList() {
         return this.lib99j$shouldAddToPlayerList;
+    }
+
+    @Override
+    public BlockDisplayElement lib99j$getCamera() {
+        return this.lib99j$cameraPoint;
     }
 }

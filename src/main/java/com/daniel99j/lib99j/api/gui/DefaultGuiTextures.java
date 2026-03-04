@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.api.gui;
 
 import com.daniel99j.lib99j.Lib99j;
+import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
 import eu.pb4.sgui.api.elements.GuiElement;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.component.DataComponents;
@@ -15,7 +16,7 @@ import java.util.Optional;
 public class DefaultGuiTextures {
     public static final GuiElement INVISIBLE;
     public static final GuiElementBuilder SOLID_COLOUR = GuiUtils.generateColourableTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour"));
-    public static final GuiElementBuilder SOLID_COLOUR_BOX;
+    public static final GuiElementBuilder SOLID_COLOUR_BOX = GuiUtils.generateItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour_box"), ItemAsset.Properties.DEFAULT);
 
     //textures from polydex
     public static final GuiElementBuilder HEAD_PREVIOUS_PAGE = GuiUtils.head("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzEwODI5OGZmMmIyNjk1MWQ2ODNlNWFkZTQ2YTQyZTkwYzJmN2M3ZGQ0MWJhYTkwOGJjNTg1MmY4YzMyZTU4MyJ9fX0");
@@ -36,9 +37,5 @@ public class DefaultGuiTextures {
         INVISIBLE_STACK.set(DataComponents.ITEM_MODEL, Identifier.withDefaultNamespace("air"));
         INVISIBLE_STACK.set(DataComponents.USE_COOLDOWN, new UseCooldown(0.001f, Optional.of(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "invisible_model")))); // disable any item cooldown
         INVISIBLE = GuiElementBuilder.from(INVISIBLE_STACK).setItemName(Component.nullToEmpty("")).hideTooltip().build();
-
-        ItemStack SOLID_COLOUR_BOX_STACK = Items.BARRIER.getDefaultInstance();
-        SOLID_COLOUR_BOX_STACK.set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "gen/ui/solid_colour_box"));
-        SOLID_COLOUR_BOX = GuiElementBuilder.from(SOLID_COLOUR_BOX_STACK);
     }
 }

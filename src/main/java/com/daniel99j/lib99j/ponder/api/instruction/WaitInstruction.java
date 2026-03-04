@@ -10,7 +10,7 @@ public class WaitInstruction extends PonderInstruction {
     }
 
     public boolean isComplete(PonderScene scene) {
-        return this.time > this.waitTime;
+        return this.time >= this.waitTime;
     };
 
     public void start(PonderScene scene) {
@@ -23,6 +23,16 @@ public class WaitInstruction extends PonderInstruction {
     @Override
     public WaitInstruction clone() {
         return (WaitInstruction) super.clone();
+    }
+
+    @Override
+    public int getMaxValue() {
+        return this.waitTime;
+    }
+
+    @Override
+    public int getValue(PonderScene scene) {
+        return this.time;
     }
 
     @Override

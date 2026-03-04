@@ -2,7 +2,9 @@ package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
+import com.daniel99j.lib99j.ponder.impl.PonderGuiCreator;
 import com.daniel99j.lib99j.ponder.impl.PonderGuiTextures;
+import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Many game properties such as data gen etc.
@@ -85,5 +87,8 @@ public class GameProperties {
         GameProperties.ponderEnabled = true;
         GameProperties.hideableBossBar = true;
         PonderGuiTextures.load();
+        //load it!
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) //noinspection ResultOfMethodCallIgnored
+            PonderGuiCreator.PONDER_GUI_CREATOR_BUILDER.shouldHideFromCommands();
     }
 }

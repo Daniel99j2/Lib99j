@@ -52,6 +52,7 @@ public class GuiUtils {
     private static final List<String> atlasAdditions = new ArrayList<>();
     //Dont use a HashMap of component to component as they are mutable
     private static final Map<String, MutableComponent> optimisedTextCache = new HashMap<>();
+    public static final Map<Identifier, ItemAsset> customAssets = new HashMap<>();
 
     private static final String BASIC_ITEM_TEMPLATE = """
             {
@@ -276,7 +277,13 @@ public class GuiUtils {
 
         }
 
-        assetWriter.accept("assets/lib99j/items/gen/ui/solid_colour_box.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/solid_colour_box"), List.of())).toJson().getBytes());
+        customAssets.forEach((id, asset) -> {
+            assetWriter.accept("assets/"+id.getNamespace()+"/items/gen/"+id.getPath()+".json", asset.toJson().getBytes());
+        });
+
+
+//        assetWriter.accept("assets/lib99j/items/gen/ui/ponder/button.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/button_above"), List.of())).toJson().getBytes());
+//        assetWriter.accept("assets/lib99j/items/gen/ui/ponder/pondering_about.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about_above"), List.of())).toJson().getBytes());
     }
 
     public static GuiElementBuilder generateTexture(Identifier path) {
@@ -294,6 +301,17 @@ public class GuiUtils {
         else tints.set(0, colour);
         stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(data.floats(), data.flags(), data.strings(), tints));
         return stack;
+    }
+
+    public static GuiElementBuilder generateItemModel(Identifier path, ItemAsset.Properties properties) {
+        String base = MiscUtils.getTextBetween(path.getPath(), "", "/");
+        if(base.isEmpty()) throw new IllegalStateException("Error loading "+path.toString(), new Throwable("Texture paths must be prefixed, eg ui/test.png"));
+        Identifier newPath = Identifier.fromNamespaceAndPath(path.getNamespace(), MiscUtils.replaceTextBetween(path.getPath(), "", "/", ""));
+        atlasAdditions.add(path.toString());
+
+        customAssets.put(path, new ItemAsset(new BasicItemModel(path), properties));
+
+        return blank().model(Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
     }
 
     private static GuiElementBuilder generateTextureInternal(Identifier path, boolean coloured) {

@@ -1,7 +1,7 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.PonderChunkGenerator;
+import com.daniel99j.lib99j.impl.LevelChunkAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -32,7 +32,7 @@ public class PonderLevel extends ServerLevel {
         super(Lib99j.getServerOrThrow(),
                 Lib99j.getServerOrThrow().executor,
                 Lib99j.getServerOrThrow().storageSource,
-                new PonderLevelData(), resourceKey, new LevelStem(playerLevel.dimensionTypeRegistration(), new PonderChunkGenerator(biomeResourceKey, playerLevel.getHeight())),
+                new PonderLevelData(), resourceKey, new LevelStem(playerLevel.dimensionTypeRegistration(), new PonderChunkGenerator(biomeResourceKey, playerLevel.getLogicalHeight()-1)),
                 false,
                 0,
                 List.of(),
@@ -58,15 +58,21 @@ public class PonderLevel extends ServerLevel {
 
     @ApiStatus.Internal
     public void syncRain() {
-        this.oRainLevel = -1000;
+        this.setRainLevel(0);
         this.oThunderLevel = -1000;
     }
 
-    public void fillBlocks(BlockPos start, BlockPos end, BlockState blockState) {
-        for (int x = start.getX(); x < end.getX(); x++) {
-            for (int y = start.getY(); y < end.getY(); y++) {
-                for (int z = start.getZ(); z < end.getZ(); z++) {
-                    setBlockAndUpdate(new BlockPos(x, y, z), blockState);
+    public void fillBlocksAndUpdate(BlockPos start, BlockPos end, BlockState blockState) {
+        fillBlocks(start, end, blockState, false);
+    }
+
+    public void fillBlocks(BlockPos start, BlockPos end, BlockState blockState, boolean skipAllUpdates) {
+        for (int x = start.getX(); x <= end.getX(); x++) {
+            for (int y = start.getY(); y <= end.getY(); y++) {
+                for (int z = start.getZ(); z <= end.getZ(); z++) {
+                    BlockPos pos = new BlockPos(x, y, z);
+                    if(!skipAllUpdates) setBlockAndUpdate(pos, blockState);
+                    else ((LevelChunkAccessor) this.getChunkAt(pos)).lib99j$setBlockReallyUnsafeDoNotUse(pos, blockState);
                 }
             }
         }

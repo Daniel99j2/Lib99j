@@ -2,8 +2,6 @@ package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.EntityUtils;
-import com.daniel99j.lib99j.api.VFXUtils;
-import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
@@ -11,6 +9,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,12 +22,9 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,7 +132,7 @@ public class PonderCommand {
         scene.then(Commands.literal("pause").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
-                currentScene.pause();
+                currentScene.setMode(PonderSceneMode.PAUSED);
                 context.getSource().sendSystemMessage(Component.translatable("commands.lib99j.ponder.scene.paused"));
                 return 1;
             }
@@ -147,7 +143,7 @@ public class PonderCommand {
         scene.then(Commands.literal("unpause").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
-                currentScene.unpause();
+                currentScene.setMode(PonderSceneMode.PLAYING);
                 context.getSource().sendSystemMessage(Component.translatable("commands.lib99j.ponder.scene.unpaused"));
                 return 1;
             }
@@ -170,7 +166,17 @@ public class PonderCommand {
 
         LiteralArgumentBuilder<CommandSourceStack> dev = Commands.literal("dev");
         dev.then(Commands.literal("ui_creator").executes((context) -> {
-            return 1;
+            if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
+                PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
+                currentScene.stopPonderingSafelyWithoutVfx();
+                currentScene.runOnceDone = () -> {
+                    new PonderGuiCreator(currentScene.player, currentScene.builder, currentScene, currentScene.getStep());
+                };
+                context.getSource().sendSystemMessage(Component.literal("Entered UI creator mode. Open the menu (L) to start editing"));
+                return 1;
+            }
+            context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
+            return 0;
         }));
 
         dev.then(Commands.literal("get_edits").executes((context) -> {
@@ -198,15 +204,10 @@ public class PonderCommand {
         dev.then(Commands.literal("toggle_free_movement").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
-                currentScene.ponderDevEdits.inBlocKEditMode = !currentScene.ponderDevEdits.inBlocKEditMode;
-                if (currentScene.ponderDevEdits.inBlocKEditMode) {
-                    currentScene.pause();
-                    ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
-                    context.getSource().getPlayer().connection.send(new Lib99j.BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(currentScene.getOrigin().above(1).getBottomCenter(), Vec3.ZERO, 0, 0), Set.of())));
+                if (currentScene.getMode() != PonderSceneMode.DEV_EDITING) {
+                    currentScene.setMode(PonderSceneMode.DEV_EDITING);
                 } else {
-                    currentScene.unpause();
-                    VFXUtils.removeGenericScreenEffect(context.getSource().getPlayerOrException(), Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-                    VFXUtils.addGenericScreenEffect(context.getSource().getPlayerOrException(), -1, VFXUtils.GENERIC_SCREEN_EFFECT.LOCK_CAMERA_AND_POS, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
+                    currentScene.setMode(PonderSceneMode.PLAYING);
                 }
                 context.getSource().sendSystemMessage(Component.literal("Toggled free movement"));
                 return 1;
@@ -215,7 +216,20 @@ public class PonderCommand {
             return 0;
         }));
 
-        root.then(dev);
+        if(Lib99j.isDaniel99jMachine) dev.then(Commands.literal("go_to_real_ponder_world").executes((context) -> {
+            if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
+                PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
+                PonderLevel level = currentScene.getLevel();
+                currentScene.stopPondering(true);
+                context.getSource().getPlayerOrException().teleportTo(level, currentScene.getOrigin().getX(), currentScene.getOrigin().getY(), currentScene.getOrigin().getZ(), Set.of(), 1, 1, true);
+                context.getSource().sendSystemMessage(Component.literal("Teleported to real ponder world"));
+                return 1;
+            }
+            context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
+            return 0;
+        }));
+
+        if(FabricLoader.getInstance().isDevelopmentEnvironment()) root.then(dev);
 
         dispatcher.getRoot().addChild(root.build());
     }
@@ -223,7 +237,7 @@ public class PonderCommand {
     private static boolean checkIfOnGround(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         //enable elytra pondering. it might be buggy but its less cheaty than being able to have a friend place water below when you fall
         //if this didnt exist, the player would still take fall damage but only when exiting ponder
-        if (!context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 3) > 10) {
+        if (!context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 10) <= 3) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.not_on_ground"));
             return true;
         }
@@ -233,14 +247,20 @@ public class PonderCommand {
 
     private static void registerIdSuggestions(Set<Identifier> ids, LiteralArgumentBuilder<CommandSourceStack> root) {
         List<String> allowedIds = new ArrayList<>();
-        ids.forEach((id) -> allowedIds.add(id.toString()));
+        ids.forEach((id) -> {
+            if(!PonderManager.idToBuilder.get(id).shouldHideFromCommands()) allowedIds.add(id.toString());
+        });
         root.then(Commands.argument("id", IdentifierArgument.id()).suggests((context, builder) -> SharedSuggestionProvider.suggest(allowedIds, builder)).executes((context) -> openPonderFromId(context, IdentifierArgument.getId(context, "id"))));
     }
 
     private static int openPonderFromId(CommandContext<CommandSourceStack> context, Identifier id) throws CommandSyntaxException {
         PonderBuilder builder = PonderManager.idToBuilder.get(id);
-        if (builder == null) {
+        if (builder == null || (!FabricLoader.getInstance().isDevelopmentEnvironment() && builder.shouldHideFromCommands())) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.id_not_found", id.toString()));
+            return 0;
+        }
+        if (builder.shouldHideFromCommands()) {
+            context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.hidden_from_commands", id.toString(), Component.translatable("commands.lib99j.ponder.id_not_found", id.toString())));
             return 0;
         }
         //send before so it isn't blocked by packet redirection

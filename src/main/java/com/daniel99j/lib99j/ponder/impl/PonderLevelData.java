@@ -37,7 +37,7 @@ public class PonderLevelData implements ServerLevelData, WorldData {
     private boolean initialized;
     private final TimerQueue<MinecraftServer> timer;
     private GameRules gameRules;
-    private Difficulty difficulty;
+    private Difficulty difficulty = Difficulty.NORMAL;
 
     public PonderLevelData() {
         this.gameTime = 0;

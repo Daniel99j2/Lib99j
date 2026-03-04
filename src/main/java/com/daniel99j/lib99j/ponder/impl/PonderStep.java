@@ -1,10 +1,12 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 
-public record PonderStep(ArrayList<PonderInstruction> instructions, int i) implements Cloneable {
+@ApiStatus.Internal
+public record PonderStep(ArrayList<PonderInstruction> instructions, int i, int totalValue) implements Cloneable {
     public PonderStep clone() {
         try {
             PonderStep clone = (PonderStep) super.clone();
@@ -12,7 +14,7 @@ public record PonderStep(ArrayList<PonderInstruction> instructions, int i) imple
             this.instructions.forEach(i -> {
                 newInstructions.add(i.clone());
             });
-            return new PonderStep(newInstructions, i);
+            return new PonderStep(newInstructions, i, totalValue);
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }

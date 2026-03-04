@@ -415,9 +415,9 @@ public class EntityUtils {
     }
 
     private static void getDistanceToGroundRec(ValueHolder<Integer> val, BlockPos currentPos, ServerLevel level, int current, int limit) {
-        if(current > limit) {
+        if(current > limit || level.getMinY() > currentPos.getY()) {
             val.object = 999999999;
-        } else if(level.getMinY() > currentPos.getY() && !level.getBlockState(currentPos).getCollisionShape(level, currentPos).isEmpty()) {
+        } else if(!level.getBlockState(currentPos).getCollisionShape(level, currentPos).isEmpty()) {
             val.object = current;
         } else {
             getDistanceToGroundRec(val, currentPos.below(), level, current+1, limit);

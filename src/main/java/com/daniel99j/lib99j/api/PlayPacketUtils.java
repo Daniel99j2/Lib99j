@@ -53,7 +53,7 @@ public class PlayPacketUtils {
         temp.add(new PacketInfo(ClientboundEntityPositionSyncPacket.class, GamePacketTypes.CLIENTBOUND_ENTITY_POSITION_SYNC, PacketFlow.CLIENTBOUND, PacketTag.WORLD, PacketTag.ENTITY));
         temp.add(new PacketInfo(ClientboundExplodePacket.class, GamePacketTypes.CLIENTBOUND_EXPLODE, PacketFlow.CLIENTBOUND, PacketTag.WORLD, PacketTag.MISC));
         temp.add(new PacketInfo(ClientboundForgetLevelChunkPacket.class, GamePacketTypes.CLIENTBOUND_FORGET_LEVEL_CHUNK, PacketFlow.CLIENTBOUND, PacketTag.WORLD, PacketTag.CHUNK));
-        temp.add(new PacketInfo(ClientboundGameEventPacket.class, GamePacketTypes.CLIENTBOUND_GAME_EVENT, PacketFlow.CLIENTBOUND, PacketTag.MISC, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ClientboundGameEventPacket.class, GamePacketTypes.CLIENTBOUND_GAME_EVENT, PacketFlow.CLIENTBOUND, PacketTag.MISC, PacketTag.PLAYER_CLIENT, PacketTag.MANY_USES));
         temp.add(new PacketInfo(ClientboundGameTestHighlightPosPacket.class, GamePacketTypes.CLIENTBOUND_GAME_TEST_HIGHLIGHT_POS, PacketFlow.CLIENTBOUND, PacketTag.DEBUG, PacketTag.WORLD, PacketTag.WORLD));
         temp.add(new PacketInfo(ClientboundMountScreenOpenPacket.class, GamePacketTypes.CLIENTBOUND_MOUNT_SCREEN_OPEN, PacketFlow.CLIENTBOUND, PacketTag.UI));
         temp.add(new PacketInfo(ClientboundHurtAnimationPacket.class, GamePacketTypes.CLIENTBOUND_HURT_ANIMATION, PacketFlow.CLIENTBOUND, PacketTag.PLAYER_CLIENT));
@@ -227,7 +227,8 @@ public class PlayPacketUtils {
         DEBUG,
         MISC,
         CHAT,
-        COMMAND
+        COMMAND,
+        MANY_USES
     }
 
     public static @Nullable PacketInfo getInfo(Identifier id) {

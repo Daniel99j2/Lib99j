@@ -1,0 +1,25 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"0": "lib99j:ui/ponder/pondering_about",
+		"particle": "lib99j:ui/ponder/pondering_about"
+	},
+	"elements": [
+		{
+			"from": [-5.5, -5.5, 0],
+			"to": [22.5, 22.5, 0],
+			"rotation": {"angle": 0, "axis": "y", "origin": [-5.5, -5.5, 0]},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 16], "texture": "#0"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#0"}
+			}
+		}
+	],
+	"gui_light": "front",
+	"display": {
+		"gui": {
+			"translation": [0, -27, 0]
+		}
+	}
+}

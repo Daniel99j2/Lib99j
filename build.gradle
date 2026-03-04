@@ -50,6 +50,11 @@ repositories {
 	maven { url "https://maven.terraformersmc.com/releases/" }
 
 	maven {
+		name = 'ParchmentMC'
+		url = 'https://maven.parchmentmc.org'
+	}
+
+	maven {
 		name = "Terraformers"
 		url = "https://maven.terraformersmc.com/"
 	}
@@ -63,23 +68,27 @@ fabricApi {
 
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings loom.officialMojangMappings()
+	mappings loom.layered() {
+		officialMojangMappings()
+		parchment("org.parchmentmc.data:parchment-1.20.2:2023.10.08@zip")
+	}
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	modImplementation include("me.lucko:fabric-permissions-api:0.6.1")
 
+	modImplementation include ("eu.pb4:polymer-autohost:${project.polymer_version}")
 	modImplementation include ("eu.pb4:polymer-core:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-blocks:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-resource-pack:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-resource-pack-extras:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-autohost:${polymer_version}")
 	modImplementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
-	modImplementation include('eu.pb4:map-canvas-api:0.5.0+1.21.3')
-	modImplementation include('eu.pb4:sidebar-api:0.5.1+1.21.1')
-	modImplementation include('eu.pb4:sgui:1.11.0+1.21.9')
-	modImplementation include('eu.pb4:factorytools:0.8.2+1.21.10')
+	modImplementation include("eu.pb4:map-canvas-api:0.7.1+1.21.11")
+	modImplementation include("eu.pb4:sidebar-api:0.5.1+1.21.1")
+	modImplementation include("eu.pb4:sgui:1.12.0+1.21.11")
+	modImplementation include("eu.pb4:factorytools:0.8.2+1.21.10")
 	modImplementation include("eu.pb4:common-protection-api:1.0.0")
 
 	modImplementation ("me.shedaniel.cloth:cloth-config-fabric:21.11.153")
@@ -89,6 +98,8 @@ dependencies {
 	modCompileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
 
 	modImplementation include("xyz.nucleoid:server-translations-api:2.5.2+1.21.9-pre3")
+
+	modCompileOnly 'maven.modrinth:polydex:1.8.1+1.21.11'
 }
 
 processResources {

@@ -2,12 +2,9 @@ package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.ItemUtils;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
@@ -55,18 +52,16 @@ public class Lib99jClient implements ClientModInitializer {
 
                     for(Block block : blocksWithoutBlockItem.stream().sorted(Comparator.comparing(block -> block.properties().id.identifier().toString())).toList()) {
                         if(!block.defaultBlockState().isAir()) {
-                            ItemStack stack = Items.REPEATING_COMMAND_BLOCK.getDefaultInstance();
+                            ItemStack stack = Items.COMMAND_BLOCK.getDefaultInstance();
                             stack.set(DataComponents.ITEM_NAME, block.getName());
-                            CommandBlockEntity be = new CommandBlockEntity(BlockPos.ZERO, Blocks.REPEATING_COMMAND_BLOCK.defaultBlockState());
+                            CommandBlockEntity be = new CommandBlockEntity(BlockPos.ZERO, Blocks.COMMAND_BLOCK.defaultBlockState());
                             be.setAutomatic(true);
-                            be.setPowered(true);
-                            be.conditionMet = false;
-                            be.setChanged();;
+                            be.setChanged();
                             be.getCommandBlock().setCommand("setblock ~ ~ ~ " + block.properties().id.identifier());
                             TagValueOutput view = TagValueOutput.createWithoutContext(null);
-                            var t = "/setblock -3 0 -2 minecraft:repeating_command_block[conditional=false,facing=south]{Command:\"setblock ~ ~ ~ minecraft:light_blue_wall_banner\",SuccessCount:0,TrackOutput:1b,UpdateLastExecution:1b,auto:1b,components:{\"minecraft:item_name\":{translate:\"block.minecraft.light_blue_banner\"}},conditionMet:0b,powered:0b}";
                             be.saveWithFullMetadata(view);
                             stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BlockEntityType.COMMAND_BLOCK, CustomData.of(view.buildResult()).copyTag()));
+                            stack.set(DataComponents.ITEM_MODEL, Identifier.withDefaultNamespace("test_instance_block"));
                             entries.accept(stack);
                         }
                     }
@@ -97,17 +92,6 @@ public class Lib99jClient implements ClientModInitializer {
                 i.set(DataComponents.ITEM_NAME, Component.literal(id.toString()).withStyle(ChatFormatting.YELLOW));
                 entries.accept(i, CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
             });
-        });
-
-        ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if(client.getWindow().isFullscreen() && FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                client.getWindow().toggleFullScreen();
-                int x = client.getWindow().findBestMonitor().getX();
-                int y = client.getWindow().findBestMonitor().getY();
-                if(x <= 0 || y <= 0) return;
-                client.getWindow().setWindowed(x, y);
-                client.getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.nullToEmpty("Fullscreen disabled"), Component.nullToEmpty("Fullscreen will cause freezes at breakpoints")));
-            }
         });
     }
 }

@@ -1,5 +1,6 @@
-package com.daniel99j.lib99j.api;
+package com.daniel99j.lib99j.ponder.impl;
 
+import com.daniel99j.lib99j.api.EmptyChunkGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.WorldGenRegion;

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 @ApiStatus.Internal
 public class PonderDevEdits {
-    public boolean inBlocKEditMode = false;
     public ArrayList<BlockEdit> blockEdits = new ArrayList<>();
 
     public record BlockEdit(BlockPos pos, Block block, EditType type) {}

@@ -19,6 +19,16 @@ public abstract class PonderInstruction implements Cloneable {
         this.time++;
     };
 
+    //The value of this instruction on the progress bar in an active scene
+    public int getValue(PonderScene scene) {
+        return 0;
+    }
+
+    //The value of this instruction on the progress bar when complete
+    public int getMaxValue() {
+        return 0;
+    }
+
     public PonderInstruction clone() {
         try {
             return (PonderInstruction) super.clone();

@@ -1,7 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.ponder.impl.PonderLevel;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.network.protocol.Packet;
@@ -15,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.List;
 
 @Mixin(ServerLevel.class)
-public abstract class ServerLevelMixin implements BossBarVisibility {
+public abstract class ServerLevelMixin {
     @ModifyExpressionValue(
             method = "globalLevelEvent",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;getPlayers()Ljava/util/List;")

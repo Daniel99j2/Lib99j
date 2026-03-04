@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.impl;
 
 import com.daniel99j.lib99j.api.gui.GuiUtils;
+import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -16,6 +17,8 @@ public interface Lib99jPlayerUtilController {
     void lib99j$setCameraInterpolationTime(int time);
 
     void lib99j$setCameraPos(Vec3 pos);
+
+    BlockDisplayElement lib99j$getCamera();
 
     void lib99j$setCameraPitch(float pitch);
 
