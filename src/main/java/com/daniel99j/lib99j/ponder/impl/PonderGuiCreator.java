@@ -7,6 +7,7 @@ import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
+import com.daniel99j.lib99j.ponder.api.PonderTextDisplay;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import net.minecraft.core.Holder;
@@ -63,8 +64,9 @@ public class PonderGuiCreator extends PonderScene {
         //Size done at 70 fov
         float normalSize = 0.31f/10;
         this.screenSizeDisplay.setScale(new Vector3f(normalSize*16, normalSize*9, 0));
-        this.screenSizeDisplay.setTranslation(new Vector3f(0, 0, -0.2f));
+        this.screenSizeDisplay.setTranslation(new Vector3f(0, 0, -0.2001f));
         this.screenSizeDisplay.setBillboardMode(Display.BillboardConstraints.CENTER);
+        this.screenSizeDisplay.setViewRange(0.01f);
 
         this.getElementHolder().addElement(this.screenSizeDisplay);
 
@@ -81,7 +83,10 @@ public class PonderGuiCreator extends PonderScene {
         this.positioningElement.setBillboardMode(Display.BillboardConstraints.CENTER);
         Vec2 coords = PonderScene.transformWorldToScreenCoord(new Vec2(0, 0));
         this.positioningElement.setTranslation(new Vector3f(coords.x, coords.y, -0.2f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
+        this.positioningElement.setViewRange(0.01f);
         this.getElementHolder().addElement(this.positioningElement);
+
+        this.getElementHolder().addElement(new PonderTextDisplay(this, 100, new Vec2(0.5f, 0.5f), new Vec2(2.4f, 2.4f), Component.literal("Testing 1234T"), Component.literal("Telephone"), Component.literal("Very long text wheeeeee"), Component.literal("Hi"), Component.literal("Gday")));
     }
 
 

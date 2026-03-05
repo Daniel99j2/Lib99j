@@ -26,5 +26,6 @@
   "ponder.scene.group.lib99j.large_group": "Testing elements",
   "ponder.scene.group.lib99j.tnt_group": "TNT",
   "commands.lib99j.ponder.hidden_from_commands": "Scene %1$s has been disabled for commands (this will display as \"%2$s\" in release versions)",
-  "lib99j.invalid_run_code_uuid": "Invalid run code click event"
+  "lib99j.invalid_run_code_uuid": "Invalid run code click event",
+  "ponder.scene.please_press_key": "Please press %1$s"
 }

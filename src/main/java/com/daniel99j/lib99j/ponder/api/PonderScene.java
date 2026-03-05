@@ -10,7 +10,9 @@ import com.daniel99j.lib99j.ponder.impl.*;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
+import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.sidebars.api.Sidebar;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -35,6 +37,7 @@ import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.player.ChatVisiblity;
@@ -316,6 +319,21 @@ public class PonderScene {
 
         this.elementHolder.addElement(background);
 
+        TextDisplayElement f5Hint = new TextDisplayElement(Component.translatable("ponder.scene.please_press_key", Component.keybind("key.togglePerspective"))) {
+            @Override
+            public Vec3 getCurrentPos() {
+                BlockDisplayElement element = ((Lib99jPlayerUtilController) player).lib99j$getCamera();
+                if(!getMode().hasInGameGui() || element == null) return new Vec3(0, -10000, 0);
+                return element.getCurrentPos();
+            }
+        };
+
+        f5Hint.setTranslation(new Vector3f(0, 0, 1f));
+        f5Hint.setScale(new Vector3f(3, 3, 0));
+        f5Hint.setBillboardMode(Display.BillboardConstraints.CENTER);
+        f5Hint.setBackground(0xff000000);
+        this.elementHolder.addElement(f5Hint);
+
         if (checkTime) {
             Lib99j.LOGGER.info("Stage {} took {}", "Finish", GLFW.glfwGetTime() - time);
             time = GLFW.glfwGetTime();
@@ -452,7 +470,24 @@ public class PonderScene {
             } else {
                 this.subtitleTopBar.setName(Component.empty());
             }
+
+            float moveDistance = Math.max(this.builder.sizeX, Math.max(this.builder.sizeY, this.builder.sizeZ))*2+15;
+            double distance = this.identifyPos.subtract(this.getBottomCenterPos()).length();
+            if(distance > moveDistance*1.5) {
+                this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(this.getOrigin().above(1).getBottomCenter(), Vec3.ZERO, 0, 0), Set.of())));
+            } else if(distance > moveDistance) {
+                Vec3 target = this.getBottomCenterPos();
+                Vec3 currentPos = this.identifyPos;
+                Vec3 targetPos = new Vec3(target.x, target.y, target.z);
+                Vec3 direction = targetPos.subtract(currentPos).normalize();
+                Vec3 accelerationVector = direction.scale(distance-moveDistance);
+                EntityUtils.sendVelocityDelta(this.player, accelerationVector);
+            }
         }
+    }
+
+    public Vec3 getBottomCenterPos() {
+        return this.origin.getBottomCenter().add(this.builder.sizeX/2.0f, 0, this.builder.sizeZ/2.0f);
     }
 
     //Use this if you are for example, currently in a tick loop with entities to avoid ConcurrentModificationException
@@ -500,18 +535,19 @@ public class PonderScene {
         this.hotbarGui.close();
         this.sidebarGui.hide();
 
+        //noinspection resource
         Lib99j.getServerOrThrow().levels.remove(levelKey);
 
         try {
             Files.walkFileTree(Lib99j.getServerOrThrow().storageSource.getDimensionPath(levelKey), new SimpleFileVisitor<>() {
                 @Override
-                public @NotNull FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                public @NotNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
                     Files.deleteIfExists(file);
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
-                public @NotNull FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                public @NotNull FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
                     Files.deleteIfExists(dir);
                     return FileVisitResult.CONTINUE;
                 }
@@ -523,8 +559,11 @@ public class PonderScene {
         VFXUtils.clearParticles(this.player);
 
         //just in case it might have stored it
+        //noinspection DataFlowIssue
         this.packetRedirector.connection = null;
+        //noinspection DataFlowIssue
         this.packetRedirector.gameMode.setLevel(null);
+        //noinspection DataFlowIssue
         this.packetRedirector.level = null;
 
         if(this.runOnceDone != null) this.runOnceDone.run();
@@ -556,7 +595,7 @@ public class PonderScene {
     }
 
     private PonderInstruction getCurrentInstruction() {
-        return getCurrentStep().instructions().get(this.currentInstructionInStep);
+        return Objects.requireNonNull(getCurrentStep()).instructions().get(this.currentInstructionInStep);
     }
 
     public MutableComponent buildActionBar() {
@@ -572,7 +611,7 @@ public class PonderScene {
         int currentInstructionValue = 0;
 
         int i = 0;
-        for (PonderInstruction instruction : this.getCurrentStep().instructions()) {
+        for (PonderInstruction instruction : Objects.requireNonNull(this.getCurrentStep()).instructions()) {
             if(i > this.currentInstructionInStep) break;
             currentInstructionValue+=instruction.getValue(this);
             i++;
@@ -619,7 +658,7 @@ public class PonderScene {
             this.showLoadingScreen();
             this.stopPondering(false);
             this.builder.startPonderingFromGoTo(this.player, this, step);
-        } else if (step > this.currentStep) {
+        } else {
             this.showLoadingScreen();
             fastForwardUntil(step);
         }

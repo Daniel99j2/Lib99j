@@ -16,7 +16,7 @@ public class PonderGuiTextures {
     public static final int FILLED_BAR_WIDTH = 176;
 
     public static final SimpleFontTexture STEP_BAR_BACKGROUND = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_back"), 182*2, 0, 9*2, 0);
-    public static final SimpleFontTexture STEP_BAR_1 = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_"+ 1), 1, -3*2, 3*2, 0);
+    public static final SimpleFontTexture STEP_BAR_1 = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_1"), 1, -3*2, 3*2, 0);
 
     public static final SimpleFontTexture PAUSE_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/pause"), 28*2, 28*2-6, 28*2, 360/2+28);
     public static final SimpleFontTexture RESUME_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/resume"), 28*2, 28*2-6, 28*2, 360/2+28);
@@ -32,6 +32,15 @@ public class PonderGuiTextures {
     public static final SimpleFontTexture RESTART_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/restart"), 28*2+1, -28*2*2, 28*2, 28*2);
 
     public static final GuiElementBuilder PONDERING_ABOUT_ITEM = GuiUtils.generateItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about"), new ItemAsset.Properties(false, true));
+
+    public static final SimpleFontTexture TEXT_BACKGROUND_TOP_LEFT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top_left"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_TOP_RIGHT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top_right"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_TOP = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_LEFT = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/left"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_RIGHT = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/right"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM_LEFT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom_left"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM_RIGHT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom_right"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom"), 1, 0, 16, 0);
 
     public static void load() {
     }

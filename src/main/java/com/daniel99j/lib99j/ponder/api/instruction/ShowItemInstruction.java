@@ -6,10 +6,22 @@ import net.minecraft.world.item.ItemStack;
 public class ShowItemInstruction extends PonderInstruction {
     private final int displayTime;
     private ItemStack stack;
+    private ItemStack stack2;
+    private ItemStack stack3;
 
     public ShowItemInstruction(float displayTime, ItemStack stack) {
+        this(displayTime, stack, null, null);
+    }
+
+    public ShowItemInstruction(float displayTime, ItemStack stack, ItemStack stack2) {
+        this(displayTime, stack, stack2, null);
+    }
+
+    public ShowItemInstruction(float displayTime, ItemStack stack, ItemStack stack2, ItemStack stack3) {
         this.displayTime = (int) (displayTime * 20);
         this.stack = stack;
+        this.stack2 = stack2;
+        this.stack3 = stack3;
     }
 
     @Override
