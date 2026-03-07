@@ -14,15 +14,15 @@ import net.minecraft.world.entity.Display;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
+
+import java.util.List;
 
 public class PonderTextDisplay extends TextDisplayElement {
-    private final PonderScene scene;
+    public PonderScene scene;
     private Vec2 pos;
     private int life;
 
-    public PonderTextDisplay(PonderScene scene, int life, Vec2 pos, Vec2 scale, Component... lines) {
-        this.scene = scene;
+    public PonderTextDisplay(int life, Vec2 pos, Vec2 scale, List<Component> lines) {
         this.pos = Vec2.ZERO;
         this.life = life;
         this.setLines(lines);
@@ -50,11 +50,6 @@ public class PonderTextDisplay extends TextDisplayElement {
         return element.getCurrentPos();
     }
 
-    @Override
-    public void setTranslation(Vector3fc vector3f) {
-        super.setTranslation(vector3f);
-    }
-
     public void setPos(Vec2 pos) {
         this.pos = pos;
         Vector3f scale = new Vector3f(0.01f, 0.01f, 0);
@@ -67,7 +62,7 @@ public class PonderTextDisplay extends TextDisplayElement {
     }
 
     public void setSize(Vec2 size) {
-        Vector3f scale = new Vector3f(0.01f * size.x, 0.01f * size.y, 0);
+        Vector3f scale = new Vector3f(0.024f * size.x, 0.024f * size.y, 0);
         this.setScale(scale);
     }
 
@@ -76,7 +71,7 @@ public class PonderTextDisplay extends TextDisplayElement {
         throw new IllegalArgumentException("Use setLines() instead");
     }
 
-    public void setLines(Component... lines) {
+    public void setLines(List<Component> lines) {
         int largestWidth = 0;
 
         for (Component line : lines) {
@@ -91,7 +86,7 @@ public class PonderTextDisplay extends TextDisplayElement {
         int i = 0;
         for (Component text : lines) {
             boolean top = i == 0;
-            boolean bottom = i == lines.length-1;
+            boolean bottom = i == lines.size()-1;
 
             int space = 0;
             MutableComponent text1 = Component.empty();

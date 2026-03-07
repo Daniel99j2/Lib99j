@@ -8,6 +8,7 @@ import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.impl.PlayerElementHolder;
 import com.daniel99j.lib99j.impl.PlayerListAdder;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.DynamicOps;
 import eu.pb4.polymer.core.api.entity.PolymerEntity;
@@ -35,6 +36,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +46,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -101,6 +104,15 @@ public abstract class ServerPlayerMixin
                 Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName() + " timed out (tries remaining: " + this.lib99j$getActiveTranslationChecker().remainingTries().get() + ")");
                 this.lib99j$getActiveTranslationChecker().remainingTries().setValue(this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() - 1);
                 this.lib99j$modTranslationCheckerTimeout = 5;
+            }
+        }
+    }
+
+    @Inject(method = "teleport(Lnet/minecraft/world/level/portal/TeleportTransition;)Lnet/minecraft/server/level/ServerPlayer;", at = @At("TAIL"))
+    private void lib99j$stopPondering(TeleportTransition teleportTransition, CallbackInfoReturnable<Entity> cir) {
+        if(((Object) this) instanceof ServerPlayer player) {
+            if(PonderManager.isPondering(player)) {
+                PonderManager.activeScenes.get(player).stopPonderingSafely();
             }
         }
     }

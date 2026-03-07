@@ -16,7 +16,9 @@ public class PonderGuiTextures {
     public static final int FILLED_BAR_WIDTH = 176;
 
     public static final SimpleFontTexture STEP_BAR_BACKGROUND = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_back"), 182*2, 0, 9*2, 0);
-    public static final SimpleFontTexture STEP_BAR_1 = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_1"), 1, -3*2, 3*2, 0);
+    public static final SimpleFontTexture STEP_BAR_FILLER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_1"), 1, -3*2, 3*2, 0);
+    public static final SimpleFontTexture STEP_BAR_STEP = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_step"), 1, -3*2, 3*2, 0);
+    public static final SimpleFontTexture STEP_BAR_STEP_SELECTED = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/step_bar_step_selected"), 5, -3*2, 6*2, 0);
 
     public static final SimpleFontTexture PAUSE_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/pause"), 28*2, 28*2-6, 28*2, 360/2+28);
     public static final SimpleFontTexture RESUME_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/resume"), 28*2, 28*2-6, 28*2, 360/2+28);

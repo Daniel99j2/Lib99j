@@ -1,20 +1,30 @@
 package com.daniel99j.lib99j.ponder.api.instruction;
 
 import com.daniel99j.lib99j.ponder.api.PonderScene;
-import net.minecraft.network.chat.MutableComponent;
+import com.daniel99j.lib99j.ponder.api.PonderTextDisplay;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec2;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ShowTextInstruction extends PonderInstruction {
-    private final int displayTime;
-    private MutableComponent component;
+    private PonderTextDisplay display;
+    private float displayTime;
+    private List<Component> components;
 
-    public ShowTextInstruction(float displayTime, MutableComponent component) {
-        this.displayTime = (int) (displayTime*20);
-        this.component = component;
+    public ShowTextInstruction(float displayTime, List<Component> components) {
+        this.components = new ArrayList<>();
+        for (Component component : components) {
+            this.components.add(component.copy());
+        }
+        this.displayTime = displayTime;
+        this.display = new PonderTextDisplay((int) (displayTime * 20), new Vec2(0.5f, 0.5f), Vec2.ONE, this.components);
     }
 
     @Override
     public boolean isComplete(PonderScene scene) {
-        return this.time > this.displayTime;
+        return true;
     }
 
     @Override
@@ -24,6 +34,8 @@ public class ShowTextInstruction extends PonderInstruction {
 
     @Override
     public void start(PonderScene scene) {
+        this.display.scene = scene;
+        scene.getElementHolder().addElement(this.display);
     }
 
     @Override
@@ -33,13 +45,12 @@ public class ShowTextInstruction extends PonderInstruction {
 
     @Override
     public ShowTextInstruction clone() {
-        ShowTextInstruction clone = (ShowTextInstruction) super.clone();
-        clone.component = component.copy();
-        return clone;
+        ShowTextInstruction showTextInstruction = new ShowTextInstruction(this.displayTime, this.components);
+        return showTextInstruction;
     }
 
     @Override
     public String toString() {
-        return "ShowTextInstruction{displayTime=" + displayTime + ", text=" + component.getString() + ", time=" + time + '}';
+        return "ShowTextInstruction";
     }
 }

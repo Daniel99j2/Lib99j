@@ -17,6 +17,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
@@ -59,6 +60,7 @@ public class PonderBuilder {
     protected BlockState state2 = Blocks.COAL_BLOCK.defaultBlockState();
     protected boolean roof = true;
     protected boolean hideFromCommands = false;
+    protected Item item;
 
     protected int totalValue = 0;
     
@@ -139,11 +141,16 @@ public class PonderBuilder {
 
     public PonderBuilder finishStep() {
         this.throwIfBuilt();
-        int value = 0;
+        int stepValue = 0;
         for (PonderInstruction currentStepInstruction : this.currentStepInstructions) {
-            value += currentStepInstruction.getMaxValue();
+            stepValue += currentStepInstruction.getMaxValue();
         }
-        this.steps.add(new PonderStep(new ArrayList<>(this.currentStepInstructions), steps.size(), value));
+
+        int totalValue = stepValue;
+        for (PonderStep step : this.steps) {
+            totalValue += step.stepValue();
+        }
+        this.steps.add(new PonderStep(new ArrayList<>(this.currentStepInstructions), steps.size(), stepValue, totalValue));
         this.currentStepInstructions.clear();
         return this;
     }
@@ -154,11 +161,7 @@ public class PonderBuilder {
             throw new IllegalStateException("Run builder.finishStep() before builder.build()");
         }
         this.done = true;
-        int value = 0;
-        for (PonderStep step : this.steps) {
-            value += step.totalValue();
-        }
-        this.totalValue = value;
+        this.totalValue = this.steps.getLast().totalValue();;
         return this;
     }
 

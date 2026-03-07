@@ -73,6 +73,7 @@ public class PonderManager {
      */
     public static PonderBuilder registerItemToBuilder(Item item, PonderBuilder builder) {
         if(builder.shouldHideFromCommands()) throw new IllegalStateException("Ponder builder {} is hidden, therefor cannot be added to an item".replace("{}", builder.id.toString()));
+        if(builder.item == null) builder.item = item;
         Identifier itemId = BuiltInRegistries.ITEM.getKey(item);
         boolean fromNameSpace = Objects.equals(itemId.getNamespace(), builder.id.getNamespace());
 
@@ -83,6 +84,7 @@ public class PonderManager {
         }
         if (fromNameSpace && !itemToBuilders.get(item).isEmpty() && (!Objects.equals(PonderManager.idToBuilder.get(itemToBuilders.get(item).getFirst()).id.getNamespace(), itemId.getNamespace()))) {
             itemToBuilders.get(item).addFirst(builder.id);
+            builder.item = item;
         } else itemToBuilders.get(item).add(builder.id);
         return builder;
     }

@@ -32,6 +32,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -43,9 +44,16 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 /**
@@ -160,10 +168,29 @@ public class Lib99j implements ModInitializer {
             }));
             PonderManager.activeScenes.clear();
             RunCodeClickEvent.clickEvents.clear();
+            ServerParticleManager.clearParticles();
+
+
+            try {
+                Files.walkFileTree(Lib99j.getServerOrThrow().storageSource.getDimensionPath(ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ponder", "delete"))).getParent(), new SimpleFileVisitor<>() {
+                    @Override
+                    public @NotNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
+                        Files.deleteIfExists(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public @NotNull FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
+                        Files.deleteIfExists(dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (Exception e) {
+                Lib99j.LOGGER.error("Failed to remove save data for temporary ponder levels", e);
+            }
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register((server) -> {
-            ServerParticleManager.clearParticles();
             Lib99j.server = null;
         });
 

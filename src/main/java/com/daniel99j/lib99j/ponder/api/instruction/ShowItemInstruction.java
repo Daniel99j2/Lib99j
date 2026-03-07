@@ -1,32 +1,25 @@
 package com.daniel99j.lib99j.ponder.api.instruction;
 
+import com.daniel99j.lib99j.ponder.api.PonderItemDisplay;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec2;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ShowItemInstruction extends PonderInstruction {
-    private final int displayTime;
-    private ItemStack stack;
-    private ItemStack stack2;
-    private ItemStack stack3;
+    private PonderItemDisplay display;
+    private List<ItemStack> items;
 
-    public ShowItemInstruction(float displayTime, ItemStack stack) {
-        this(displayTime, stack, null, null);
-    }
-
-    public ShowItemInstruction(float displayTime, ItemStack stack, ItemStack stack2) {
-        this(displayTime, stack, stack2, null);
-    }
-
-    public ShowItemInstruction(float displayTime, ItemStack stack, ItemStack stack2, ItemStack stack3) {
-        this.displayTime = (int) (displayTime * 20);
-        this.stack = stack;
-        this.stack2 = stack2;
-        this.stack3 = stack3;
+    public ShowItemInstruction(float displayTime, List<ItemStack> items) {
+        this.items = items;
+        this.display = new PonderItemDisplay((int) (displayTime * 20), new Vec2(0.5f, 0.6f), Vec2.ONE, this.items);
     }
 
     @Override
     public boolean isComplete(PonderScene scene) {
-        return this.time > this.displayTime;
+        return true;
     }
 
     @Override
@@ -36,6 +29,8 @@ public class ShowItemInstruction extends PonderInstruction {
 
     @Override
     public void start(PonderScene scene) {
+        this.display.scene = scene;
+        scene.getElementHolder().addElement(this.display);
     }
 
     @Override
@@ -45,13 +40,13 @@ public class ShowItemInstruction extends PonderInstruction {
 
     @Override
     public ShowItemInstruction clone() {
-        ShowItemInstruction clone = (ShowItemInstruction) super.clone();
-        clone.stack = stack.copy();
-        return clone;
+        ArrayList<ItemStack> newItems = new ArrayList<>();
+        this.items.forEach((item) -> newItems.add(item.copy()));
+        return new ShowItemInstruction(this.display.life, newItems);
     }
 
     @Override
     public String toString() {
-        return "ShowItemInstruction{displayTime=" + displayTime + ", stack=" + stack.toString() + ", time=" + time + '}';
+        return "ShowItemInstruction";
     }
 }

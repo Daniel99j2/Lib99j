@@ -106,14 +106,17 @@ public class PonderScene {
     public float identifyPitch = 0;
     @ApiStatus.Internal
     public float identifyYaw = 0;
-    @ApiStatus.Internal
-    public Runnable runOnceDone = null;
 
     /**
      * Store whatever you want in here
      */
     @SuppressWarnings("unused")
     public Object customData = null;
+
+    /**
+     * This code is executed when the ponder scene finishes. Note that it is overridden by some in-built actions
+     */
+    public Runnable runOnceDone = null;
 
     protected PonderScene(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
         GameProperties.throwIfPonderNotEnabled("This code should never be reached");
@@ -145,12 +148,14 @@ public class PonderScene {
         }
 
         this.player = player;
+
+        this.showLoadingScreen();
+
         this.hotbarGui = new PonderHotbarGui(this.player, this);
         this.hotbarGui.open();
         this.sidebarGui = new Sidebar(Sidebar.Priority.OVERRIDE);
         this.sidebarGui.show();
         this.sidebarGui.addPlayer(player);
-        this.showLoadingScreen();
 
         //forces advancement screen to have tabs, meaning the advancement button detection works
         AdvancementProgress progress = new AdvancementProgress();
@@ -313,9 +318,8 @@ public class PonderScene {
 
         ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.asStack(), 0x111111));
         background.setOverridePos(origin.getBottomCenter());
-        //background.setTranslation(new Vector3f(builder.sizeX/2-10, builder.sizeY/2-10, builder.sizeZ/2-10));
-        //background.setScale(new Vector3f(-builder.sizeX-20, -builder.sizeY-20, -builder.sizeZ-20));
         background.setScale(new Vector3f(-1000, -1000, -1000));
+        background.setViewRange(100f);
 
         this.elementHolder.addElement(background);
 
@@ -343,7 +347,7 @@ public class PonderScene {
     }
 
     public void tick() {
-        if (this.stepFFTo != -1) tick(100, true);
+        if (this.stepFFTo != -1) tick(500, true);
         else tick(1, false);
     }
 
@@ -357,11 +361,10 @@ public class PonderScene {
         }
         //dont check paused here so inputs and disconnections still are checked
 
-        if ((this.player.getLastClientInput().forward() || this.player.getLastClientInput().backward() || this.player.getLastClientInput().jump()) && this.mode.hasMovementControls()) {
+        if ((this.player.getLastClientInput().forward() || this.player.getLastClientInput().backward() || this.player.getLastClientInput().jump() || this.player.getLastClientInput().left() || this.player.getLastClientInput().right()) && this.mode.hasMovementControls()) {
             if (this.inputCooldown <= 0) {
                 this.inputCooldown = 10; //put it here so new ponder scenes already have it
                 if (this.player.getLastClientInput().backward()) {
-                    this.selectedStep = 0;
                     goTo(0);
                 } else if (this.player.getLastClientInput().forward()) {
                     goTo(this.selectedStep);
@@ -369,12 +372,25 @@ public class PonderScene {
                     if(this.mode == PonderSceneMode.PAUSED) this.setMode(PonderSceneMode.PLAYING);
                     else if(this.mode == PonderSceneMode.PLAYING) this.setMode(PonderSceneMode.PAUSED);
                     this.inputCooldown = 1;
+                } else if(builder.item != null) {
+                    int current = PonderManager.itemToBuilders.get(builder.item).indexOf(builder.id);
+                    if (this.player.getLastClientInput().right() && current < PonderManager.itemToBuilders.get(builder.item).size()-1) {
+                        this.stopPonderingSafely();
+                        this.runOnceDone = () -> {
+                            PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(builder.item).get(current+1)).startPondering(player);
+                        };
+                    } else if (this.player.getLastClientInput().left() && current > 0) {
+                        this.stopPonderingSafely();
+                        this.runOnceDone = () -> {
+                            PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(builder.item).get(current-1)).startPondering(player);
+                        };
+                    }
                 }
             }
         } else if (this.inputCooldown > 0) this.inputCooldown--;
 
         int ticksToRun = ticksToSimulate;
-        while (ticksToRun-- > 0 && !this.isToBeRemoved() && (!this.mode.isPaused() || forced)) {
+        while (ticksToRun-- > 0 && !this.isToBeStopped && !this.isToBeRemoved() && (!this.mode.isPaused() || forced)) {
             if (stepFFTo == this.currentStep) {
                 stepFFTo = -1;
                 VFXUtils.clearParticles(this.packetRedirector);
@@ -528,6 +544,8 @@ public class PonderScene {
             player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer")), Map.of(), false));
 
             if(this.mode == PonderSceneMode.IN_MENU) player.connection.send(new ClientboundContainerClosePacket(-1));
+
+            this.showShortLoadingScreen();
         }
 
         this.titleTopBar.removeAllPlayers();
@@ -538,6 +556,7 @@ public class PonderScene {
         //noinspection resource
         Lib99j.getServerOrThrow().levels.remove(levelKey);
 
+        //dont just delete this world, also delete all other ponder worlds
         try {
             Files.walkFileTree(Lib99j.getServerOrThrow().storageSource.getDimensionPath(levelKey), new SimpleFileVisitor<>() {
                 @Override
@@ -553,7 +572,7 @@ public class PonderScene {
                 }
             });
         } catch (Exception e) {
-            Lib99j.LOGGER.error("Failed to remove save data for temporary level " + this.levelKey.identifier(), e);
+            Lib99j.LOGGER.error("Failed to remove save data for temporary level {}", this.levelKey.identifier(), e);
         }
 
         VFXUtils.clearParticles(this.player);
@@ -605,7 +624,7 @@ public class PonderScene {
 
         int completedInstructionsValue = 0;
         for (int i = 0; i < this.currentStep; i++) {
-            completedInstructionsValue += this.steps.get(i).totalValue();
+            completedInstructionsValue += this.steps.get(i).stepValue();
         }
 
         int currentInstructionValue = 0;
@@ -623,22 +642,42 @@ public class PonderScene {
 
         MutableComponent out = PonderGuiTextures.STEP_BAR_BACKGROUND.text();
 
-        String fillerPart = PonderGuiTextures.STEP_BAR_1.text().getString();
-
         GuiUtils.appendSpace(5, out);
 
-        out.append(Component.literal(fillerPart.repeat(Math.max(0, pixels))).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
+        StringBuilder barFiller = new StringBuilder("");
+
+//        String space = GuiUtils.getSpace(scale).getString();
+//        barFiller.append(space.repeat(fill2));
+//
+        Map<Integer, Integer> positions = new HashMap<>();
+        for (PonderStep step : this.builder.steps) {
+            int pos = (int)((PonderGuiTextures.FILLED_BAR_WIDTH) * ((float)step.totalValue()/max));
+            positions.put(pos, step.i());
+        }
+
+        for (int j = 0; j < PonderGuiTextures.FILLED_BAR_WIDTH; j++) {
+            if(j == 0 && this.selectedStep == 0 && this.builder.steps.size() > 1) {
+                barFiller.append(PonderGuiTextures.STEP_BAR_STEP_SELECTED.string());
+            } else {
+                boolean selectedStep = positions.containsKey(j) && positions.get(j) == this.selectedStep - 1;
+                barFiller.append(positions.containsKey(j) ? (selectedStep ? PonderGuiTextures.STEP_BAR_STEP_SELECTED.string() : PonderGuiTextures.STEP_BAR_STEP.string()) : (j <= pixels ? PonderGuiTextures.STEP_BAR_FILLER.string() : GuiUtils.getSpace(scale).getString()));
+            }
+        }
+
+        out.append(Component.literal(barFiller.toString()).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
 
         GuiUtils.appendSpace(-5, out);
 
         //recenter
-        GuiUtils.appendSpace((PonderGuiTextures.FILLED_BAR_WIDTH+3-pixels)*scale, out);
+        GuiUtils.appendSpace((3)*scale, out);
 
         if(this.mode.isPaused()) out.append(PonderGuiTextures.RESUME_BUTTON.text());
         else out.append(PonderGuiTextures.PAUSE_BUTTON.text());
 
-        out.append(PonderGuiTextures.RIGHT_BUTTON.text());
-        out.append(PonderGuiTextures.LEFT_BUTTON.text());
+        if(builder.item != null) {
+            if(PonderManager.itemToBuilders.get(builder.item).indexOf(builder.id) < PonderManager.itemToBuilders.get(builder.item).size()-1) out.append(PonderGuiTextures.RIGHT_BUTTON.text());
+            if(PonderManager.itemToBuilders.get(builder.item).indexOf(builder.id) > 0) out.append(PonderGuiTextures.LEFT_BUTTON.text());
+        }
         out.append(PonderGuiTextures.EXIT_BUTTON.text());
         out.append(PonderGuiTextures.MENU_BUTTON.text());
 
@@ -667,16 +706,28 @@ public class PonderScene {
     private void showLoadingScreen() {
         if (!this.showingLoadingScreen) {
             this.showingLoadingScreen = true;
-            this.player.connection.send(new ClientboundSetSubtitleTextPacket(Component.nullToEmpty("Loading...")));
-            this.player.connection.send(new ClientboundSetTitleTextPacket(GuiUtils.styleText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), Style.EMPTY.withColor(0x58638e), false)));
-            this.player.connection.send(new ClientboundSetTitlesAnimationPacket(5, 10000, 0));
+            ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+            packets.add(new ClientboundSetTitlesAnimationPacket(5, 10000, 0));
+            packets.add(new ClientboundSetTitleTextPacket(GuiUtils.styleText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), Style.EMPTY.withColor(0x58638e), false)));
+            packets.add(new ClientboundSetSubtitleTextPacket(Component.nullToEmpty("Loading...")));
+            this.player.connection.send(new ClientboundBundlePacket(packets));
+        }
+    }
+
+    private void showShortLoadingScreen() {
+        if (!this.showingLoadingScreen) {
+            ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+            packets.add(new ClientboundSetTitlesAnimationPacket(2, 0, 2));
+            packets.add(new ClientboundSetTitleTextPacket(GuiUtils.styleText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), Style.EMPTY.withColor(0x58638e), false)));
+            packets.add(new ClientboundSetSubtitleTextPacket(Component.nullToEmpty("Loading...")));
+            this.player.connection.send(new ClientboundBundlePacket(packets));
         }
     }
 
     private void hideLoadingScreen() {
         if (this.showingLoadingScreen) {
             this.showingLoadingScreen = false;
-            this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 1, 5));
+            this.player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 3, 5));
         }
     }
 
@@ -708,9 +759,11 @@ public class PonderScene {
         this.mode = newMode;
 
         if(!oldMode.locksCamera() && newMode.locksCamera()) {
+            this.showShortLoadingScreen();
             ((Lib99jPlayerUtilController) this.player).lib99j$lockCamera();
         }
         if(oldMode.locksCamera() && !newMode.locksCamera()) {
+            this.showShortLoadingScreen();
             ((Lib99jPlayerUtilController) this.player).lib99j$unlockCamera();
             this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(this.getOrigin().above(1).getBottomCenter(), Vec3.ZERO, 0, 0), Set.of())));
         }

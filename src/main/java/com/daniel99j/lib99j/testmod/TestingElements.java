@@ -8,7 +8,7 @@ import com.daniel99j.lib99j.ponder.api.PonderGroup;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.ShowLineInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.ShowTextInstruction;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.phys.Vec2;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -62,12 +61,12 @@ public class TestingElements {
                         //scene.fastForwardUntil(2);
                     }))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, Items.PISTON.getDefaultInstance()))
-                    .instruction(new ShowLineInstruction(1, 0xFF0000, Vec2.ZERO, new Vec2(20, 10), 10))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance())))
+                    .instruction(new ShowTextInstruction(3, List.of(Component.literal("hello"))))
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, Items.STICKY_PISTON.getDefaultInstance()))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance())))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Cow creeper = new Cow(EntityType.COW, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -81,7 +80,7 @@ public class TestingElements {
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, Items.TNT.getDefaultInstance()))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance())))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);

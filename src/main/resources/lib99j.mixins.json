@@ -1,6 +1,7 @@
 {
   "required": true,
   "package": "com.daniel99j.lib99j.impl.mixin",
+  "plugin": "com.daniel99j.lib99j.impl.Lib99jMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "BossbarAccessor",
@@ -15,6 +16,8 @@
     "LivingEntityMixin",
     "MinecraftServerMixin",
     "PlayerListAccessor",
+    "PolydexHiderMixin",
+    "PolydexPageMixin",
     "PolymerEffectScreenMixin",
     "RegistrySynchronizationMixin",
     "ServerCommonPacketListenerImplMixin",

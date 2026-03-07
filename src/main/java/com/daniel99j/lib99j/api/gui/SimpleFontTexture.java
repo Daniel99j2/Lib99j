@@ -24,9 +24,13 @@ public class SimpleFontTexture {
         GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
     }
 
+    public String string() {
+        return text().getString();
+    }
+
     public MutableComponent text() {
         MutableComponent text = GuiUtils.appendSpace(-offset, Component.empty());
-        text.append(Component.literal(Character.toString(character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
+        text.append(Component.literal(Character.toString(this.character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
         GuiUtils.appendSpace(offset, text);
         GuiUtils.appendSpace(-width, text);
         return GuiUtils.compactText(text);

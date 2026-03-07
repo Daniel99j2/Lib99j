@@ -87,6 +87,10 @@ public class GuiUtils {
         return c;
     }
 
+    public static char getNullChar() {
+        return SPACES.get(0);
+    }
+
     public static MutableComponent getSpace(int pixels) {
         return appendSpace(pixels, null);
     }
@@ -141,6 +145,14 @@ public class GuiUtils {
             } else throw new IllegalStateException("All component parts must be mutable");
         }
         return c;
+    }
+
+    public static MutableComponent fastAppend(MutableComponent base, Component appendage) {
+        return base.append("e").append(appendage);
+    }
+
+    public static MutableComponent fastAppend(MutableComponent base, String appendage) {
+        return appendage.isEmpty() ? base : fastAppend(base, Component.literal(appendage));
     }
 
     /**
