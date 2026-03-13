@@ -86,8 +86,9 @@ public class PonderScene {
     private boolean stopWithoutVfx = false;
     private final ServerBossEvent titleTopBar;
     private final ServerBossEvent subtitleTopBar;
-    private Vec3 cameraPos = Vec3.ZERO;
-    private Vec2 cameraRotation = new Vec2(45, -45);
+    public Vec3 cameraPos = Vec3.ZERO;
+    public Vec2 cameraRotation = new Vec2(45, -45);
+    public int cameraInterpolateTime = 10;
     private int stepFFTo = -1;
     private boolean showingLoadingScreen;
     @ApiStatus.Internal
@@ -457,7 +458,7 @@ public class PonderScene {
 
         if (this.isToBeRemoved()) return;
         //no more epilepsy
-        VFXUtils.setCameraInterpolation(player, 10);
+        VFXUtils.setCameraInterpolation(player, this.cameraInterpolateTime);
         VFXUtils.setCameraPos(player, this.cameraPos);
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);

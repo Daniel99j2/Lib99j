@@ -86,9 +86,10 @@ public class PonderGuiCreator extends PonderScene {
         this.positioningElement.setViewRange(0.01f);
         this.getElementHolder().addElement(this.positioningElement);
 
-        PonderTextDisplay display = new PonderTextDisplay(100, new Vec2(0.5f, 0.5f), new Vec2(2.4f, 2.4f), List.of(Component.literal("Testing 1234T"), Component.literal("Telephone"), Component.literal("Very long text wheeeeee"), Component.literal("Hi"), Component.literal("Gday")));
-        display.scene = this;
-        this.getElementHolder().addElement(display);
+        //TODO
+//        PonderTextDisplay display = new PonderTextDisplay(100, new Vec2(0.5f, 0.5f), new Vec2(2.4f, 2.4f), List.of(Component.literal("Testing 1234T"), Component.literal("Telephone"), Component.literal("Very long text wheeeeee"), Component.literal("Hi"), Component.literal("Gday")));
+//        display.scene = this;
+//        this.getElementHolder().addElement(display);
 
     }
 

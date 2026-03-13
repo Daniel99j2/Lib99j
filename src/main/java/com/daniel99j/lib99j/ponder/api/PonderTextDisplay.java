@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PonderTextDisplay extends TextDisplayElement {
@@ -22,10 +23,10 @@ public class PonderTextDisplay extends TextDisplayElement {
     private Vec2 pos;
     private int life;
 
-    public PonderTextDisplay(int life, Vec2 pos, Vec2 scale, List<Component> lines) {
+    public PonderTextDisplay(int life, Vec2 pos, Vec2 scale, Component component) {
         this.pos = Vec2.ZERO;
         this.life = life;
-        this.setLines(lines);
+        this.setText(component);
         this.setBillboardMode(Display.BillboardConstraints.CENTER);
         this.setBrightness(Brightness.FULL_BRIGHT);
         this.setTextAlignment(Display.TextDisplay.Align.LEFT);
@@ -67,11 +68,23 @@ public class PonderTextDisplay extends TextDisplayElement {
     }
 
     @Override
-    public void setText(Component text) {
-        throw new IllegalArgumentException("Use setLines() instead");
+    public void setText(Component component) {
+        ArrayList<Component> lines = new ArrayList<>();
+
+        String baseText = component.getString();
+
+        while(true) {
+            int index = baseText.indexOf("\\n");;
+            if(index == -1) break;
+            lines.add(Component.literal(baseText.substring(0, index)));
+        }
+
+        lines.add(component);
+
+        setTextRaw(lines);
     }
 
-    public void setLines(List<Component> lines) {
+    public void setTextRaw(ArrayList<Component> lines) {
         int largestWidth = 0;
 
         for (Component line : lines) {

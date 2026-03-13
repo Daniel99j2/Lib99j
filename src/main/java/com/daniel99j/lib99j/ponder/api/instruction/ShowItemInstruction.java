@@ -8,7 +8,7 @@ import net.minecraft.world.phys.Vec2;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShowItemInstruction extends PonderInstruction {
+public class ShowItemInstruction extends InstantPonderInstruction {
     private PonderItemDisplay display;
     private List<ItemStack> items;
 
@@ -18,24 +18,9 @@ public class ShowItemInstruction extends PonderInstruction {
     }
 
     @Override
-    public boolean isComplete(PonderScene scene) {
-        return true;
-    }
-
-    @Override
-    public boolean preventContinue(PonderScene scene) {
-        return false;
-    }
-
-    @Override
     public void start(PonderScene scene) {
         this.display.scene = scene;
         scene.getElementHolder().addElement(this.display);
-    }
-
-    @Override
-    public void tick(PonderScene scene) {
-        super.tick(scene);
     }
 
     @Override
@@ -47,6 +32,6 @@ public class ShowItemInstruction extends PonderInstruction {
 
     @Override
     public String toString() {
-        return "ShowItemInstruction";
+        return "ShowItemInstruction{items=["+this.items.toString()+"],time="+this.display.life+"}";
     }
 }

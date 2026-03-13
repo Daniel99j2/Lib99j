@@ -8,7 +8,9 @@ import com.daniel99j.lib99j.impl.ServerParticleManager;
 import com.google.common.hash.HashCode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import eu.pb4.polymer.resourcepack.api.ResourcePackBuilder;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
@@ -16,10 +18,13 @@ import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 /**
  * This is executed through polymer's resource pack generator, not the traditional data generator

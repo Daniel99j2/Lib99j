@@ -11,6 +11,7 @@ import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTi
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.core.ClientAsset;
@@ -33,11 +34,16 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"unused"})
 public class GuiUtils {
@@ -53,6 +59,8 @@ public class GuiUtils {
     //Dont use a HashMap of component to component as they are mutable
     private static final Map<String, MutableComponent> optimisedTextCache = new HashMap<>();
     public static final Map<Identifier, ItemAsset> customAssets = new HashMap<>();
+    @ApiStatus.Internal
+    public static final ArrayList<String> serverModTranslations = new ArrayList<>();
 
     private static final String BASIC_ITEM_TEMPLATE = """
             {
@@ -482,5 +490,9 @@ public class GuiUtils {
     @ApiStatus.Internal
     public record PlayerTranslationCheckerData(List<Map.Entry<String, String>> translations, List<String> results, Consumer<PlayerTranslationsResponse> output, MutableInt remainingTries) {
 
+    }
+
+    public static void addServerTranslations(String modid) {
+        serverModTranslations.add(modid);
     }
 }

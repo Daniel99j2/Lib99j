@@ -55,6 +55,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A library for all of Daniel99j's mods

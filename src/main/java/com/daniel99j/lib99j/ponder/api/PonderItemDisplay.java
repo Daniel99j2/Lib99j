@@ -86,9 +86,10 @@ public class PonderItemDisplay extends GenericEntityElement {
             offset+=offsetSize;
         }
 
-        PonderTextDisplay display = new PonderTextDisplay( 1000000, this.pos.add(new Vec2((offset-offsetSize)/2, 0)), this.size, List.of(Component.literal("       ".repeat(this.items.size())), Component.empty(), Component.empty()));
-        display.scene = this.scene;
-        this.elements.add(display);
+        //TODO
+//        PonderTextDisplay display = new PonderTextDisplay( 1000000, this.pos.add(new Vec2((offset-offsetSize)/2, 0)), this.size, List.of(Component.literal("       ".repeat(this.items.size())), Component.empty(), Component.empty()));
+//        display.scene = this.scene;
+//        this.elements.add(display);
 
         for (VirtualElement element : this.elements) {
             this.getHolder().addElement(element);

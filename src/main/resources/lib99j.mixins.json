@@ -12,6 +12,7 @@
     "CommandsMixin",
     "CommandSourceStackMixin",
     "DamageSourceMixin",
+    "LanguageReaderMixin",
     "LevelChunkMixin",
     "LivingEntityMixin",
     "MinecraftServerMixin",

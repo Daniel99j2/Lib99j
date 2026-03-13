@@ -62,7 +62,7 @@ public class TestingElements {
                     }))
                     .waitFor(1)
                     .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance())))
-                    .instruction(new ShowTextInstruction(3, List.of(Component.literal("hello"))))
+                    .instruction(new ShowTextInstruction(3, Component.literal("hello")))
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)

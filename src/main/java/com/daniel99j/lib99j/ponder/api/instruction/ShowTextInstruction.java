@@ -8,28 +8,15 @@ import net.minecraft.world.phys.Vec2;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ShowTextInstruction extends PonderInstruction {
+public class ShowTextInstruction extends InstantPonderInstruction {
     private PonderTextDisplay display;
     private float displayTime;
-    private List<Component> components;
+    private Component component;
 
-    public ShowTextInstruction(float displayTime, List<Component> components) {
-        this.components = new ArrayList<>();
-        for (Component component : components) {
-            this.components.add(component.copy());
-        }
+    public ShowTextInstruction(float displayTime, Component component) {
+        this.component = component;
         this.displayTime = displayTime;
-        this.display = new PonderTextDisplay((int) (displayTime * 20), new Vec2(0.5f, 0.5f), Vec2.ONE, this.components);
-    }
-
-    @Override
-    public boolean isComplete(PonderScene scene) {
-        return true;
-    }
-
-    @Override
-    public boolean preventContinue(PonderScene scene) {
-        return false;
+        this.display = new PonderTextDisplay((int) (displayTime * 20), new Vec2(0.5f, 0.5f), Vec2.ONE, this.component);
     }
 
     @Override
@@ -39,18 +26,13 @@ public class ShowTextInstruction extends PonderInstruction {
     }
 
     @Override
-    public void tick(PonderScene scene) {
-        super.tick(scene);
-    }
-
-    @Override
     public ShowTextInstruction clone() {
-        ShowTextInstruction showTextInstruction = new ShowTextInstruction(this.displayTime, this.components);
+        ShowTextInstruction showTextInstruction = new ShowTextInstruction(this.displayTime, this.component.copy());
         return showTextInstruction;
     }
 
     @Override
     public String toString() {
-        return "ShowTextInstruction";
+        return "ShowTextInstruction{component='"+this.component.getString() + "',displayTime="+this.displayTime+"}";
     }
 }
