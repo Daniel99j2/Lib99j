@@ -20,8 +20,8 @@ public class PonderChunkGenerator extends EmptyChunkGenerator {
 
     @Override
     public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState noiseConfig, ChunkAccess chunk) {
-        for (int x = 0; x < 15; x++) {
-            for (int z = 0; z < 15; z++) {
+        for (int x = 0; x <= 15; x++) {
+            for (int z = 0; z <= 15; z++) {
                 chunk.setBlockState(new BlockPos(x, roof, z), Blocks.BARRIER.defaultBlockState());
             }
         }

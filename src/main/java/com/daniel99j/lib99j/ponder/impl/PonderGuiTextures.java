@@ -35,6 +35,8 @@ public class PonderGuiTextures {
 
     public static final GuiElementBuilder PONDERING_ABOUT_ITEM = GuiUtils.generateItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about"), new ItemAsset.Properties(false, true));
 
+    public static final SimpleFontTexture WHITE_LINE = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/white_line"), 1, 10, 16, 0);
+
     public static final SimpleFontTexture TEXT_BACKGROUND_TOP_LEFT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top_left"), 1, 10, 16, 0);
     public static final SimpleFontTexture TEXT_BACKGROUND_TOP_RIGHT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top_right"), 1, 10, 16, 0);
     public static final SimpleFontTexture TEXT_BACKGROUND_TOP = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/top"), 1, 10, 16, 0);
@@ -43,6 +45,10 @@ public class PonderGuiTextures {
     public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM_LEFT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom_left"), 1, 10, 16, 0);
     public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM_RIGHT_CORNER = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom_right"), 1, 10, 16, 0);
     public static final SimpleFontTexture TEXT_BACKGROUND_BOTTOM = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/bottom"), 1, 0, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_SINGLE_LEFT = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/single_left"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_SINGLE_RIGHT = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/single_right"), 1, 10, 16, 0);
+    public static final SimpleFontTexture TEXT_BACKGROUND_SINGLE = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/single"), 1, 10, 16, 0);
+
 
     public static void load() {
     }

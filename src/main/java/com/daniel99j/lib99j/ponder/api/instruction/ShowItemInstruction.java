@@ -4,34 +4,38 @@ import com.daniel99j.lib99j.ponder.api.PonderItemDisplay;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec2;
+import org.joml.Vector2i;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ShowItemInstruction extends InstantPonderInstruction {
-    private PonderItemDisplay display;
-    private List<ItemStack> items;
+    private final List<ItemStack> items;
+    private final float displayTime;
+    private final int line;
+    private final Vector2i pos;
 
-    public ShowItemInstruction(float displayTime, List<ItemStack> items) {
+    public ShowItemInstruction(float displayTime, List<ItemStack> items, Vector2i pos, int line) {
         this.items = items;
-        this.display = new PonderItemDisplay((int) (displayTime * 20), new Vec2(0.5f, 0.6f), Vec2.ONE, this.items);
+        this.displayTime = displayTime;
+        this.line = line;
+        this.pos = pos;
     }
 
     @Override
     public void start(PonderScene scene) {
-        this.display.scene = scene;
-        scene.getElementHolder().addElement(this.display);
+        scene.getElementHolder().addElement(new PonderItemDisplay((int) (displayTime * 20), new Vector2i(pos).add(line, 0), Vec2.ONE, this.items, scene, line));
     }
 
     @Override
     public ShowItemInstruction clone() {
         ArrayList<ItemStack> newItems = new ArrayList<>();
         this.items.forEach((item) -> newItems.add(item.copy()));
-        return new ShowItemInstruction(this.display.life, newItems);
+        return new ShowItemInstruction(this.displayTime, newItems, this.pos, this.line);
     }
 
     @Override
     public String toString() {
-        return "ShowItemInstruction{items=["+this.items.toString()+"],time="+this.display.life+"}";
+        return "ShowItemInstruction{items=["+this.items.toString()+"],time="+this.displayTime+"}";
     }
 }

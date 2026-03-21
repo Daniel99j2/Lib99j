@@ -2,9 +2,7 @@ package com.daniel99j.lib99j.api.gui;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
 public class GuiTexture {
@@ -24,7 +22,7 @@ public class GuiTexture {
     }
 
     public MutableComponent text() {
-        MutableComponent text = Component.literal(Character.toString(character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui"))));
+        MutableComponent text = Component.literal(Character.toString(character)).withStyle(ChatFormatting.WHITE).withStyle(GuiUtils.GUI_FONT_STYLE);
         GuiUtils.appendSpace(-width, text);
         return text;
     }

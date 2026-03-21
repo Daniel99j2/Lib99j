@@ -36,6 +36,8 @@ public class GameProperties {
 
     private static boolean ponderEnabled = false;
 
+    private static boolean addAssetTranslationsToServer = false;
+
     public static boolean isHideableBossBar() {
         return hideableBossBar;
     }
@@ -50,6 +52,10 @@ public class GameProperties {
 
     public static boolean areContentModsLoaded() {
         return contentModsLoaded;
+    }
+
+    public static boolean shouldAddAssetTranslationsToServer() {
+        return addAssetTranslationsToServer;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -85,10 +91,15 @@ public class GameProperties {
 
     public static void enablePonder() {
         GameProperties.ponderEnabled = true;
-        GameProperties.hideableBossBar = true;
+        enableHideableBossBar();
+        enableAddingAssetTranslationsToServer();
         PonderGuiTextures.load();
         //load it!
         if(FabricLoader.getInstance().isDevelopmentEnvironment()) //noinspection ResultOfMethodCallIgnored
             PonderGuiCreator.PONDER_GUI_CREATOR_BUILDER.shouldHideFromCommands();
+    }
+
+    public static void enableAddingAssetTranslationsToServer() {
+        GameProperties.addAssetTranslationsToServer = true;
     }
 }

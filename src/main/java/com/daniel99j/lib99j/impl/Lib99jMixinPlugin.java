@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.impl;
 
+import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -22,8 +23,14 @@ public class Lib99jMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if(targetClassName.contains("polydex")) {
+        if(targetClassName.toLowerCase().contains("polydex")) {
             return FabricLoader.getInstance().isModLoaded("polydex");
+        }
+        if(mixinClassName.contains("dev")) {
+            return FabricLoader.getInstance().isDevelopmentEnvironment();
+        }
+        if(mixinClassName.contains("ClientPositionFinderMixin")) {
+            return FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
         }
         return true;
     }

@@ -68,10 +68,10 @@ public abstract class ServerCommonPacketListenerImplMixin {
             if (packet.id().getNamespace().equals("lib99j_run_code_click_event")) {
                 ServerPlayer player = networkHandler.getPlayer();
                 UUID uuid = UUID.fromString(packet.id().getPath());
-                if (RunCodeClickEvent.clickEvents.containsKey(uuid)) {
-                    var weak = RunCodeClickEvent.clickEvents.get(uuid).get();
-                    if (weak != null && weak.allowedPlayerUUID.equals(player.getUUID())) {
-                        weak.run();
+                if (RunCodeClickEvent.eventMap.containsKey(uuid)) {
+                    RunCodeClickEvent event = RunCodeClickEvent.eventMap.get(uuid);
+                    if (event != null && !event.isDisabled()) {
+                        event.run();
                     } else {
                         Lib99j.debug("The code was garbage collected or it was for a different player");
                         this.disconnect(Component.translatable("lib99j.invalid_run_code_uuid"));
@@ -98,10 +98,10 @@ public abstract class ServerCommonPacketListenerImplMixin {
                 if(info != null && info.hasTag(PlayPacketUtils.PacketTag.MANY_USES)) {
                     if(packet instanceof ClientboundGameEventPacket gameEventPacket) {
                         if(gameEventPacket.getEvent() == ClientboundGameEventPacket.START_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.STOP_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.RAIN_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT || gameEventPacket.getEvent() == ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND) {
-                            ci.cancel();
+                             ci.cancel();
                             return;
                         }
-                    } else this.disconnect(Component.literal("Custom handler not setup for packet. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)"));
+                    } else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
                 } else if (info != null && info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT) && !info.hasTag(PlayPacketUtils.PacketTag.ENTITY)) {
                     ci.cancel();
                     return;

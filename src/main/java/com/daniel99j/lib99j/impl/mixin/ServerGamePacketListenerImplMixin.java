@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.CommandSourceAccessor;
 import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
@@ -8,7 +9,9 @@ import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import com.daniel99j.lib99j.ponder.impl.PonderDevEdits;
 import com.daniel99j.lib99j.ponder.impl.PonderSceneMode;
+import com.mojang.brigadier.ParseResults;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
@@ -30,6 +33,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 import java.util.Objects;
@@ -158,5 +162,10 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
                 ((Lib99jPlayerUtilController) player).lib99j$finishCurrentModChecker();
             }
         }
+    }
+
+    @Inject(method = "parseCommand", at = @At("TAIL"))
+    private void addPacketContext(String command, CallbackInfoReturnable<ParseResults<CommandSourceStack>> cir) {
+        ((CommandSourceAccessor) cir.getReturnValue().getContext().getSource()).lib99j$setFromPacket(true);
     }
 }

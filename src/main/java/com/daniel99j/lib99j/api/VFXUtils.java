@@ -353,7 +353,11 @@ public class VFXUtils {
     }
 
     public static void clearParticles(ServerPlayer player) {
-        ParticleHelper.spawnParticlesAtPosition(player.level, player.position().add(0, -5, 0), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
+        ParticleHelper.spawnParticlesAtPosition(player.level, player.position(), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
+    }
+
+    public static void clearParticles(ServerPlayer player, Vec3 pos) {
+        ParticleHelper.spawnParticlesAtPosition(player.level, pos, ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
     }
 
     public static class CameraShakeInstance {

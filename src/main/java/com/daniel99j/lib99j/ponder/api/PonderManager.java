@@ -34,7 +34,7 @@ public class PonderManager {
     public static void load() {
         CustomEvents.GAME_LOADED.register(() -> {
             idToGroup.forEach((id, group) -> {
-                for (PonderBuilder builder : group.builders()) {
+                for (PonderBuilder builder : group.builders) {
                     builder.groups.add(id);
                 }
             });
@@ -86,6 +86,13 @@ public class PonderManager {
             itemToBuilders.get(item).addFirst(builder.id);
             builder.item = item;
         } else itemToBuilders.get(item).add(builder.id);
+
+        Identifier groupId = Identifier.fromNamespaceAndPath("_item_"+BuiltInRegistries.ITEM.getKey(builder.item).getNamespace(), BuiltInRegistries.ITEM.getKey(builder.item).getPath());
+
+        if(!idToGroup.containsKey(groupId)) PonderManager.registerGroup(new PonderGroup(groupId, builder.item.getDefaultInstance(), new ArrayList<>()));
+
+        idToGroup.get(groupId).builders.add(builder);
+
         return builder;
     }
 
@@ -122,19 +129,32 @@ public class PonderManager {
      */
     public static PonderGroup registerGroup(PonderGroup builder) {
         GameProperties.throwIfPonderNotEnabled("Ponder has not been enabled! Use GameProperties.enablePonder()");
-        if(frozen) throw new IllegalStateException("Ponder group {} was registered after load".replace("{}", builder.id().toString()));
+        if(frozen) throw new IllegalStateException("Ponder group {} was registered after load".replace("{}", builder.id.toString()));
 
-        if(idToGroup.containsKey(builder.id())) throw new IllegalStateException("A ponder builder is already registered for {}".replace("{}", builder.id().toString()));
-        idToGroup.put(builder.id(), builder);
+        if(idToGroup.containsKey(builder.id)) throw new IllegalStateException("A ponder builder is already registered for {}".replace("{}", builder.id.toString()));
+        idToGroup.put(builder.id, builder);
         //Check that the group's builders are modifiable
         //Other mods should always be able to access other mod's groups!
         try {
             PonderBuilder test = PonderBuilder.create(null, null, Component.empty(), Component.empty());
-            builder.builders().add(test);
-            builder.builders().remove(test);
+            builder.builders.add(test);
+            builder.builders.remove(test);
         } catch (Exception e) {
-            throw new IllegalStateException("Ponder builder {}'s builder list has prevented other mods from adding their own builders".replace("{}", builder.id().toString()), e);
+            throw new IllegalStateException("Ponder group {}'s builder list has prevented other mods from adding their own builders".replace("{}", builder.id.toString()), e);
         }
         return builder;
+    }
+
+    public static PonderGroup getGroupForItem(Item item) {
+        Identifier groupId = Identifier.fromNamespaceAndPath("_item_"+BuiltInRegistries.ITEM.getKey(item).getNamespace(), BuiltInRegistries.ITEM.getKey(item).getPath());
+        return idToGroup.get(groupId);
+    }
+
+    public static PonderBuilder getBuilder(Identifier id) {
+        return idToBuilder.get(id);
+    }
+
+    public static PonderGroup getGroup(Identifier id) {
+        return idToGroup.get(id);
     }
 }

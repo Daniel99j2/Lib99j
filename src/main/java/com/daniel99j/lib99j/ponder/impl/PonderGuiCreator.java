@@ -2,12 +2,13 @@ package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.RunCodeClickEvent;
+import com.daniel99j.lib99j.api.RunCodeClickEventHolder;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
+import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
-import com.daniel99j.lib99j.ponder.api.PonderTextDisplay;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import net.minecraft.core.Holder;
@@ -27,6 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -47,9 +49,9 @@ public class PonderGuiCreator extends PonderScene {
 
     private boolean positioningX = true;
 
-    private Vec2 testPos = Vec2.ZERO;
+    private Vector2i testPos = new Vector2i(0, 0);
 
-    private final ArrayList<RunCodeClickEvent> eventStorage = new ArrayList<>();
+    private final RunCodeClickEventHolder eventStorage = new RunCodeClickEventHolder();
 
     protected PonderGuiCreator(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
         super(player, builder, oldAfterStep, goTo);
@@ -81,16 +83,10 @@ public class PonderGuiCreator extends PonderScene {
         Vector3f scale = new Vector3f(0.01f, 0.01f, 0);
         this.positioningElement.setScale(scale);
         this.positioningElement.setBillboardMode(Display.BillboardConstraints.CENTER);
-        Vec2 coords = PonderScene.transformWorldToScreenCoord(new Vec2(0, 0));
+        Vec2 coords = PonderCoordUtil.pixelsToRelative(new Vector2i(0, 0));
         this.positioningElement.setTranslation(new Vector3f(coords.x, coords.y, -0.2f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
         this.positioningElement.setViewRange(0.01f);
         this.getElementHolder().addElement(this.positioningElement);
-
-        //TODO
-//        PonderTextDisplay display = new PonderTextDisplay(100, new Vec2(0.5f, 0.5f), new Vec2(2.4f, 2.4f), List.of(Component.literal("Testing 1234T"), Component.literal("Telephone"), Component.literal("Very long text wheeeeee"), Component.literal("Hi"), Component.literal("Gday")));
-//        display.scene = this;
-//        this.getElementHolder().addElement(display);
-
     }
 
 
@@ -132,7 +128,7 @@ public class PonderGuiCreator extends PonderScene {
         }));
 
         body.add(action("Set position element pos to center", () -> {
-            setTestPos(new Vec2(0.5f, 0.5f));
+            setTestPos(PonderCoordUtil.relativeToPixels(new Vec2(0.5f, 0.5f)));
         }));
 
 
@@ -141,16 +137,17 @@ public class PonderGuiCreator extends PonderScene {
         )));
     }
 
-    private void setTestPos(Vec2 vec2) {
+    private void setTestPos(Vector2i vec2) {
         testPos = vec2;
         Vector3f scale = new Vector3f(0.01f, 0.01f, 0);
-        Vec2 coords = PonderScene.transformWorldToScreenCoord(testPos);
+        Vec2 coords = PonderCoordUtil.pixelsToWorld(testPos);
         this.positioningElement.setTranslation(new Vector3f(coords.x, coords.y, -0.2f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
     }
 
     private ItemBody action(String text, Runnable code) {
 
         MutableComponent title = Component.literal(text);
+        //eventStorage
         //Because this is dev-only, I dont care about security of the user running things whilst not in the UI
         GuiUtils.styleText(title, title.getStyle().withClickEvent(new RunCodeClickEvent(() -> {
             code.run();
@@ -163,23 +160,25 @@ public class PonderGuiCreator extends PonderScene {
     @Override
     public void addToSelectedStep(int selectedStep) {
         if(this.positioningElement != null) {
-            float normalSize = 0.31f*50;
-            var mul = new Vector3f(normalSize * 16, normalSize * 9, 0);
+            var mul = new Vector2i(10, 10);
 
-            setTestPos(testPos.add(new Vec2(positioningX ? selectedStep/mul.x : 0, positioningX ? 0 : selectedStep/mul.y)));
+            setTestPos(testPos.add(new Vector2i(positioningX ? selectedStep/mul.x : 0, positioningX ? 0 : selectedStep/mul.y)));
 
         }
     }
 
     //if its frozen then the elements dont update
+
+
     @Override
     protected void updateTickStatus() {
+        super.updateTickStatus();
     }
 
     @Override
     public void closeMenu() {
         super.closeMenu();
         setMode(PonderSceneMode.PAUSED);
-        this.eventStorage.clear();
+        this.eventStorage.close();
     }
 }

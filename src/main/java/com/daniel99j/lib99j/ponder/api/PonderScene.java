@@ -25,31 +25,32 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
+import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.player.ChatVisiblity;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.gamerules.GameRules;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec2;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -79,7 +80,7 @@ public class PonderScene {
     private final ArrayList<PonderStep> steps;
     private final ArrayList<PonderInstruction> activeInstructions = new ArrayList<>();
     public final ResourceKey<Level> levelKey;
-    private final ServerPlayer packetRedirector;
+    public final ServerPlayer packetRedirector;
     private final BlockPos origin;
     private boolean isToBeRemoved = false;
     private boolean isToBeStopped = false;
@@ -87,12 +88,12 @@ public class PonderScene {
     private final ServerBossEvent titleTopBar;
     private final ServerBossEvent subtitleTopBar;
     public Vec3 cameraPos = Vec3.ZERO;
-    public Vec2 cameraRotation = new Vec2(45, -45);
+    public Vec2 cameraRotation = PonderStandards.DEFAULT_CAMERA_ROT;
     public int cameraInterpolateTime = 10;
     private int stepFFTo = -1;
     private boolean showingLoadingScreen;
     @ApiStatus.Internal
-    public boolean canBreakFloor = false;
+    public boolean canEscapeBounds = false;
     public PonderDevEdits ponderDevEdits = new PonderDevEdits();
     @ApiStatus.Internal
     public final PonderHotbarGui hotbarGui;
@@ -107,6 +108,10 @@ public class PonderScene {
     public float identifyPitch = 0;
     @ApiStatus.Internal
     public float identifyYaw = 0;
+    //this is not needed for fall damage, but it makes things like elytra rocketing before a ponder less punishing
+    @ApiStatus.Internal
+    public Vec3 initialVelocity = Vec3.ZERO;
+    private int time;
 
     /**
      * Store whatever you want in here
@@ -122,6 +127,8 @@ public class PonderScene {
     protected PonderScene(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
         GameProperties.throwIfPonderNotEnabled("This code should never be reached");
 
+        this.player = player;
+
         if ((goTo == -1) != (oldAfterStep == null)) throw new IllegalStateException("oldAfterStep is for fast-forward");
         if (oldAfterStep != null) {
             this.showingLoadingScreen = oldAfterStep.showingLoadingScreen;
@@ -129,6 +136,9 @@ public class PonderScene {
             if(oldAfterStep.mode == PonderSceneMode.PAUSED) this.mode = PonderSceneMode.PAUSED;
             this.inputCooldown = oldAfterStep.inputCooldown;
             this.selectedStep = oldAfterStep.selectedStep;
+            this.initialVelocity = oldAfterStep.initialVelocity;
+        } else {
+            this.initialVelocity = this.player.getDeltaMovement();
         }
 
         boolean checkTime = FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
@@ -147,8 +157,6 @@ public class PonderScene {
             if (builder.y >= 250 - builder.y)
                 player.sendSystemMessage(Component.literal("Warning: This will cause issues in some dimensions!").withColor(0xf5d442));
         }
-
-        this.player = player;
 
         this.showLoadingScreen();
 
@@ -188,7 +196,7 @@ public class PonderScene {
 
         BlockPos farPos = EntityUtils.getFarPos(player, player.level.getWorldBorder());
         this.origin = new BlockPos(farPos.getX(), builder.y, farPos.getZ());
-        this.cameraPos = Vec3.atCenterOf(this.origin).add(-builder.sizeX / 4.0f, builder.sizeY / 2.0f, -builder.sizeZ / 4.0f);
+        this.cameraPos = new Vec3(-builder.sizeX / 4.0f, builder.sizeY / 2.0f, -builder.sizeZ / 4.0f);
         VFXUtils.setCameraPos(player, this.cameraPos);
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
@@ -202,8 +210,6 @@ public class PonderScene {
         this.level.getGameRules().set(GameRules.SPAWNER_BLOCKS_WORK, true, null);
         this.level.getGameRules().set(GameRules.SPAWN_MOBS, false, null);
         this.level.getGameRules().set(GameRules.SPECTATORS_GENERATE_CHUNKS, true, null);
-
-        this.level.syncRain();
 
         if (checkTime) {
             Lib99j.LOGGER.info("Stage {} took {}", "World create", GLFW.glfwGetTime() - time);
@@ -225,15 +231,18 @@ public class PonderScene {
             time = GLFW.glfwGetTime();
         }
 
-        int roof = player.level.getMaxY() - 1;
+        int roof = player.level.getMaxY();
 
         for (int x = 0; x < builder.sizeX; x++) {
             for (int z = 0; z < builder.sizeZ; z++) {
                 BlockPos pos = origin.offset(x, -1, z);
+                LevelChunk chunk = this.level.getChunkAt(pos);
                 //remove roof
-                ((LevelChunkAccessor) this.level.getChunkAt(new BlockPos(pos.getX(), roof, pos.getZ()))).lib99j$setBlockReallyUnsafeDoNotUse(new BlockPos(pos.getX(), roof, pos.getZ()), Blocks.AIR.defaultBlockState());
+                ((LevelChunkAccessor) chunk).lib99j$setBlockReallyUnsafeDoNotUse(new BlockPos(pos.getX(), roof, pos.getZ()), Blocks.AIR.defaultBlockState());
                 boolean checker = (x % 2 == 0) != (z % 2 == 1);
-                ((LevelChunkAccessor) this.level.getChunkAt(pos)).lib99j$setBlockReallyUnsafeDoNotUse(pos, checker ? builder.state1 : builder.state2);
+                ((LevelChunkAccessor) chunk).lib99j$setBlockReallyUnsafeDoNotUse(pos, checker ? builder.state1 : builder.state2);
+
+                this.level.setChunkForced(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), true);
             }
         }
 
@@ -283,13 +292,23 @@ public class PonderScene {
                 if (info == null || !player1.connection.isAcceptingMessages()) {
                     return;
                 }
-                if (info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
+                if(info.hasTag(PlayPacketUtils.PacketTag.MANY_USES)) {
+                    if(packet instanceof ClientboundGameEventPacket gameEventPacket) {
+                        if(!(gameEventPacket.getEvent() == ClientboundGameEventPacket.START_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.STOP_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.RAIN_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE)) {
+                            return;
+                        }
+                    } else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
+                } else if (info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
                 player1.connection.send(new BypassPacket(packet));
 
                 //simulate the client accepting the server's chunks
                 if (packet instanceof ClientboundChunkBatchFinishedPacket) {
                     //the float is the desired chunks/tick (64 is max)
                     this.handleChunkBatchReceived(new ServerboundChunkBatchReceivedPacket(64));
+                }
+
+                if (packet instanceof ClientboundKeepAlivePacket clientboundKeepAlivePacket) {
+                    this.handleKeepAlive(new ServerboundKeepAlivePacket(clientboundKeepAlivePacket.getId()));
                 }
             }
         };
@@ -317,11 +336,14 @@ public class PonderScene {
 
         this.elementHolder.startWatching(packetRedirector);
 
+        this.level.syncRain();
+
         ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.asStack(), 0x111111));
         background.setOverridePos(origin.getBottomCenter());
         background.setScale(new Vector3f(-1000, -1000, -1000));
         background.setViewRange(100f);
 
+        //TODO: Noxesium compat
         this.elementHolder.addElement(background);
 
         TextDisplayElement f5Hint = new TextDisplayElement(Component.translatable("ponder.scene.please_press_key", Component.keybind("key.togglePerspective"))) {
@@ -337,7 +359,7 @@ public class PonderScene {
         f5Hint.setScale(new Vector3f(3, 3, 0));
         f5Hint.setBillboardMode(Display.BillboardConstraints.CENTER);
         f5Hint.setBackground(0xff000000);
-        this.elementHolder.addElement(f5Hint);
+        //this.elementHolder.addElement(f5Hint);
 
         if (checkTime) {
             Lib99j.LOGGER.info("Stage {} took {}", "Finish", GLFW.glfwGetTime() - time);
@@ -345,15 +367,16 @@ public class PonderScene {
         }
 
         if (goTo != -1) this.fastForwardUntil(goTo);
+
+        VFXUtils.clearParticles(this.player, Vec3.atCenterOf(this.getOrigin().below()));
     }
 
     public void tick() {
-        if (this.stepFFTo != -1) tick(500, true);
-        else tick(1, false);
+        if (this.stepFFTo != -1) tick(true);
+        else tick(false);
     }
 
-    public void tick(int ticksToSimulate, boolean forced) {
-        if (ticksToSimulate <= 0) return;
+    public void tick(boolean forced) {
         if (this.isToBeStopped) this.stopPondering(!this.stopWithoutVfx);
         if (this.isToBeRemoved()) return;
         if (this.player.hasDisconnected() || this.player.isRemoved()) {
@@ -390,9 +413,13 @@ public class PonderScene {
             }
         } else if (this.inputCooldown > 0) this.inputCooldown--;
 
-        int ticksToRun = ticksToSimulate;
+        //update before too so the client always tick the entities properly
+        updateTickStatus();
+
+
+        int ticksToRun = this.stepFFTo == -1 ? 1 : 500;
         while (ticksToRun-- > 0 && !this.isToBeStopped && !this.isToBeRemoved() && (!this.mode.isPaused() || forced)) {
-            if (stepFFTo == this.currentStep) {
+            if (stepFFTo != -1 && this.currentStep >= stepFFTo) {
                 stepFFTo = -1;
                 VFXUtils.clearParticles(this.packetRedirector);
                 VFXUtils.clearParticles(this.player);
@@ -400,6 +427,10 @@ public class PonderScene {
                 break; //dont go past the step!
             }
 
+            time++;
+
+//            this.packetRedirector.connection.tick();
+//            this.packetRedirector.tick();
             this.level.runTick();
 
             //dont tick extra
@@ -434,7 +465,7 @@ public class PonderScene {
                     currentInstructionInStep = 0;
 
                     if(!this.activeInstructions.isEmpty() && FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                        this.player.sendSystemMessage(Component.literal("Warning: Active instructions were present whilst a step finished! Instructions left over are auto-cleared, try adding a wait before going to the next step."));
+                        this.player.sendSystemMessage(Component.literal("Warning: Active instructions were present whilst a step finished! See logs for more info."));
                         Lib99j.LOGGER.error("Active instructions were present whilst a step finished! Instructions left over are auto-cleared, try adding a wait before going to the next step.");
                         for (PonderInstruction activeInstruction : this.activeInstructions) {
                             Lib99j.LOGGER.error("Offending instruction: {}", activeInstruction);
@@ -459,7 +490,7 @@ public class PonderScene {
         if (this.isToBeRemoved()) return;
         //no more epilepsy
         VFXUtils.setCameraInterpolation(player, this.cameraInterpolateTime);
-        VFXUtils.setCameraPos(player, this.cameraPos);
+        VFXUtils.setCameraPos(player,  Vec3.atCenterOf(this.origin).add(cameraPos));
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
         this.packetRedirector.connection.send(new ClientboundSetTimePacket(this.level.getGameTime(), this.level.getDayTime(), false));
@@ -480,12 +511,24 @@ public class PonderScene {
             Vec3 vec3 = this.identifyPos;
             Vec3 vec32 =  this.packetRedirector.calculateViewVector(this.identifyYaw, this.identifyPitch);
             Vec3 vec33 = vec3.add(vec32.x * max, vec32.y * max, vec32.z * max);
-            BlockHitResult result = this.level.clip(new ClipContext(vec3, vec33, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.packetRedirector));
+            HitResult result = this.level.clip(new ClipContext(vec3, vec33, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, this.packetRedirector));
 
-            if(result.getType() == HitResult.Type.BLOCK) {
-                this.subtitleTopBar.setName(this.level.getBlockState(result.getBlockPos()).getBlock().getName());
+            Mannequin lookAngle = new Mannequin(EntityType.MANNEQUIN, this.level);
+            lookAngle.setPos(this.identifyPos.add(0, this.player.getEyeHeight(), 0));
+            lookAngle.setYRot(this.identifyYaw);
+            lookAngle.setXRot(this.identifyPitch);
+            lookAngle.setPose(this.player.getPose());
+
+            AABB aABB = lookAngle.getBoundingBox().expandTowards(vec32.scale(max)).inflate(1.0, 1.0, 1.0);
+            EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(lookAngle, vec3, vec33, aABB, EntitySelector.CAN_BE_PICKED, Mth.square(max));
+            if (entityHitResult != null) {
+                this.subtitleTopBar.setName((entityHitResult.getEntity()).getName());
             } else {
-                this.subtitleTopBar.setName(Component.empty());
+                if (result.getType() == HitResult.Type.BLOCK && result instanceof BlockHitResult blockHitResult) {
+                    BlockState state = this.level.getBlockState(blockHitResult.getBlockPos());
+                    if(blockHitResult.getBlockPos().getY() == this.getOrigin().getY()-1 && (state == this.builder.state1 || state == this.builder.state2)) this.subtitleTopBar.setName(Component.empty());
+                    else this.subtitleTopBar.setName(state.getBlock().getName());
+                } else this.subtitleTopBar.setName(Component.empty());
             }
 
             float moveDistance = Math.max(this.builder.sizeX, Math.max(this.builder.sizeY, this.builder.sizeZ))*2+15;
@@ -534,11 +577,10 @@ public class PonderScene {
             }
 
             VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
-            this.elementHolder.destroy();
             this.player.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.posToSectionCoord(this.player.getX()), SectionPos.posToSectionCoord(this.player.getZ())));
             PolymerUtils.reloadWorld(this.player);
             this.player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
-            this.player.connection.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
+            this.player.connection.teleport(new PositionMoveRotation(this.player.position(), initialVelocity, this.player.getYRot(), this.player.getXRot()), Set.of());
             this.player.connection.send(ClientboundTickingStatePacket.from(this.player.level.tickRateManager()));
             this.player.connection.send(new ClientboundSetTimePacket(this.player.level.getGameTime(), this.player.level.getDayTime(), ((ServerLevel) this.player.level).getGameRules().get(GameRules.ADVANCE_TIME)));
 
@@ -547,8 +589,19 @@ public class PonderScene {
             if(this.mode == PonderSceneMode.IN_MENU) player.connection.send(new ClientboundContainerClosePacket(-1));
 
             this.showShortLoadingScreen();
+
+            if (player.level.isRaining()) {
+                player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
+            } else {
+                player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+            }
+
+            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, player.level.getRainLevel(1)));
+            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, player.level.getRainLevel(1)));
+
         }
 
+        this.elementHolder.destroy();
         this.titleTopBar.removeAllPlayers();
         this.subtitleTopBar.removeAllPlayers();
         this.hotbarGui.close();
@@ -645,7 +698,7 @@ public class PonderScene {
 
         GuiUtils.appendSpace(5, out);
 
-        StringBuilder barFiller = new StringBuilder("");
+        StringBuilder barFiller = new StringBuilder();
 
 //        String space = GuiUtils.getSpace(scale).getString();
 //        barFiller.append(space.repeat(fill2));
@@ -665,7 +718,7 @@ public class PonderScene {
             }
         }
 
-        out.append(Component.literal(barFiller.toString()).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
+        out.append(Component.literal(barFiller.toString()).withStyle(GuiUtils.GUI_FONT_STYLE));
 
         GuiUtils.appendSpace(-5, out);
 
@@ -688,9 +741,14 @@ public class PonderScene {
     }
 
     public void fastForwardUntil(int step) {
-        if (this.currentStep < step && stepFFTo == -1) {
-            stepFFTo = step;
+        if (step <= this.currentStep) {
+            if (this.stepFFTo != -1) {
+                this.stepFFTo = -1;
+                this.hideLoadingScreen();
+            }
+            return;
         }
+        this.stepFFTo = step;
     }
 
     public void goTo(int step) {
@@ -718,7 +776,7 @@ public class PonderScene {
     private void showShortLoadingScreen() {
         if (!this.showingLoadingScreen) {
             ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
-            packets.add(new ClientboundSetTitlesAnimationPacket(2, 0, 2));
+            packets.add(new ClientboundSetTitlesAnimationPacket(4, 2, 4));
             packets.add(new ClientboundSetTitleTextPacket(GuiUtils.styleText(DefaultGuiTextures.BIG_WHITE_SQUARE.text(), Style.EMPTY.withColor(0x58638e), false)));
             packets.add(new ClientboundSetSubtitleTextPacket(Component.nullToEmpty("Loading...")));
             this.player.connection.send(new ClientboundBundlePacket(packets));
@@ -738,17 +796,17 @@ public class PonderScene {
     }
 
     protected void updateTickStatus() {
-        int current = this.stepFFTo * (this.mode.isPaused() ? 5 : 1);
+        int current = Objects.hash(this.mode, this.stepFFTo);
         if (this.tickSyncVerify == current) return;
         this.tickSyncVerify = current;
 
         if (this.mode.isPaused()) this.player.connection.send(new ClientboundTickingStatePacket(20, true));
-        else if (this.stepFFTo != -1) this.player.connection.send(new ClientboundTickingStatePacket(10000, false));
+        else if (this.stepFFTo != -1) this.player.connection.send(new ClientboundTickingStatePacket(1000, true));
         else this.player.connection.send(new ClientboundTickingStatePacket(20, false));
     }
 
-    public void setCanBreakFloor(boolean canBreakFloor) {
-        this.canBreakFloor = canBreakFloor;
+    public void setCanEscapeBounds(boolean canEscapeBounds) {
+        this.canEscapeBounds = canEscapeBounds;
     }
 
     public boolean isPaused() {
@@ -778,8 +836,11 @@ public class PonderScene {
         if(!oldMode.locksHotbar() && newMode.locksHotbar()) {
             this.hotbarGui.open();
         }
-        if(oldMode == PonderSceneMode.IDENTIFYING &&newMode != PonderSceneMode.IDENTIFYING) {
+        if(oldMode == PonderSceneMode.IDENTIFYING && newMode != PonderSceneMode.IDENTIFYING) {
             this.subtitleTopBar.setName(this.builder.title);
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()));
+        } else if(oldMode != PonderSceneMode.IDENTIFYING && newMode == PonderSceneMode.IDENTIFYING) {
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_looking_at").withColor(ChatFormatting.GRAY.getColor()));
         }
     }
 
@@ -796,19 +857,12 @@ public class PonderScene {
         return currentStep;
     }
 
-    public static Vec2 transformWorldToScreenCoord(Vec2 old) {
-        float normalSize = 0.31f/10;
-        //old = old.add(new Vec2(-0.5f, -0.5f));
-        var scale = new Vector3f(normalSize * 16, normalSize * 9, 0);
-
-        Vec2 scaled = new Vec2(old.x*scale.x, -old.y*scale.y);
-
-        scaled = scaled.add(new Vec2(-scale.x/2, scale.y/2));
-        return scaled;
-    }
-
     public void closeMenu() {
         this.setMode(PonderSceneMode.PLAYING);
         this.player.connection.send(new ClientboundContainerClosePacket(-1));
+    }
+
+    public int getTime() {
+        return time;
     }
 }

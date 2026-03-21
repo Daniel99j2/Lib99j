@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class LevelChunkMixin extends ChunkAccess implements LevelChunkAccessor {
     @Shadow
     @Final
-    private Level level;
+    Level level;
 
     public LevelChunkMixin(ChunkPos chunkPos, UpgradeData upgradeData, LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory palettedContainerFactory, long l, LevelChunkSection @Nullable [] levelChunkSections, @Nullable BlendingData blendingData) {
         super(chunkPos, upgradeData, levelHeightAccessor, palettedContainerFactory, l, levelChunkSections, blendingData);
@@ -35,10 +35,11 @@ public abstract class LevelChunkMixin extends ChunkAccess implements LevelChunkA
         if (blockState2 == blockState) {
             return;
         }
-        //dont some heightmaps bc they dont affect ponder (afaik)
-//        ((Heightmap)this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING)).update(k, j, m, blockState);
+        //dont do some heightmaps bc they dont affect ponder (afaik)
+        //this one is needed for rain
+        ((Heightmap)this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING)).update(k, j, m, blockState);
 //        ((Heightmap)this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES)).update(k, j, m, blockState);
-        ((Heightmap)this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR)).update(k, j, m, blockState);
+//        ((Heightmap)this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR)).update(k, j, m, blockState);
 //        ((Heightmap)this.heightmaps.get(Heightmap.Types.WORLD_SURFACE)).update(k, j, m, blockState);
 
         this.level.getChunkSource().getLightEngine().updateSectionStatus(blockPos, false);

@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
+import com.daniel99j.lib99j.Lib99j;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -15,6 +16,7 @@ import java.util.Set;
 public abstract class CommandSourceStackMixin {
     @Inject(method = "levels", at = @At("TAIL"), cancellable = true)
     private static void lib99j$hideDataDimension(CallbackInfoReturnable<Set<ResourceKey<Level>>> cir) {
+        if(Lib99j.isDevelopingLib99j) return;
         var edited = cir.getReturnValue();
         edited.removeIf((key) -> Objects.equals(key.identifier().getNamespace(), "ponder"));
         cir.setReturnValue(edited);

@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
@@ -11,17 +12,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 public class PonderItemDisplayInternal extends ItemDisplayElement {
     private final PonderScene scene;
-    private Vec2 pos;
+    private Vector2i pos;
     private int life;
 
-    public PonderItemDisplayInternal(PonderScene scene, int life, Vec2 pos, Vec2 scale, ItemStack stack) {
+    public PonderItemDisplayInternal(PonderScene scene, int life, Vector2i pos, Vec2 scale, ItemStack stack) {
         this.scene = scene;
-        this.pos = Vec2.ZERO;
+        this.pos = pos;
         this.life = life;
         this.setItem(stack);
         this.setBillboardMode(Display.BillboardConstraints.CENTER);
@@ -33,6 +35,7 @@ public class PonderItemDisplayInternal extends ItemDisplayElement {
         this.setLeftRotation(rot);
         this.setPos(pos);
         this.setSize(scale);
+        this.setInvisible(true);
     }
 
     @Override
@@ -55,14 +58,14 @@ public class PonderItemDisplayInternal extends ItemDisplayElement {
         super.setTranslation(vector3f);
     }
 
-    public void setPos(Vec2 pos) {
+    public void setPos(Vector2i pos) {
         this.pos = pos;
         Vector3f scale = new Vector3f(0.01f, 0.01f, 0);
-        Vec2 coords = PonderScene.transformWorldToScreenCoord(this.pos);
+        Vec2 coords = PonderCoordUtil.pixelsToWorld(new Vector2i(this.pos));
         this.setTranslation(new Vector3f(coords.x, coords.y, -0.19f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
     }
 
-    public Vec2 getPos() {
+    public Vector2i getPos() {
         return pos;
     }
 

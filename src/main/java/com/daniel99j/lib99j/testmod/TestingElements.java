@@ -3,32 +3,39 @@ package com.daniel99j.lib99j.testmod;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.RegUtil;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
-import com.daniel99j.lib99j.ponder.api.PonderBuilder;
-import com.daniel99j.lib99j.ponder.api.PonderGroup;
-import com.daniel99j.lib99j.ponder.api.PonderManager;
+import com.daniel99j.lib99j.ponder.api.*;
 import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.SetCameraInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.ShowTextInstruction;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CopperGolemStatueBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BannerBlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
+import org.joml.Vector2i;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @ApiStatus.Internal
@@ -53,20 +60,29 @@ public class TestingElements {
                     .waitFor(1)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         scene.getLevel().setBlockAndUpdate(new BlockPos(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getLevel());
-                        creeper.setPosRaw(5, 10, 5);
+                        Creeper creeper = new Creeper(EntityType.CREEPER, scene.getLevel()) {
+                            @Override
+                            public void tick() {
+                                super.tick();
+                                if(scene.player.getMainHandItem().is(Items.ARROW)) throw new IllegalStateException("Test exception!");
+                            }
+                        };
+                        creeper.setPosRaw(5, 8, 5);
                         creeper.setPersistenceRequired();
                         creeper.ignite();
                         scene.getLevel().addFreshEntity(creeper);
-                        //scene.fastForwardUntil(2);
+                        //scene.fastForwardUntil(2);\
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 4), Blocks.COPPER_GOLEM_STATUE.defaultBlockState().setValue(CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.STAR));
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 6), Blocks.BLACK_BANNER.defaultBlockState());
+                        scene.getLevel().setBlockEntity(new BannerBlockEntity(new BlockPos(6, 1, 6).offset(scene.getOrigin()), Blocks.BLACK_BANNER.defaultBlockState(), DyeColor.BROWN));
                     }))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance())))
-                    .instruction(new ShowTextInstruction(3, Component.literal("hello")))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance()), new Vector2i(0, 0), 10))
+                    .instruction(new ShowTextInstruction(3, Component.translatable("lib99j.test"), new Vector2i(0, 0), PonderLine.RIGHT))
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance())))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(0, 0), 0))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Cow creeper = new Cow(EntityType.COW, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -80,7 +96,7 @@ public class TestingElements {
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance())))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance()), new Vector2i(0, 0), 10))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -89,17 +105,21 @@ public class TestingElements {
 
                         scene.getLevel().setBlockAndUpdate(new BlockPos(5, 6, 5), Blocks.LAVA.defaultBlockState());
                     }))
-                    .waitFor(10)
+                    .waitFor(2)
+                    .instruction(new ShowTextInstruction(10, Component.literal("TNT is also cool, and\nalso changes blocks"), new Vector2i(0, 0), PonderLine.LEFT))
+                    .waitFor(8)
                     .finishStep()
                     .waitFor(30)
                     .finishStep()
                     .build()
     );
 
+    public static final PonderBuilder TEST_VANILLA = PonderManager.registerBuilder(PonderBuilder.create(Identifier.withDefaultNamespace("icecream"), Items.EXPOSED_CHISELED_COPPER.getDefaultInstance(), Component.literal("Vanilla"), Component.empty()).waitFor(10).finishStep().build());
+
     public static final PonderBuilder TEST_ITEM_PONDER = PonderManager.registerItemToBuilder(Items.TNT,
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "tnt_explodes"), Items.TNT.getDefaultInstance(), Component.literal("TNT explosions"), Component.literal("When TNT is lit and not in water, after a short delay it explodes!")).size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.TERRACOTTA.defaultBlockState(), Blocks.TERRACOTTA.defaultBlockState())
                     .instruction(new ExecuteCodeInstruction((scene) -> {
-                        scene.setCanBreakFloor(true);
+                        scene.setCanEscapeBounds(true);
                         scene.getLevel().setBlockAndUpdate(new BlockPos(2, 0, 2), Blocks.TNT.defaultBlockState());
                     }))
                     .waitFor(3)
@@ -115,12 +135,30 @@ public class TestingElements {
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "tnt_doesnt_explode_underwater"), Items.WATER_BUCKET.getDefaultInstance(), Component.literal("TNT water interactions"), Component.literal("When a TNT is lit in the water, it does not break blocks")).size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.CLAY.defaultBlockState(), Blocks.CLAY.defaultBlockState())
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         scene.getLevel().fillBlocksAndUpdate(new BlockPos(-5, -5, -5), new BlockPos(10, 10, 10), Blocks.WATER.defaultBlockState());
-                        scene.setCanBreakFloor(true);
+                        scene.setCanEscapeBounds(true);
                         scene.getLevel().setBlockAndUpdate(new BlockPos(2, 0, 2), Blocks.TNT.defaultBlockState());
                     }))
                     .waitFor(3)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         scene.getLevel().setBlockAndUpdate(new BlockPos(3, 0, 2), Blocks.REDSTONE_BLOCK.defaultBlockState());
+                    }))
+                    .waitFor(6)
+                    .finishStep()
+                    .build()
+    );
+
+    public static final PonderBuilder END_CRYSTAL_PONDER2 = PonderManager.registerItemToBuilder(Items.END_CRYSTAL,
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "end_crystals_explode"), Items.END_CRYSTAL.getDefaultInstance(), Component.literal("End Crystals"), Component.literal("End crystals explode when punched or hit with a projectile")).defaultBiome(Biomes.END_BARRENS)
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        EndCrystal crystal = EntityType.END_CRYSTAL.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
+                        crystal.setPos(new Vec3(2, 2, 2));
+                        scene.getLevel().addFreshEntity(crystal);
+                    }))
+                    .waitFor(3)
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        Arrow crystal = EntityType.ARROW.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
+                        crystal.setPos(new Vec3(2, 10, 2));
+                        scene.getLevel().addFreshEntity(crystal);
                     }))
                     .waitFor(6)
                     .finishStep()
@@ -138,9 +176,110 @@ public class TestingElements {
                     .build()
     );
 
-    public static final PonderGroup MANY_PONDERS_GROUP = PonderManager.registerGroup(new PonderGroup(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "large_group"), Items.BUNDLE.getDefaultInstance(), new ArrayList<>(List.of(TEST_PONDER, TEST_ITEM_PONDER2, TEST_ITEM_PONDER))));
+    public static final PonderBuilder LINES = PonderManager.registerBuilder(
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "lines"), Items.WHITE_DYE.getDefaultInstance(), Component.literal("Lines"), Component.literal("UI Testing"))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 0))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 1))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 2))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 3))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 4))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 5))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 6))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 7))
+                    .waitFor(1)
+                    .finishStep()
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 0))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 1))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 2))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 3))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 4))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 5))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 6))
+                    .waitFor(1)
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 7))
+                    .waitFor(1)
+                    .finishStep()
+                    .build()
+    );
 
-    public static final PonderGroup TNT_PONDERS_GROUP = PonderManager.registerGroup(new PonderGroup(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "tnt_group"), Items.TNT.getDefaultInstance(), new ArrayList<>(List.of(TEST_ITEM_PONDER2, TEST_ITEM_PONDER))));
+    public static final PonderBuilder TEXT = PonderManager.registerBuilder(
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "text"), Items.LIME_DYE.getDefaultInstance(), Component.literal("Text"), Component.literal("UI Testing"))
+                    //.instruction(new ShowTextInstruction(5, Component.literal("hello left"), new Vector2i(400, 0), PonderLine.LEFT))
+                    //.instruction(new ShowTextInstruction(5, Component.literal("hello hi left\nmultiline"), new Vector2i(400, 30), PonderLine.LEFT))
+
+                    //.instruction(new ShowTextInstruction(5, Component.literal("hello none"), new Vector2i(400, 45), PonderLine.NONE))
+                    //.instruction(new ShowTextInstruction(5, Component.literal("hello hi none\nmultiline"), new Vector2i(400, 60), PonderLine.NONE))
+
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello right"), new Vector2i(400, 5), PonderLine.RIGHT))
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello hi right\nmultiline"), new Vector2i(400, 35), PonderLine.RIGHT))
+
+                    .waitFor(5)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(400, 0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
+//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
+//                    .waitFor(1)
+                    .finishStep()
+                    .build()
+    );
+
+    public static final PonderBuilder RECURSIVE_LINE = PonderManager.registerBuilder(
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "recursive_line"), Items.LIME_DYE.getDefaultInstance(), Component.literal("Recursive line"), Component.literal("UI Testing"))
+                    .instruction(new ExecuteCodeInstruction((scene -> {
+                        scene.getElementHolder().addElement(new PonderLineDisplay(2, new Vector2i(0), Vec2.ONE, scene, 0, 0));
+                    })))
+                    .waitFor(100000)
+                    .finishStep()
+                    .build()
+    );
+
+    public static final PonderBuilder CAMERA_TEST = PonderManager.registerBuilder(
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "camera"), Items.SPYGLASS.getDefaultInstance(), Component.literal("Camera"), Component.literal("CAMERAS WHEE"))
+                    .instruction(new SetCameraInstruction(Vec3.ZERO, new Vec2(0, 90), 1))
+                    .waitFor(1)
+                    .instruction(new SetCameraInstruction(new Vec3(0, 10, 0), new Vec2(90, 180), 2))
+                    .waitFor(1)
+                    .instruction(new SetCameraInstruction(new Vec3(5, 7, 6), new Vec2(70, 30), 3))
+                    .waitFor(1)
+                    .instruction(new SetCameraInstruction(Vec3.ZERO, new Vec2(0, 90), 0.5f))
+                    .waitFor(1)
+                    .finishStep()
+                    .build()
+    );
+
+
+    public static final PonderGroup MANY_PONDERS_GROUP = PonderManager.registerGroup(new PonderGroup(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "large_group"), Items.BUNDLE.getDefaultInstance(), List.of(TEST_PONDER, TEST_ITEM_PONDER2, TEST_ITEM_PONDER, CAMERA_TEST, RECURSIVE_LINE, LINES, TEXT)));
+
+    public static final PonderGroup EXPLOSIVES_PONDERS_GROUP = PonderManager.registerGroup(new PonderGroup(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "explosives"), Items.GUNPOWDER.getDefaultInstance(), List.of(TEST_ITEM_PONDER2, TEST_ITEM_PONDER, END_CRYSTAL_PONDER2))).addRelatedGroup(PonderManager.getGroupForItem(Items.TNT));
 
     public static final GuiElementBuilder TEST_UI_ITEM = GuiUtils.generateTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/testing_element_item"));
     public static final GuiElementBuilder TEST_VANILLA_GUI_ITEM = GuiUtils.generateTexture(Identifier.withDefaultNamespace("gui/sprites/container/slot/sword"));

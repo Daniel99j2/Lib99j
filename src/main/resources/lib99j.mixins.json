@@ -10,6 +10,7 @@
     "BossbarMixin",
     "BossbarPacketMixin",
     "CommandsMixin",
+    "CommandSourceMixin",
     "CommandSourceStackMixin",
     "DamageSourceMixin",
     "LanguageReaderMixin",
@@ -26,12 +27,16 @@
     "ServerGamePacketListenerImplMixin",
     "ServerLevelMixin",
     "ServerPlayerMixin",
-    "SystemLanguageMixin"
+    "SharedConstantsAccessor",
+    "SystemLanguageMixin",
+    "dev.DogBoneMixin",
+    "dev.Vec2StringifierMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
+    "ClientPositionFinderMixin",
     "GoAwayExperimentalWarningMixin"
   ]
 }

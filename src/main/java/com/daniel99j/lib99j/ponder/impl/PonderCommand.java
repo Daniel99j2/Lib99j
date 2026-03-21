@@ -1,7 +1,10 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.CommandSourceAccessor;
+import com.daniel99j.lib99j.api.CooldownManager;
 import com.daniel99j.lib99j.api.EntityUtils;
+import com.daniel99j.lib99j.api.Lib99jArgumentTypes;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
@@ -9,6 +12,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -22,9 +26,11 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -173,11 +179,14 @@ public class PonderCommand {
                     new PonderGuiCreator(currentScene.player, currentScene.builder, currentScene, currentScene.getStep());
                 };
                 context.getSource().sendSystemMessage(Component.literal("Entered UI creator mode. Open the menu (L) to start editing"));
+                context.getSource().sendSystemMessage(Component.literal("If Lib99j is running on your client, hold LEFT-SHIFT to see the position you are hovering over whilst in the menu, then use CTRL-C to copy the position").withStyle(ChatFormatting.YELLOW));
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
             return 0;
         }));
+
+        dev.then(Commands.literal("ui_creator_from").then(root));
 
         dev.then(Commands.literal("get_edits").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
@@ -216,7 +225,7 @@ public class PonderCommand {
             return 0;
         }));
 
-        if(Lib99j.isDaniel99jMachine) dev.then(Commands.literal("go_to_real_ponder_world").executes((context) -> {
+        if(Lib99j.isDevelopingLib99j) dev.then(Commands.literal("go_to_real_ponder_world").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
                 PonderLevel level = currentScene.getLevel();
@@ -235,9 +244,9 @@ public class PonderCommand {
     }
 
     private static boolean checkIfOnGround(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        //enable elytra pondering. it might be buggy but its less cheaty than being able to have a friend place water below when you fall
+        //it feels 'wrong' but its less cheaty than being able to have a friend place water below when you fall
         //if this didnt exist, the player would still take fall damage but only when exiting ponder
-        if (!context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 10) <= 3) {
+        if (!context.getSource().getPlayerOrException().isInWater() && context.getSource().getPlayerOrException().gameMode.getGameModeForPlayer() != GameType.CREATIVE && !context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && (context.getSource().getPlayerOrException().fallDistance > 3 || EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 10) > 3)) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.not_on_ground"));
             return true;
         }
@@ -246,14 +255,27 @@ public class PonderCommand {
 
 
     private static void registerIdSuggestions(Set<Identifier> ids, LiteralArgumentBuilder<CommandSourceStack> root) {
-        List<String> allowedIds = new ArrayList<>();
+        List<Identifier> allowedIds = new ArrayList<>();
         ids.forEach((id) -> {
-            if(!PonderManager.idToBuilder.get(id).shouldHideFromCommands()) allowedIds.add(id.toString());
+            if(!PonderManager.idToBuilder.get(id).shouldHideFromCommands()) allowedIds.add(id);
         });
-        root.then(Commands.argument("id", IdentifierArgument.id()).suggests((context, builder) -> SharedSuggestionProvider.suggest(allowedIds, builder)).executes((context) -> openPonderFromId(context, IdentifierArgument.getId(context, "id"))));
+        //root.then(Commands.argument("id", Lib99jArgumentTypes.of(List.of(Identifier.withDefaultNamespace("vanilla"), Identifier.withDefaultNamespace("hello"), Identifier.fromNamespaceAndPath("poo", "pee"), Identifier.fromNamespaceAndPath("poo", "test")))).executes((context) -> openPonderFromId(context, IdentifierArgument.getId(context, "id"))));
+
+        root.then(Lib99jArgumentTypes.identifierList(allowedIds).executes((context) -> openPonderFromId(context, IdentifierArgument.getId(context, "id"))));
     }
 
     private static int openPonderFromId(CommandContext<CommandSourceStack> context, Identifier id) throws CommandSyntaxException {
+        if(checkIfOnGround(context)) return 0;
+        if (CooldownManager.isOnCooldown(context.getSource().getPlayerOrException(), Identifier.fromNamespaceAndPath("ponder", "command"))) {
+            context.getSource().sendFailure(Component.translatable("commands.lib99j.on_cooldown"));
+            return 0;
+        }
+        if(!((CommandSourceAccessor) context.getSource()).lib99j$isFromPacket()) {
+            throw CommandSourceStack.ERROR_NOT_PLAYER.create();
+        }
+
+        CooldownManager.setCooldown(context.getSource().getPlayerOrException(), Identifier.fromNamespaceAndPath("ponder", "command"), 10);
+
         PonderBuilder builder = PonderManager.idToBuilder.get(id);
         if (builder == null || (!FabricLoader.getInstance().isDevelopmentEnvironment() && builder.shouldHideFromCommands())) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.id_not_found", id.toString()));
@@ -265,7 +287,18 @@ public class PonderCommand {
         }
         //send before so it isn't blocked by packet redirection
         context.getSource().sendSystemMessage(Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()));
-        builder.startPondering(context.getSource().getPlayerOrException());
+
+        //if you try and ponder from a command block it causes a problem!
+        try {
+            builder.startPondering(context.getSource().getPlayerOrException());
+        } catch (Exception e) {
+            Lib99j.LOGGER.error("Player {} tried to ponder about {}, but an exception occurred", context.getSource().getPlayerOrException().getPlainTextName(), builder.getId().toString(), e);
+            throw new SimpleCommandExceptionType(Component.translatable("commands.lib99j.ponder.failed_to_ponder")).create();
+        }
+
+        if(FabricLoader.getInstance().isDevelopmentEnvironment() && context.getInput().contains("ui_creator_from")) {
+            context.getSource().getPlayerOrException().connection.handleChatCommand(new ServerboundChatCommandPacket("ponder dev ui_creator"));
+        }
         return 1;
     }
 }

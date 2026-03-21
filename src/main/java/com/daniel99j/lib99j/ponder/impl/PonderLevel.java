@@ -3,9 +3,13 @@ package com.daniel99j.lib99j.ponder.impl;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.LevelChunkAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.ConstantInt;
@@ -22,6 +26,7 @@ import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -46,7 +51,7 @@ public class PonderLevel extends ServerLevel {
                         playerLevel.dimensionTypeRegistration().value().height(),
                         playerLevel.dimensionTypeRegistration().value().logicalHeight(),
                         null,
-                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, DimensionType.CardinalLightType.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty())), new PonderChunkGenerator(biomeResourceKey, playerLevel.getLogicalHeight() - 1)),
+                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, DimensionType.CardinalLightType.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty())), new PonderChunkGenerator(biomeResourceKey, playerLevel.getMaxY())),
                 false,
                 0,
                 List.of(),
@@ -61,19 +66,31 @@ public class PonderLevel extends ServerLevel {
     }
 
     @Override // only tick when I want it to
-    public void tick(BooleanSupplier booleanSupplier) {
+    public void tick(@NonNull BooleanSupplier booleanSupplier) {
 
     }
 
     @ApiStatus.Internal
     public void runTick() {
-        super.tick(() -> true);
+        try {
+            super.tick(() -> true);
+        } catch (Exception e) {
+            this.scene.player.sendSystemMessage(Component.translatable("ponder.scene.error_ticking_world").withStyle(ChatFormatting.RED));
+            this.scene.stopPonderingSafely();
+            Lib99j.LOGGER.error("Error whilst pondering in scene {}", this.scene.builder.getId(), e);
+        }
     }
 
     @ApiStatus.Internal
     public void syncRain() {
-        this.setRainLevel(0);
-        this.oThunderLevel = -1000;
+        if (this.isRaining()) {
+            this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
+        } else {
+            this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+        }
+
+        this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
+        this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
     }
 
     public void fillBlocksAndUpdate(BlockPos start, BlockPos end, BlockState blockState) {
@@ -81,22 +98,35 @@ public class PonderLevel extends ServerLevel {
     }
 
     public void fillBlocks(BlockPos start, BlockPos end, BlockState blockState, boolean skipAllUpdates) {
+        //Enable filling blocks outside as this is fully intentional and cannot be called by the world
+        boolean old = this.scene.canEscapeBounds;
+        this.scene.canEscapeBounds = true;
+
         for (int x = start.getX(); x <= end.getX(); x++) {
             for (int y = start.getY(); y <= end.getY(); y++) {
                 for (int z = start.getZ(); z <= end.getZ(); z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (!skipAllUpdates) setBlockAndUpdate(pos, blockState);
-                    else
+                    else {
                         ((LevelChunkAccessor) this.getChunkAt(pos)).lib99j$setBlockReallyUnsafeDoNotUse(pos, blockState);
+                    }
                 }
             }
         }
+
+        this.scene.canEscapeBounds = old;
     }
 
     //These make it so a 0,0,0 origin can be used if wanted
     @Override
     public boolean addFreshEntity(Entity entity) {
-        entity.setPos(newPos(entity.position()));
+        Vec3 newPos = newPos(entity.position());
+        //when adding entities this allows them to drop in
+        if (!isValidPos(BlockPos.containing(newPos), true)) {
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to add entity outside scene at {}: {}", entity.position(), entity.getType());
+            return false;
+        };
+        entity.setPos(newPos);
         return super.addFreshEntity(entity);
     }
 
@@ -113,7 +143,10 @@ public class PonderLevel extends ServerLevel {
     @Override
     public boolean setBlock(BlockPos blockPos, BlockState blockState, @Block.UpdateFlags int i, int j) {
         BlockPos newPos = newPos(blockPos);
-        if (!scene.canBreakFloor && newPos.getY() < scene.getOrigin().getY()) return false;
+        if (!isValidPos(newPos, false)) {
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
+            return false;
+        };
         return super.setBlock(newPos, blockState, i, j);
     }
 
@@ -125,7 +158,10 @@ public class PonderLevel extends ServerLevel {
     @Override
     public boolean destroyBlock(BlockPos blockPos, boolean var2, @Nullable Entity var3, int var4) {
         BlockPos newPos = newPos(blockPos);
-        if (!scene.canBreakFloor && newPos.getY() < scene.getOrigin().getY()) return false;
+        if (!isValidPos(newPos, false)) {
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to destroy block outside scene at {}", blockPos);
+            return false;
+        };
         return super.destroyBlock(newPos, var2, var3, var4);
     }
 
@@ -141,5 +177,19 @@ public class PonderLevel extends ServerLevel {
             return position.offset(this.scene.getOrigin());
         }
         return position;
+    }
+
+    private boolean isValidPos(BlockPos newPos, boolean allowOverY) {
+        return scene.canEscapeBounds || (
+                newPos.getX() >= scene.getOrigin().getX()
+                && newPos.getX() <= scene.getOrigin().getX()+scene.builder.getSize().getX()
+                && newPos.getY() >= scene.getOrigin().getY()
+                && (newPos.getY() <= scene.getOrigin().getY()+scene.builder.getSize().getY() || allowOverY)
+                && newPos.getZ() >= scene.getOrigin().getZ()
+                && newPos.getZ() <= scene.getOrigin().getZ()+scene.builder.getSize().getZ());
+    }
+
+    public PonderScene getScene() {
+        return scene;
     }
 }

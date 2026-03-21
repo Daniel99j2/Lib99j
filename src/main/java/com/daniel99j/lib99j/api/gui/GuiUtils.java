@@ -11,7 +11,7 @@ import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTi
 import eu.pb4.sgui.api.ClickType;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.core.ClientAsset;
@@ -34,19 +34,15 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @SuppressWarnings({"unused"})
 public class GuiUtils {
+    public static final Style GUI_FONT_STYLE = Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui"))).withoutShadow().withColor(ChatFormatting.WHITE.getColor());
     private static final int SPACES_RANGE = 256;
     protected static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
     private static final Map<Integer, Character> SPACES = new HashMap<>(); //this is faster than using a recursive function to find which char is valid
@@ -59,8 +55,6 @@ public class GuiUtils {
     //Dont use a HashMap of component to component as they are mutable
     private static final Map<String, MutableComponent> optimisedTextCache = new HashMap<>();
     public static final Map<Identifier, ItemAsset> customAssets = new HashMap<>();
-    @ApiStatus.Internal
-    public static final ArrayList<String> serverModTranslations = new ArrayList<>();
 
     private static final String BASIC_ITEM_TEMPLATE = """
             {
@@ -82,6 +76,11 @@ public class GuiUtils {
         blacklistedChars.add('§');
         blacklistedChars.add('&'); //incase client mods are bad and use & as a formatting symbol
         blacklistedChars.add('\\');
+        blacklistedChars.add('\n');
+        blacklistedChars.add('\t');
+        blacklistedChars.add('\r');
+        blacklistedChars.add('\f');
+        blacklistedChars.add('\b');
         SPACES.clear();
         for (int i = -SPACES_RANGE; i <= SPACES_RANGE; i++) {
             SPACES.put(i, getNextGuiChar());
@@ -104,25 +103,25 @@ public class GuiUtils {
     }
 
     public static MutableComponent appendSpace(int pixels, MutableComponent text) {
-        if (pixels == 0) return text;
+        if (pixels == 0) return text == null ? Component.empty() : text;
 
         int negative = pixels < 0 ? -1 : 1;
-        int absPixels = Math.abs(pixels);
+        int remaining = Math.abs(pixels);
+        while(true) {
+            if(remaining > SPACES_RANGE) {
+                remaining-=SPACES_RANGE;
 
-        int repeats = absPixels / SPACES_RANGE;
-        int extra = absPixels % SPACES_RANGE;
+                MutableComponent space = getSpaceThrows(SPACES_RANGE * negative);
+                if (text == null) text = space;
+                else text.append(space);
+            } else if(remaining > 0) {
+                MutableComponent space = getSpaceThrows(remaining * negative);
+                if (text == null) text = space;
+                else text.append(space);
 
-        // full bits of 256
-        for (int i = 0; i < repeats; i++) {
-            MutableComponent space = getSpaceThrows(SPACES_RANGE * negative);
-            if (text == null) text = space;
-            else text.append(space);
-        }
-
-        if (extra != 0) {
-            MutableComponent space = getSpaceThrows(extra * negative);
-            if (text == null) text = space;
-            else text.append(space);
+                remaining=0;
+            } else if(remaining == 0) break;
+            else throw new IndexOutOfBoundsException("Overshot spaces! Report to Daniel99j on modrinth!");
         }
 
         return text;
@@ -156,7 +155,14 @@ public class GuiUtils {
     }
 
     public static MutableComponent fastAppend(MutableComponent base, Component appendage) {
-        return base.append("e").append(appendage);
+        if(base.getContents() instanceof PlainTextContents plainTextContents && plainTextContents.text().isEmpty()) return appendage.copy();
+        else if(base.getContents() instanceof PlainTextContents && appendage.getContents() instanceof PlainTextContents && appendage.getSiblings().isEmpty() && (base.getStyle().equals(appendage.getStyle()))) {
+            MutableComponent out = MutableComponent.create(PlainTextContents.create(((PlainTextContents) base.getContents()).text()+((PlainTextContents) appendage.getContents()).text()));
+            out.withStyle(base.getStyle());
+            out.getSiblings().addAll(base.getSiblings());
+            return out;
+        }
+        return base.copy().append(appendage);
     }
 
     public static MutableComponent fastAppend(MutableComponent base, String appendage) {
@@ -490,9 +496,5 @@ public class GuiUtils {
     @ApiStatus.Internal
     public record PlayerTranslationCheckerData(List<Map.Entry<String, String>> translations, List<String> results, Consumer<PlayerTranslationsResponse> output, MutableInt remainingTries) {
 
-    }
-
-    public static void addServerTranslations(String modid) {
-        serverModTranslations.add(modid);
     }
 }

@@ -4,6 +4,7 @@ import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
+import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
@@ -30,6 +31,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -55,7 +57,6 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * A library for all of Daniel99j's mods
@@ -73,7 +74,7 @@ public class Lib99j implements ModInitializer {
 
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
-    public static boolean isDaniel99jMachine = false;
+    public static boolean isDevelopingLib99j = false;
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -104,11 +105,16 @@ public class Lib99j implements ModInitializer {
                 if (list[i + 1].endsWith("\\build\\datagen")) {
                     GameProperties.markRunningDataGen();
                     break;
-                } else if(list[i + 1].contains("home/dj") && list[i + 1].contains("Coding/Lib99j")) {
-                    isDaniel99jMachine = true;
+
+                    //If it is running on my machine, I enable all features so I can develop Lib99j
+                    //If these were enabled in normal dev mode, it would mean other mods would sometimes only work in dev
+                    //If you want to work on Lib99j, feel free to edit this so it also works for you
                 }
-            };
+                ;
+            }
         }
+
+        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && FabricLoader.getInstance().isDevelopmentEnvironment();
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -120,7 +126,8 @@ public class Lib99j implements ModInitializer {
         });
 
         //only enable features on my machine so other mod developers do not forget to enable them for their mods
-        if(isDaniel99jMachine) {
+        if(isDevelopingLib99j) {
+            SharedConstantsAccessor.setInIde(true);
             GameProperties.enablePonder();
             GameProperties.enableCustomEffectBadLuck();
 
@@ -140,7 +147,9 @@ public class Lib99j implements ModInitializer {
             });
         };
 
-        ServerLifecycleEvents.SERVER_STARTED.register((server1) -> server = server1);
+        ServerLifecycleEvents.SERVER_STARTING.register((server1) -> {
+            server = server1;
+        });
 
         if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             ClientLifecycleEvents.CLIENT_STARTED.register((client) -> {
@@ -168,12 +177,12 @@ public class Lib99j implements ModInitializer {
                 ponderScene.stopPondering(true);
             }));
             PonderManager.activeScenes.clear();
-            RunCodeClickEvent.clickEvents.clear();
+            RunCodeClickEvent.eventMap.clear();
             ServerParticleManager.clearParticles();
 
-
-            try {
-                Files.walkFileTree(Lib99j.getServerOrThrow().storageSource.getDimensionPath(ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ponder", "delete"))).getParent(), new SimpleFileVisitor<>() {
+            Path ponderPath = Lib99j.getServerOrThrow().storageSource.getDimensionPath(ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("ponder", "delete"))).getParent();
+            if(Files.exists(ponderPath)) try {
+                Files.walkFileTree(ponderPath, new SimpleFileVisitor<>() {
                     @Override
                     public @NotNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
                         Files.deleteIfExists(file);
@@ -304,6 +313,13 @@ public class Lib99j implements ModInitializer {
                 builder.then(Commands.literal("ghostblock")
                         .executes((context) -> {
                             context.getSource().getPlayer().connection.send(new ClientboundBlockUpdatePacket(BlockPos.containing(context.getSource().getPosition()), TestingElements.TEST.defaultBlockState()));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("closeallmenus")
+                        .executes((context) -> {
+                            context.getSource().getPlayer().connection.send(new ClientboundContainerClosePacket(-1));
                             return 1;
                         })
                         .build());

@@ -151,7 +151,7 @@ public abstract class ServerPlayerMixin
     public void lib99j$setCameraInterpolationTime(int time) {
         if (this.lib99j$cameraPoint == null) return;
         this.lib99j$cameraPoint.setInterpolationDuration(time);
-        this.lib99j$cameraPoint.setInterpolationDuration(time);
+        this.lib99j$cameraPoint.setTeleportDuration(time);
     }
 
     @Override

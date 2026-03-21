@@ -9,25 +9,28 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec2;
+import org.joml.Vector2i;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PonderItemDisplay extends GenericEntityElement {
     public PonderScene scene;
-    private Vec2 pos;
+    private Vector2i pos;
     private Vec2 size;
     public int life;
-    private List<ItemStack> items;
+    private final List<ItemStack> items;
+    private final int line;
 
-    private ArrayList<VirtualElement> elements = new ArrayList<>();
+    private final ArrayList<VirtualElement> elements = new ArrayList<>();
 
-    public PonderItemDisplay(int life, Vec2 pos, Vec2 size, List<ItemStack> items) {
+    public PonderItemDisplay(int life, Vector2i pos, Vec2 size, List<ItemStack> items, PonderScene scene, int line) {
         this.items = items;
-        this.pos = Vec2.ZERO;
         this.life = life;
         this.size = size;
         this.pos = pos;
+        this.scene = scene;
+        this.line = line;
         this.update();
     }
 
@@ -57,12 +60,12 @@ public class PonderItemDisplay extends GenericEntityElement {
         if(holder != null) update();
     }
 
-    public void setPos(Vec2 pos) {
+    public void setPos(Vector2i pos) {
         this.pos = pos;
         this.update();
     }
 
-    public Vec2 getPos() {
+    public Vector2i getPos() {
         return pos;
     }
 
@@ -78,18 +81,17 @@ public class PonderItemDisplay extends GenericEntityElement {
         }
         this.elements.clear();
 
-        float offsetSize = 0.03f;
-        float offset = 0;
+        int offsetSize = 50;
+        int offset = offsetSize+15;
         for (ItemStack item : this.items) {
-            this.elements.add(new PonderItemDisplayInternal(this.scene, 1000000, this.pos.add(new Vec2(offset, -0.035f)), this.size, item));
+            this.elements.add(new PonderItemDisplayInternal(this.scene, 1000000, new Vector2i(this.pos).add(offset, 50), this.size, item));
 
             offset+=offsetSize;
         }
 
-        //TODO
-//        PonderTextDisplay display = new PonderTextDisplay( 1000000, this.pos.add(new Vec2((offset-offsetSize)/2, 0)), this.size, List.of(Component.literal("       ".repeat(this.items.size())), Component.empty(), Component.empty()));
-//        display.scene = this.scene;
-//        this.elements.add(display);
+        PonderTextDisplay display = new PonderTextDisplay(1000000, new Vector2i(this.pos), this.size, Component.literal("       ".repeat(this.items.size())+"\n \n "), this.scene);
+        display.scene = this.scene;
+        this.elements.add(display);
 
         for (VirtualElement element : this.elements) {
             this.getHolder().addElement(element);

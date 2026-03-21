@@ -36,10 +36,11 @@ import java.util.ArrayList;
  * <p>1. The scene is NOT at 0,0,0. Use {@link PonderScene#getOrigin()} to find the origin point. Some common methods like {@link PonderLevel#getBlockState(BlockPos)} or {@link PonderLevel#addFreshEntity(Entity)} auto-convert, so usage varies (see {@link PonderLevel} for method overrides)</p>
  * <p>2. Scenes create a new world every time that it starts</p>
  * <p>3. Replaying/going back steps creates a new scene, then fast-forwards to the point</p>
- * <p>4. In a scene there is a fake player called packetRedirector. This entity is added to the player list through mixins and receives, then redirects to the real player, all outgoing packets</p>
+ * <p>4. In a scene there is a fake player called packetRedirector. This entity is added to the player list through mixins and receives then redirects to the real player all outgoing packets</p>
  * <p>5. DO NOT EVER store the packet redirector, scene world, or active scene outside of a method where it will be automatically de-referenced. This will cause memory leaks of 150mb+ PER SCENE!</p>
  * <p>6. As the ponder world is only temporary, feel free to edit things like gamerules, time, weather etc</p>
- * <p>7. The bottom progress bar is translated using the server's language, utilizing Nucleoid Server Translation API. See <a href="https://github.com/NucleoidMC/Server-Translations">Link</a> for how to add translations</p>
+ * <p>7. When using translatable text in text display instructions, the result is translated on the server. Using nucleoid server translation api and {@link GameProperties#enableAddingAssetTranslationsToServer()} you can add translations like normal (to /assets/)</p>
+ * <p>8. Most instruction times are in SECONDS not ticks</p>
  */
 public class PonderBuilder {
     protected Identifier id = null;
@@ -179,7 +180,7 @@ public class PonderBuilder {
         PonderScene scene = new PonderScene(player, this, from, goTo);
         //ensure scene is inited
         if(from != null && from.isPaused() && goTo <= 0) {
-            scene.tick(1, true);
+            //scene.tick(true);
         };
     };
     
@@ -196,6 +197,10 @@ public class PonderBuilder {
     public Identifier getId() {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
         return id;
+    }
+
+    public BlockPos getSize() {
+        return new BlockPos(sizeX, sizeY, sizeZ);
     }
 
     public boolean shouldHideFromCommands() {

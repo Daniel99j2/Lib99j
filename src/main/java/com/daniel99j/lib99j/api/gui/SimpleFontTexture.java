@@ -2,9 +2,7 @@ package com.daniel99j.lib99j.api.gui;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
 public class SimpleFontTexture {
@@ -12,6 +10,7 @@ public class SimpleFontTexture {
     final int width;
     final Identifier path;
     final int offset;
+    final String text;
 
     public SimpleFontTexture background(Identifier path, int width) {
         return new SimpleFontTexture(path, width, 13, 256, 8);
@@ -22,17 +21,19 @@ public class SimpleFontTexture {
         this.path = path;
         this.offset = offset;
         GuiUtils.FONT_TEXTURES.add(new FontTexture(Identifier.fromNamespaceAndPath(path.getNamespace(), "ui/" + path.getPath()), ascent, height, new char[][]{new char[]{character}}));
+
+        MutableComponent text1 = GuiUtils.appendSpace(-offset, Component.empty());
+        text1.append(Component.literal(Character.toString(this.character)).withStyle(ChatFormatting.WHITE));
+        GuiUtils.appendSpace(offset, text1);
+        GuiUtils.appendSpace(-width, text1);
+        text = GuiUtils.compactText(text1).getString();
     }
 
     public String string() {
-        return text().getString();
+        return text;
     }
 
     public MutableComponent text() {
-        MutableComponent text = GuiUtils.appendSpace(-offset, Component.empty());
-        text.append(Component.literal(Character.toString(this.character)).withStyle(ChatFormatting.WHITE).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui")))));
-        GuiUtils.appendSpace(offset, text);
-        GuiUtils.appendSpace(-width, text);
-        return GuiUtils.compactText(text);
+        return Component.literal(text).withStyle(GuiUtils.GUI_FONT_STYLE);
     }
 }
