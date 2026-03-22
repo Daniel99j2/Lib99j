@@ -74,7 +74,10 @@ public class Lib99j implements ModInitializer {
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
     public static boolean isDevelopingLib99j = false;
+    public static boolean isDevelopmentEnvironment = FabricLoader.getInstance().isDevelopmentEnvironment() || Files.exists(FabricLoader.getInstance().getConfigDir().resolve("lib99j_force_dev.txt"));
     public static boolean personalFeatures = System.getenv("DANIEL99J_MODE") != null;
+
+    private static boolean hasLoadedLib99j = false;
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -86,19 +89,26 @@ public class Lib99j implements ModInitializer {
     }
 
     public static void debug(String s) {
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+        if(isDevelopmentEnvironment) {
             Lib99j.LOGGER.info(s);
         }
     }
 
     public static void debug(String s, Object o) {
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+        if(isDevelopmentEnvironment) {
             Lib99j.LOGGER.info(s, o);
         }
     }
 
     @Override
     public void onInitialize() {
+        ensureLoaded();
+    }
+
+    public static void ensureLoaded() {
+        if(hasLoadedLib99j) return;
+        hasLoadedLib99j = true;
+
         String[] list = FabricLoader.getInstance().getLaunchArguments(true);
         for (int i = 0; i < list.length; i++) {
             if (Objects.equals(list[i], "--gameDir") && list.length > i + 1) {
@@ -113,7 +123,7 @@ public class Lib99j implements ModInitializer {
             }
         }
 
-        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getConfigDir().getParent().toString().contains("Lib99j");
+        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().getParent().toString().contains("Lib99j");
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -204,12 +214,12 @@ public class Lib99j implements ModInitializer {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
-            if (GameProperties.areContentModsLoaded() || FabricLoader.getInstance().isDevelopmentEnvironment()) VfxCommand.register(dispatcher);
+            if (GameProperties.areContentModsLoaded() || Lib99j.isDevelopmentEnvironment) VfxCommand.register(dispatcher);
             PonderCommand.register(dispatcher, registryAccess);
 
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
-            
-            if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
+
+            if(Lib99j.isDevelopmentEnvironment) {
                 builder.then(Commands.literal("translationcheck")
                         .executes((context) -> {
                             GuiUtils.doesPlayerHaveMods(context.getSource().getPlayer(), Map.of("vanilla", "controls.reset", "hacks", "x13.mod.xray"), (e) -> {
@@ -220,17 +230,17 @@ public class Lib99j implements ModInitializer {
                                 context.getSource().getPlayer().sendSystemMessage(Component.literal("failed: " + e.checkFailed()));
                                 context.getSource().getPlayer().sendSystemMessage(Component.literal("blocked: " + e.translationCheckBlocked()));
                             });
-                              return 1;
+                            return 1;
                         })
                         .build());
 
                 builder.then(Commands.literal("toast")
                         .then(Commands.argument("icon", ItemArgument.item(registryAccess))
                                 .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
-                                                .executes((context) -> {
-                                                    GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
-                                                    return 1;
-                                                }))).build());
+                                        .executes((context) -> {
+                                            GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
+                                            return 1;
+                                        }))).build());
 
                 builder.then(Commands.literal("clientexplode")
                         .executes((context) -> {
@@ -338,5 +348,4 @@ public class Lib99j implements ModInitializer {
         PonderManager.load();
         LOGGER.info("Ready to rumble!");
     }
-
 }

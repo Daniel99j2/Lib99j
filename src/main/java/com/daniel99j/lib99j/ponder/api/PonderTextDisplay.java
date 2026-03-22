@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.ponder.api;
 
+import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
@@ -7,7 +8,6 @@ import com.daniel99j.lib99j.ponder.impl.PonderGuiTextures;
 import eu.pb4.mapcanvas.api.font.DefaultFonts;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -103,7 +103,7 @@ public class PonderTextDisplay extends TextDisplayElement {
         int largestWidth = 0;
 
         for (Component line : lines) {
-            if (FabricLoader.getInstance().isDevelopmentEnvironment() && line.getString().contains("\n")) throw new IllegalStateException("Lines of text should not occupy more than one line");
+            if (Lib99j.isDevelopmentEnvironment && line.getString().contains("\n")) throw new IllegalStateException("Lines of text should not occupy more than one line");
             largestWidth = Math.max(largestWidth, DefaultFonts.REGISTRY.getWidth(line, 8));
         }
 

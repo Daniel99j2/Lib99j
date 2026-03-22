@@ -138,12 +138,12 @@ public class PonderScene {
             //this.player.level.getEntitie
         }
 
-        boolean checkTime = FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
+        boolean checkTime = Lib99j.isDevelopmentEnvironment && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
 
         double time = GLFW.glfwGetTime();
         if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering(true);
 
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+        if (Lib99j.isDevelopmentEnvironment) {
             if (builder.y <= 2)
                 player.sendSystemMessage(Component.literal("Warning: Ponder height is very low!").withColor(0xf5d442));
             if (builder.y <= 2)
@@ -469,7 +469,7 @@ public class PonderScene {
 
                     List<PonderInstruction> persistentInstructions = new ArrayList<>();
 
-                    if(!this.activeInstructions.isEmpty() && FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                    if(!this.activeInstructions.isEmpty() && Lib99j.isDevelopmentEnvironment) {
                         List<String> problems = new ArrayList<>();
                         for (PonderInstruction activeInstruction : this.activeInstructions) {
                             if(!activeInstruction.canPersist()) {
@@ -885,7 +885,7 @@ public class PonderScene {
     public void openMenu() {
         if(!this.customProperties.canUseMenu) return;
         if(!this.builder.registered) {
-            if(FabricLoader.getInstance().isDevelopmentEnvironment()) this.player.sendSystemMessage(Component.literal("The menu cannot be opened if the builder is not registered. Please disable opening the menu if this will be used in release builds through customProperties."));
+            if(Lib99j.isDevelopmentEnvironment) this.player.sendSystemMessage(Component.literal("The menu cannot be opened if the builder is not registered. Please disable opening the menu if this will be used in release builds through customProperties."));
             return;
         }
         this.setMode(PonderSceneMode.IN_MENU);

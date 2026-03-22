@@ -1,10 +1,10 @@
 package com.daniel99j.lib99j.api;
 
+import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
 import com.daniel99j.lib99j.ponder.impl.PonderGuiCreator;
 import com.daniel99j.lib99j.ponder.impl.PonderGuiTextures;
-import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Many game properties such as data gen etc.
@@ -95,7 +95,7 @@ public class GameProperties {
         enableAddingAssetTranslationsToServer();
         PonderGuiTextures.load();
         //load it!
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) //noinspection ResultOfMethodCallIgnored
+        if(Lib99j.isDevelopmentEnvironment) //noinspection ResultOfMethodCallIgnored
             PonderGuiCreator.PONDER_GUI_CREATOR_BUILDER.shouldHideFromCommands();
     }
 

@@ -3,7 +3,6 @@ package com.daniel99j.lib99j.ponder.impl;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.LevelChunkAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -123,7 +122,7 @@ public class PonderLevel extends ServerLevel {
         Vec3 newPos = newPos(entity.position());
         //when adding entities this allows them to drop in
         if (!isValidPos(BlockPos.containing(newPos), true)) {
-            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to add entity outside scene at {}: {}", entity.position(), entity.getType());
+            if(Lib99j.isDevelopmentEnvironment) Lib99j.LOGGER.warn("Tried to add entity outside scene at {}: {}", entity.position(), entity.getType());
             return false;
         };
         entity.setPos(newPos);
@@ -144,7 +143,7 @@ public class PonderLevel extends ServerLevel {
     public boolean setBlock(BlockPos blockPos, BlockState blockState, @Block.UpdateFlags int i, int j) {
         BlockPos newPos = newPos(blockPos);
         if (!isValidPos(newPos, false)) {
-            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
+            if(Lib99j.isDevelopmentEnvironment) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
             return false;
         };
         return super.setBlock(newPos, blockState, i, j);
@@ -159,7 +158,7 @@ public class PonderLevel extends ServerLevel {
     public boolean destroyBlock(BlockPos blockPos, boolean var2, @Nullable Entity var3, int var4) {
         BlockPos newPos = newPos(blockPos);
         if (!isValidPos(newPos, false)) {
-            if(FabricLoader.getInstance().isDevelopmentEnvironment()) Lib99j.LOGGER.warn("Tried to destroy block outside scene at {}", blockPos);
+            if(Lib99j.isDevelopmentEnvironment) Lib99j.LOGGER.warn("Tried to destroy block outside scene at {}", blockPos);
             return false;
         };
         return super.destroyBlock(newPos, var2, var3, var4);

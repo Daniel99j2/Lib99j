@@ -10,7 +10,6 @@ import com.daniel99j.lib99j.ponder.api.PonderScene;
 import com.daniel99j.lib99j.ponder.impl.PonderDevEdits;
 import com.daniel99j.lib99j.ponder.impl.PonderSceneMode;
 import com.mojang.brigadier.ParseResults;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
@@ -105,7 +104,7 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
 
     @Unique
     private void blockEdit(BlockPos pos, Block newBlock, CallbackInfo ci) {
-        if (FabricLoader.getInstance().isDevelopmentEnvironment() && PonderManager.isPondering(this.player)) {
+        if (Lib99j.isDevelopmentEnvironment && PonderManager.isPondering(this.player)) {
             PonderScene currentScene = PonderManager.activeScenes.get(this.player);
             if (currentScene.ponderDevEdits.blockEdits.isEmpty())
                 this.player.sendSystemMessage(Component.literal("Use '/ponder dev get_edits' to see all block edits"));

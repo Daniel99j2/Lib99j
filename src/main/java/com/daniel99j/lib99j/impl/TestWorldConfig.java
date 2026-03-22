@@ -1,16 +1,16 @@
 package com.daniel99j.lib99j.impl;
 
+import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.config.ConfigEntry;
 import com.google.gson.annotations.SerializedName;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.phys.Vec3;
 
 public class TestWorldConfig {
     @ConfigEntry(show = false)
     @SerializedName("dev_modew")
-    public boolean supaHackaModew = FabricLoader.getInstance().isDevelopmentEnvironment();
+    public boolean supaHackaModew = Lib99j.isDevelopmentEnvironment;
 
     @ConfigEntry
     @SerializedName("disable_syncw")

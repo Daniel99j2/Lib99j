@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.impl;
 
+import com.daniel99j.lib99j.Lib99j;
 import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -29,7 +30,7 @@ public class Lib99jMixinPlugin implements IMixinConfigPlugin {
             return FabricLoader.getInstance().isModLoaded("booklet");
         }
         if(mixinClassName.contains("dev")) {
-            return FabricLoader.getInstance().isDevelopmentEnvironment();
+            return Lib99j.isDevelopmentEnvironment;
         }
         return true;
     }

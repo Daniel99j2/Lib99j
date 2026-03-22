@@ -13,7 +13,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -238,7 +237,7 @@ public class PonderCommand {
             return 0;
         }));
 
-        if(FabricLoader.getInstance().isDevelopmentEnvironment()) root.then(dev);
+        if(Lib99j.isDevelopmentEnvironment) root.then(dev);
 
         dispatcher.getRoot().addChild(root.build());
     }
@@ -277,7 +276,7 @@ public class PonderCommand {
         CooldownManager.setCooldown(context.getSource().getPlayerOrException(), Identifier.fromNamespaceAndPath("ponder", "command"), 10);
 
         PonderBuilder builder = PonderManager.idToBuilder.get(id);
-        if (builder == null || (!FabricLoader.getInstance().isDevelopmentEnvironment() && builder.shouldHideFromCommands())) {
+        if (builder == null || (!Lib99j.isDevelopmentEnvironment && builder.shouldHideFromCommands())) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.id_not_found", id.toString()));
             return 0;
         }
@@ -296,7 +295,7 @@ public class PonderCommand {
             throw new SimpleCommandExceptionType(Component.translatable("commands.lib99j.ponder.failed_to_ponder")).create();
         }
 
-        if(FabricLoader.getInstance().isDevelopmentEnvironment() && context.getInput().contains("ui_creator_from")) {
+        if(Lib99j.isDevelopmentEnvironment && context.getInput().contains("ui_creator_from")) {
             context.getSource().getPlayerOrException().connection.handleChatCommand(new ServerboundChatCommandPacket("ponder dev ui_creator"));
         }
         return 1;
