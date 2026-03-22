@@ -415,6 +415,8 @@ public class PonderScene {
         //update before too so the client always tick the entities properly
         updateTickStatus();
 
+        this.packetRedirector.connection.tick();
+        this.packetRedirector.tick();
 
         int ticksToRun = this.stepFFTo == -1 ? 1 : 500;
         while (ticksToRun-- > 0 && !this.isToBeStopped && !this.isToBeRemoved() && (!this.mode.isPaused() || forced)) {
@@ -428,8 +430,8 @@ public class PonderScene {
 
             time++;
 
-//            this.packetRedirector.connection.tick();
-//            this.packetRedirector.tick();
+            this.packetRedirector.connection.tick();
+            this.packetRedirector.tick();
             this.level.runTick();
 
             AtomicBoolean blockedContinue = new AtomicBoolean(false);
@@ -589,6 +591,7 @@ public class PonderScene {
     }
 
     public void stopPondering(boolean willNotContinuePondering) {
+        if(isToBeRemoved) return;
         this.activeInstructions.forEach((instruction) -> {
             if(instruction.isComplete(this)) {
                 instruction.onRemove(this, InstructionRemovalReason.SCENE_CLOSED);
