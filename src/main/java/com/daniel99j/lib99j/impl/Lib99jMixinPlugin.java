@@ -25,6 +25,9 @@ public class Lib99jMixinPlugin implements IMixinConfigPlugin {
         if(targetClassName.toLowerCase().contains("polydex")) {
             return FabricLoader.getInstance().isModLoaded("polydex");
         }
+        if(targetClassName.toLowerCase().contains("booklet")) {
+            return FabricLoader.getInstance().isModLoaded("booklet");
+        }
         if(mixinClassName.contains("dev")) {
             return FabricLoader.getInstance().isDevelopmentEnvironment();
         }

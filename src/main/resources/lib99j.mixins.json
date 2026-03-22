@@ -29,7 +29,6 @@
     "ServerGamePacketListenerImplMixin",
     "ServerLevelMixin",
     "ServerPlayerMixin",
-    "SharedConstantsAccessor",
     "SystemLanguageMixin",
     "dev.DogBoneMixin",
     "dev.Vec2StringifierMixin"

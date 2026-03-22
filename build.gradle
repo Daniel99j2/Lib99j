@@ -70,7 +70,7 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings loom.layered() {
 		officialMojangMappings()
-		parchment("org.parchmentmc.data:parchment-1.20.2:2023.10.08@zip")
+		parchment("org.parchmentmc.data:parchment-1.21.11:2025.12.20@zip")
 	}
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
@@ -101,7 +101,7 @@ dependencies {
 	modImplementation include("xyz.nucleoid:server-translations-api:2.5.2+1.21.9-pre3")
 
 	modCompileOnly 'maven.modrinth:polydex:1.8.1+1.21.11'
-	modImplementation include('eu.pb4:booklet:0.1.0+1.21.11')
+	modCompileOnly 'eu.pb4:booklet:0.1.0+1.21.11'
 }
 
 processResources {

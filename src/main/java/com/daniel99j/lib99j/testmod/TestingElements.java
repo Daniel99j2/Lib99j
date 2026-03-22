@@ -75,12 +75,12 @@ public class TestingElements {
                         scene.getLevel().setBlockEntity(new BannerBlockEntity(new BlockPos(6, 1, 6).offset(scene.getOrigin()), Blocks.BLACK_BANNER.defaultBlockState(), DyeColor.BROWN));
                     }))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
-                    .instruction(new ShowTextInstruction(3, Component.translatable("lib99j.test"), new Vector2i(0, 0), PonderLine.RIGHT))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance()), new Vector2i(790, 367), PonderLine.RIGHT))
+                    .instruction(new ShowTextInstruction(3, Component.translatable("lib99j.test"), new Vector2i(640, 236), PonderLine.LEFT))
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(798, 367), PonderLine.RIGHT))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Cow creeper = new Cow(EntityType.COW, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -94,7 +94,6 @@ public class TestingElements {
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -104,7 +103,7 @@ public class TestingElements {
                         scene.getLevel().setBlockAndUpdate(new BlockPos(5, 6, 5), Blocks.LAVA.defaultBlockState());
                     }))
                     .waitFor(2)
-                    .instruction(new ShowTextInstruction(10, Component.literal("TNT is also cool, and\nalso changes blocks"), new Vector2i(0, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(10, Component.literal("TNT is also cool, and\nalso changes blocks"), new Vector2i(798, 367), PonderLine.LEFT))
                     .waitFor(8)
                     .finishStep()
                     .waitFor(30)

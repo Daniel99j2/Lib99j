@@ -28,6 +28,7 @@ import java.util.Comparator;
 public class Lib99jClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        if(!Lib99j.personalFeatures) return;
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "models"), CreativeModeTab.builder(CreativeModeTab.Row.BOTTOM, -1)
                 .icon(Items.TEST_INSTANCE_BLOCK::getDefaultInstance)
                 .title(Component.literal("Item Models"))

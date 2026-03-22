@@ -4,7 +4,6 @@ import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
-import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
@@ -75,6 +74,7 @@ public class Lib99j implements ModInitializer {
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
     public static boolean isDevelopingLib99j = false;
+    public static boolean personalFeatures = System.getenv("DANIEL99J_MODE") != null;
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -110,11 +110,10 @@ public class Lib99j implements ModInitializer {
                     //If these were enabled in normal dev mode, it would mean other mods would sometimes only work in dev
                     //If you want to work on Lib99j, feel free to edit this so it also works for you
                 }
-                ;
             }
         }
 
-        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && FabricLoader.getInstance().isDevelopmentEnvironment();
+        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getConfigDir().getParent().toString().contains("Lib99j");
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -127,7 +126,6 @@ public class Lib99j implements ModInitializer {
 
         //only enable features on my machine so other mod developers do not forget to enable them for their mods
         if(isDevelopingLib99j) {
-            SharedConstantsAccessor.setInIde(true);
             GameProperties.enablePonder();
             GameProperties.enableCustomEffectBadLuck();
 
