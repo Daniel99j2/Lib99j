@@ -1,13 +1,11 @@
 package com.daniel99j.lib99j.testmod;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.RegUtil;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.ponder.api.*;
-import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.SetCameraInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.ShowItemInstruction;
-import com.daniel99j.lib99j.ponder.api.instruction.ShowTextInstruction;
+import com.daniel99j.lib99j.ponder.api.instruction.*;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -77,12 +75,12 @@ public class TestingElements {
                         scene.getLevel().setBlockEntity(new BannerBlockEntity(new BlockPos(6, 1, 6).offset(scene.getOrigin()), Blocks.BLACK_BANNER.defaultBlockState(), DyeColor.BROWN));
                     }))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance()), new Vector2i(0, 0), 10))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.PISTON.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
                     .instruction(new ShowTextInstruction(3, Component.translatable("lib99j.test"), new Vector2i(0, 0), PonderLine.RIGHT))
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(0, 0), 0))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Cow creeper = new Cow(EntityType.COW, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -96,7 +94,7 @@ public class TestingElements {
                     .waitFor(2)
                     .finishStep()
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance()), new Vector2i(0, 0), 10))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.TNT.getDefaultInstance()), new Vector2i(0, 0), PonderLine.RIGHT))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
                         creeper.setPosRaw(5, 10, 5);
@@ -133,6 +131,7 @@ public class TestingElements {
 
     public static final PonderBuilder TEST_ITEM_PONDER2 = PonderManager.registerItemToBuilder(Items.TNT,
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "tnt_doesnt_explode_underwater"), Items.WATER_BUCKET.getDefaultInstance(), Component.literal("TNT water interactions"), Component.literal("When a TNT is lit in the water, it does not break blocks")).size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.CLAY.defaultBlockState(), Blocks.CLAY.defaultBlockState())
+                    .instruction(new AddVfxInstruction(GenericScreenEffect.CONDUIT_POWER, 100000))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         scene.getLevel().fillBlocksAndUpdate(new BlockPos(-5, -5, -5), new BlockPos(10, 10, 10), Blocks.WATER.defaultBlockState());
                         scene.setCanEscapeBounds(true);
@@ -178,38 +177,38 @@ public class TestingElements {
 
     public static final PonderBuilder LINES = PonderManager.registerBuilder(
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "lines"), Items.WHITE_DYE.getDefaultInstance(), Component.literal("Lines"), Component.literal("UI Testing"))
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 0))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(10), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 1))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(20), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 2))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(30), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 3))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(40), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 4))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(50), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 5))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(60), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 6))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(70), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(0), 7))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance()), new Vector2i(80), PonderLine.RIGHT))
                     .waitFor(1)
                     .finishStep()
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 0))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(10), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 1))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(20), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 2))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(30), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 3))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(40), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 4))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(50), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 5))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(60), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 6))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(70), PonderLine.RIGHT))
                     .waitFor(1)
-                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(0), 7))
+                    .instruction(new ShowItemInstruction(1, List.of(Items.DIRT.getDefaultInstance(), Items.STONE.getDefaultInstance()), new Vector2i(80), PonderLine.RIGHT))
                     .waitFor(1)
                     .finishStep()
                     .build()
@@ -217,37 +216,37 @@ public class TestingElements {
 
     public static final PonderBuilder TEXT = PonderManager.registerBuilder(
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "text"), Items.LIME_DYE.getDefaultInstance(), Component.literal("Text"), Component.literal("UI Testing"))
-                    //.instruction(new ShowTextInstruction(5, Component.literal("hello left"), new Vector2i(400, 0), PonderLine.LEFT))
-                    //.instruction(new ShowTextInstruction(5, Component.literal("hello hi left\nmultiline"), new Vector2i(400, 30), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello left"), new Vector2i(400, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello hi left\nmultiline"), new Vector2i(400, 30), PonderLine.LEFT))
 
-                    //.instruction(new ShowTextInstruction(5, Component.literal("hello none"), new Vector2i(400, 45), PonderLine.NONE))
-                    //.instruction(new ShowTextInstruction(5, Component.literal("hello hi none\nmultiline"), new Vector2i(400, 60), PonderLine.NONE))
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello none"), new Vector2i(400, 45), PonderLine.NONE))
+                    .instruction(new ShowTextInstruction(5, Component.literal("hello hi none\nmultiline"), new Vector2i(400, 60), PonderLine.NONE))
 
                     .instruction(new ShowTextInstruction(5, Component.literal("hello right"), new Vector2i(400, 5), PonderLine.RIGHT))
                     .instruction(new ShowTextInstruction(5, Component.literal("hello hi right\nmultiline"), new Vector2i(400, 35), PonderLine.RIGHT))
 
                     .waitFor(5)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(400, 0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(0), PonderLine.LEFT))
-//                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(0, 30), PonderLine.LEFT))
-//                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(400, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello"), new Vector2i(150, 0), PonderLine.LEFT))
+                    .instruction(new ShowTextInstruction(1, Component.literal("hello hi\nmultiline"), new Vector2i(150, 30), PonderLine.LEFT))
+                    .waitFor(1)
                     .finishStep()
                     .build()
     );

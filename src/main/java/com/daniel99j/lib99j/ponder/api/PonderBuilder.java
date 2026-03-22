@@ -145,6 +145,7 @@ public class PonderBuilder {
         int stepValue = 0;
         for (PonderInstruction currentStepInstruction : this.currentStepInstructions) {
             stepValue += currentStepInstruction.getMaxValue();
+            currentStepInstruction.validate();
         }
 
         int totalValue = stepValue;
@@ -166,22 +167,24 @@ public class PonderBuilder {
         return this;
     }
 
-    public void startPondering(ServerPlayer player) {
+    @SuppressWarnings("UnusedReturnValue")
+    public PonderScene startPondering(ServerPlayer player) {
         if(!this.registered) throw new IllegalStateException("You have not registered your ponder scene yet");
-        startPonderingIgnoreRegistration(player);
+        return startPonderingIgnoreRegistration(player);
     };
 
-    public void startPonderingIgnoreRegistration(ServerPlayer player) {
-        startPonderingFromGoTo(player, null, -1);
+    public PonderScene startPonderingIgnoreRegistration(ServerPlayer player) {
+        return startPonderingFromGoTo(player, null, -1);
     };
 
-    protected void startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
+    protected PonderScene startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
         PonderScene scene = new PonderScene(player, this, from, goTo);
         //ensure scene is inited
         if(from != null && from.isPaused() && goTo <= 0) {
             //scene.tick(true);
         };
+        return scene;
     };
     
     private void throwIfBuilt() {
@@ -207,11 +210,12 @@ public class PonderBuilder {
         return hideFromCommands;
     }
 
+    @ApiStatus.Internal
     public static void hotswapExample() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("mymod").then(Commands.literal("test-ponder")
                     .executes((context -> {
-                        PonderBuilder.create(Identifier.fromNamespaceAndPath("mymod", "my_ponder"), Items.TNT.getDefaultInstance(), Component.translatable("ponder.scene.mymod.my_ponder"), Component.translatable("ponder.scene.mymod.my_ponder.description"))
+                        PonderScene hotswapScene = PonderBuilder.create(Identifier.fromNamespaceAndPath("mymod", "my_ponder"), Items.TNT.getDefaultInstance(), Component.translatable("ponder.scene.mymod.my_ponder"), Component.translatable("ponder.scene.mymod.my_ponder.description"))
                                 .waitFor(2)
                                 .instruction(new ExecuteCodeInstruction((scene -> {
                                     scene.getLevel().setBlockAndUpdate(new BlockPos(0, 0, 3), Blocks.COAL_ORE.defaultBlockState());
@@ -224,6 +228,10 @@ public class PonderBuilder {
                                 .waitFor(6)
                                 .finishStep()
                                 .build().startPonderingIgnoreRegistration(context.getSource().getPlayerOrException());
+
+                        hotswapScene.setCustomProperties(new CustomPonderProperties(null, false, true, false, true, true, false, () -> {
+                            Lib99j.LOGGER.info("test");
+                        }));
                         return 0;
                     }))));
         });

@@ -4,7 +4,6 @@ import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polydex.api.v1.recipe.PolydexEntry;
 import eu.pb4.polydex.api.v1.recipe.PolydexPage;
 import eu.pb4.polydex.impl.book.ui.ExtendedGui;
-import eu.pb4.polydex.impl.book.ui.LayerBuilder;
 import eu.pb4.polydex.impl.book.ui.PageViewerGui;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.core.component.DataComponents;
@@ -34,14 +33,6 @@ public abstract class PolydexPageMixin extends ExtendedGui {
 
     @Shadow
     @Final
-    private LayerBuilder displayLayer;
-
-    @Shadow
-    @Final
-    private PageViewerGui.IconGetter iconGetter;
-
-    @Shadow
-    @Final
     protected List<PolydexPage> pages;
 
     @Shadow
@@ -55,7 +46,7 @@ public abstract class PolydexPageMixin extends ExtendedGui {
     private void lib99j$addPonderButton(CallbackInfo ci) {
         if(this.entry != null) {
             Item item = this.pages.get(this.getPage()).entryIcon(this.entry, this.getPlayer()).getItem();
-            if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).noDefaults().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {
+            if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).noDefaults().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).hideDefaultTooltip().setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {
                 this.close();
                 PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(item).getFirst()).startPondering(this.getPlayer());
             }));

@@ -112,17 +112,13 @@ public class PonderScene {
     @ApiStatus.Internal
     public Vec3 initialVelocity = Vec3.ZERO;
     private int time;
-
-    /**
-     * Store whatever you want in here
-     */
-    @SuppressWarnings("unused")
-    public Object customData = null;
-
-    /**
-     * This code is executed when the ponder scene finishes. Note that it is overridden by some in-built actions
-     */
+    @ApiStatus.Internal
     public Runnable runOnceDone = null;
+
+    /**
+     * Options for developers who want finer control over their ponder scenes (eg, an intro to a minigame might be unskippable)
+     */
+    private CustomPonderProperties customProperties = new CustomPonderProperties(null, true, true, true, true, true, true, null);
 
     protected PonderScene(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
         GameProperties.throwIfPonderNotEnabled("This code should never be reached");
@@ -139,6 +135,7 @@ public class PonderScene {
             this.initialVelocity = oldAfterStep.initialVelocity;
         } else {
             this.initialVelocity = this.player.getDeltaMovement();
+            //this.player.level.getEntitie
         }
 
         boolean checkTime = FabricLoader.getInstance().isDevelopmentEnvironment() && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
@@ -359,7 +356,7 @@ public class PonderScene {
         f5Hint.setScale(new Vector3f(3, 3, 0));
         f5Hint.setBillboardMode(Display.BillboardConstraints.CENTER);
         f5Hint.setBackground(0xff000000);
-        //this.elementHolder.addElement(f5Hint);
+        this.elementHolder.addElement(f5Hint);
 
         if (checkTime) {
             Lib99j.LOGGER.info("Stage {} took {}", "Finish", GLFW.glfwGetTime() - time);
@@ -377,26 +374,28 @@ public class PonderScene {
     }
 
     public void tick(boolean forced) {
-        if (this.isToBeStopped) this.stopPondering(!this.stopWithoutVfx);
+        if (this.isToBeStopped) {
+            this.stopPondering(!this.stopWithoutVfx);
+            return;
+        };
         if (this.isToBeRemoved()) return;
         if (this.player.hasDisconnected() || this.player.isRemoved()) {
             this.stopPondering(true);
             return;
         }
         //dont check paused here so inputs and disconnections still are checked
-
         if ((this.player.getLastClientInput().forward() || this.player.getLastClientInput().backward() || this.player.getLastClientInput().jump() || this.player.getLastClientInput().left() || this.player.getLastClientInput().right()) && this.mode.hasMovementControls()) {
             if (this.inputCooldown <= 0) {
                 this.inputCooldown = 10; //put it here so new ponder scenes already have it
-                if (this.player.getLastClientInput().backward()) {
+                if (this.player.getLastClientInput().backward() && this.customProperties.canSkipAndRewind) {
                     goTo(0);
-                } else if (this.player.getLastClientInput().forward()) {
+                } else if (this.player.getLastClientInput().forward() && this.customProperties.canSkipAndRewind) {
                     goTo(this.selectedStep);
-                } else if (this.player.getLastClientInput().jump()) {
+                } else if (this.player.getLastClientInput().jump() && this.customProperties.canPause) {
                     if(this.mode == PonderSceneMode.PAUSED) this.setMode(PonderSceneMode.PLAYING);
                     else if(this.mode == PonderSceneMode.PLAYING) this.setMode(PonderSceneMode.PAUSED);
                     this.inputCooldown = 1;
-                } else if(builder.item != null) {
+                } else if(builder.item != null && this.customProperties.canSkipAndRewind) {
                     int current = PonderManager.itemToBuilders.get(builder.item).indexOf(builder.id);
                     if (this.player.getLastClientInput().right() && current < PonderManager.itemToBuilders.get(builder.item).size()-1) {
                         this.stopPonderingSafely();
@@ -433,17 +432,21 @@ public class PonderScene {
 //            this.packetRedirector.tick();
             this.level.runTick();
 
-            //dont tick extra
-            this.activeInstructions.removeIf((instruction) -> instruction.isComplete(this));
-
             AtomicBoolean blockedContinue = new AtomicBoolean(false);
             this.activeInstructions.forEach((instruction) -> {
                 instruction.tick(this);
                 if (instruction.preventContinue(this)) blockedContinue.set(true);
             });
 
-            //remove ones that finished this tick
-            this.activeInstructions.removeIf((instruction) -> instruction.isComplete(this));
+            List<PonderInstruction> toRemove = new ArrayList<>();
+            this.activeInstructions.forEach((instruction) -> {
+                if(instruction.isComplete(this)) {
+                    toRemove.add(instruction);
+                    instruction.onRemove(this, InstructionRemovalReason.COMPLETED_INSTRUCTION);
+                };
+            });
+
+            this.activeInstructions.removeAll(toRemove);
 
             if (!blockedContinue.get()) {
                 var step = getCurrentStep();
@@ -464,14 +467,28 @@ public class PonderScene {
                     currentStep++;
                     currentInstructionInStep = 0;
 
+                    List<PonderInstruction> persistentInstructions = new ArrayList<>();
+
                     if(!this.activeInstructions.isEmpty() && FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                        this.player.sendSystemMessage(Component.literal("Warning: Active instructions were present whilst a step finished! See logs for more info."));
-                        Lib99j.LOGGER.error("Active instructions were present whilst a step finished! Instructions left over are auto-cleared, try adding a wait before going to the next step.");
+                        List<String> problems = new ArrayList<>();
                         for (PonderInstruction activeInstruction : this.activeInstructions) {
-                            Lib99j.LOGGER.error("Offending instruction: {}", activeInstruction);
+                            if(!activeInstruction.canPersist()) {
+                                problems.add("Offending instruction: {}".replace("{}", activeInstruction.toString()));
+                            } else {
+                                persistentInstructions.add(activeInstruction);
+                            }
+                        }
+                        if(!problems.isEmpty()) {
+                            this.player.sendSystemMessage(Component.literal("Warning: Active instructions were present whilst a step finished! See logs for more info.").withStyle(ChatFormatting.YELLOW));
+                            Lib99j.LOGGER.error("Active instructions were present whilst a step finished! Instructions left over are auto-cleared, try adding a wait before going to the next step.");
+                            for (String problem : problems) {
+                                Lib99j.LOGGER.error(problem);
+                            }
                         }
                     };
                     this.activeInstructions.clear();
+
+                    this.activeInstructions.addAll(persistentInstructions);
 
                     step = getCurrentStep();
                     if (step == null) {
@@ -505,8 +522,16 @@ public class PonderScene {
         }
 
         updateTickStatus();
+        updateTitleBar();
+    }
 
-        if(this.mode == PonderSceneMode.IDENTIFYING) {
+    private void updateTitleBar() {
+        if(!this.customProperties.showHud) {
+            this.titleTopBar.setName(Component.empty());
+            this.subtitleTopBar.setName(Component.empty());
+        } else if(this.mode == PonderSceneMode.IDENTIFYING) {
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_looking_at").withColor(ChatFormatting.GRAY.getColor()));
+
             float max = 6;
             Vec3 vec3 = this.identifyPos;
             Vec3 vec32 =  this.packetRedirector.calculateViewVector(this.identifyYaw, this.identifyPitch);
@@ -543,6 +568,9 @@ public class PonderScene {
                 Vec3 accelerationVector = direction.scale(distance-moveDistance);
                 EntityUtils.sendVelocityDelta(this.player, accelerationVector);
             }
+        } else {
+            this.subtitleTopBar.setName(this.builder.title);
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()));
         }
     }
 
@@ -560,7 +588,14 @@ public class PonderScene {
         this.stopWithoutVfx = true;
     }
 
-    public void stopPondering(boolean stopVfx) {
+    public void stopPondering(boolean willNotContinuePondering) {
+        this.activeInstructions.forEach((instruction) -> {
+            if(instruction.isComplete(this)) {
+                instruction.onRemove(this, InstructionRemovalReason.SCENE_CLOSED);
+            };
+        });
+        this.activeInstructions.clear();
+
         this.packetRedirector.disconnect();
         this.packetRedirector.discard();
         ((PlayerListAdder) this.packetRedirector).lib99j$setAddToPlayerList(false);
@@ -570,7 +605,7 @@ public class PonderScene {
         //this.level.close()
 
         this.isToBeRemoved = true;
-        if (stopVfx) {
+        if (willNotContinuePondering) {
             //make the player properly reset
             if(!this.mode.locksCamera()) {
                 ((Lib99jPlayerUtilController) this.player).lib99j$lockCamera();
@@ -640,6 +675,7 @@ public class PonderScene {
         this.packetRedirector.level = null;
 
         if(this.runOnceDone != null) this.runOnceDone.run();
+        if(willNotContinuePondering && this.runOnceDone == null && this.customProperties.onClose != null) this.customProperties.onClose.run();
     }
 
     public ElementHolder getElementHolder() {
@@ -672,6 +708,7 @@ public class PonderScene {
     }
 
     public MutableComponent buildActionBar() {
+        if(!this.customProperties.showHud) return Component.empty();
         int scale = 2;
 
         int max = this.builder.totalValue;
@@ -710,7 +747,7 @@ public class PonderScene {
         }
 
         for (int j = 0; j < PonderGuiTextures.FILLED_BAR_WIDTH; j++) {
-            if(j == 0 && this.selectedStep == 0 && this.builder.steps.size() > 1) {
+            if(j == 0 && this.selectedStep == 0 && this.builder.steps.size() > 1 && this.customProperties.canSkipAndRewind) {
                 barFiller.append(PonderGuiTextures.STEP_BAR_STEP_SELECTED.string());
             } else {
                 boolean selectedStep = positions.containsKey(j) && positions.get(j) == this.selectedStep - 1;
@@ -791,6 +828,7 @@ public class PonderScene {
     }
 
     public void addToSelectedStep(int selectedStep) {
+        if(!this.getMode().hasMovementControls() || !this.customProperties.canSkipAndRewind) return;
         if (this.selectedStep + selectedStep < 0) this.selectedStep = this.steps.size() + selectedStep;
         else this.selectedStep = (this.selectedStep + selectedStep) % (this.steps.size());
     }
@@ -800,9 +838,11 @@ public class PonderScene {
         if (this.tickSyncVerify == current) return;
         this.tickSyncVerify = current;
 
-        if (this.mode.isPaused()) this.player.connection.send(new ClientboundTickingStatePacket(20, true));
-        else if (this.stepFFTo != -1) this.player.connection.send(new ClientboundTickingStatePacket(1000, true));
-        else this.player.connection.send(new ClientboundTickingStatePacket(20, false));
+        if(this.packetRedirector.connection == null) return;
+
+        if (this.mode.isPaused()) this.packetRedirector.connection.send(new ClientboundTickingStatePacket(20, true));
+        else if (this.stepFFTo != -1) this.packetRedirector.connection.send(new ClientboundTickingStatePacket(1000, true));
+        else this.packetRedirector.connection.send(new ClientboundTickingStatePacket(20, false));
     }
 
     public void setCanEscapeBounds(boolean canEscapeBounds) {
@@ -836,12 +876,6 @@ public class PonderScene {
         if(!oldMode.locksHotbar() && newMode.locksHotbar()) {
             this.hotbarGui.open();
         }
-        if(oldMode == PonderSceneMode.IDENTIFYING && newMode != PonderSceneMode.IDENTIFYING) {
-            this.subtitleTopBar.setName(this.builder.title);
-            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()));
-        } else if(oldMode != PonderSceneMode.IDENTIFYING && newMode == PonderSceneMode.IDENTIFYING) {
-            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_looking_at").withColor(ChatFormatting.GRAY.getColor()));
-        }
     }
 
     public PonderSceneMode getMode() {
@@ -849,6 +883,11 @@ public class PonderScene {
     }
 
     public void openMenu() {
+        if(!this.customProperties.canUseMenu) return;
+        if(!this.builder.registered) {
+            if(FabricLoader.getInstance().isDevelopmentEnvironment()) this.player.sendSystemMessage(Component.literal("The menu cannot be opened if the builder is not registered. Please disable opening the menu if this will be used in release builds through customProperties."));
+            return;
+        }
         this.setMode(PonderSceneMode.IN_MENU);
         PonderMenu.buildBaseMenu(this.player, this.builder.id);
     }
@@ -864,5 +903,13 @@ public class PonderScene {
 
     public int getTime() {
         return time;
+    }
+
+    public void setCustomProperties(CustomPonderProperties customProperties) {
+        this.customProperties = customProperties;
+    }
+
+    public CustomPonderProperties getCustomProperties() {
+        return customProperties;
     }
 }

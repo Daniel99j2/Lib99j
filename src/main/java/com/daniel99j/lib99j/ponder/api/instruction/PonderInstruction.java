@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.ponder.api.instruction;
 
+import com.daniel99j.lib99j.ponder.api.InstructionRemovalReason;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 
 public abstract class PonderInstruction implements Cloneable {
@@ -22,6 +23,16 @@ public abstract class PonderInstruction implements Cloneable {
      */
     public abstract void start(PonderScene scene);
 
+    /**
+     * Called when the instruction is removed
+     */
+    public void onRemove(PonderScene scene, InstructionRemovalReason reason) {
+
+    };
+
+    /**
+     * Called when the instruction ticks
+     */
     public void tick(PonderScene scene) {
         this.time++;
     };
@@ -38,6 +49,23 @@ public abstract class PonderInstruction implements Cloneable {
      */
     public int getMaxValue() {
         return 0;
+    }
+
+    /**
+     * If the instruction can persist over multiple steps
+     * <p>Mutually exclusive with: getMaxValue > 0, preventContinue != false</p>
+     */
+    public boolean canPersist() {
+        return false;
+    };
+
+    public void validate() {
+        if(this.canPersist() && (this.getMaxValue() > 0)) throw new IllegalStateException("canPersist == true is mutually exclusive with: getMaxValue > 0, preventContinue != false");
+    }
+
+    @Override
+    public String toString() {
+        return "PonderInstruction{type="+getClass().getName()+"}";
     }
 
     public PonderInstruction clone() {

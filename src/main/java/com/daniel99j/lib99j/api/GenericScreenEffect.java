@@ -11,5 +11,6 @@ public enum GenericScreenEffect {
     BLINDNESS,
     NIGHT_VISION,
     DARKNESS,
+    CONDUIT_POWER,
     LOCK_CAMERA_AND_POS
 }

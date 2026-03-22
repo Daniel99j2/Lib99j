@@ -178,8 +178,8 @@ public class PonderCommand {
                 currentScene.runOnceDone = () -> {
                     new PonderGuiCreator(currentScene.player, currentScene.builder, currentScene, currentScene.getStep());
                 };
-                context.getSource().sendSystemMessage(Component.literal("Entered UI creator mode. Open the menu (L) to start editing"));
-                context.getSource().sendSystemMessage(Component.literal("If Lib99j is running on your client, hold LEFT-SHIFT to see the position you are hovering over whilst in the menu, then use CTRL-C to copy the position").withStyle(ChatFormatting.YELLOW));
+                context.getSource().sendSystemMessage(Component.literal("Entered UI creator mode. Open the menu [L] to start editing"));
+                context.getSource().sendSystemMessage(Component.literal("If Lib99j is running on your client, hold [LEFT-SHIFT] to see the position you are hovering over whilst in the menu [L], then use [CTRL-C] to copy the position").withStyle(ChatFormatting.BLUE));
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
@@ -246,7 +246,7 @@ public class PonderCommand {
     private static boolean checkIfOnGround(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         //it feels 'wrong' but its less cheaty than being able to have a friend place water below when you fall
         //if this didnt exist, the player would still take fall damage but only when exiting ponder
-        if (!context.getSource().getPlayerOrException().isInWater() && context.getSource().getPlayerOrException().gameMode.getGameModeForPlayer() != GameType.CREATIVE && !context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && (context.getSource().getPlayerOrException().fallDistance > 3 || EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 10) > 3)) {
+        if (context.getSource().getPlayerOrException().getVehicle() == null && !context.getSource().getPlayerOrException().isInWater() && context.getSource().getPlayerOrException().gameMode.getGameModeForPlayer() != GameType.CREATIVE && !context.getSource().getPlayerOrException().onGround() && !context.getSource().getPlayerOrException().isFallFlying() && !context.getSource().getPlayerOrException().getAbilities().flying && (context.getSource().getPlayerOrException().fallDistance > 3 || EntityUtils.getDistanceToGround(context.getSource().getPlayerOrException(), 10) > 3)) {
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.not_on_ground"));
             return true;
         }

@@ -19,6 +19,7 @@ public class PonderLineDisplay extends TextDisplayElement {
     private int life;
 
     public PonderLineDisplay(int life, Vector2i pos, Vec2 scale, PonderScene scene, int offset, int width) {
+        if(width < 0) throw new IllegalStateException("Negative line width");
         offset = offset/2;
         width = width/2;
         this.pos = pos;
@@ -63,7 +64,7 @@ public class PonderLineDisplay extends TextDisplayElement {
         Vec2 offset = new Vec2(800/40.0f/2*this.getScale().x(),  -10.0f/40*this.getScale().y());
         //offset = Vec2.ZERO;
 
-        this.setTranslation(new Vector3f(coords.x, coords.y, -0.2f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)).add(offset.x, offset.y, 0));
+        this.setTranslation(new Vector3f(coords.x, coords.y, -0.200002f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)).add(offset.x, offset.y, 0));
     }
 
     public Vector2i getPos() {

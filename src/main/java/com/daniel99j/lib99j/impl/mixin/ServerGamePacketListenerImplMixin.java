@@ -79,14 +79,17 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
         }
 
         if ((serverboundPlayerActionPacket.getAction() == ServerboundPlayerActionPacket.Action.DROP_ITEM || serverboundPlayerActionPacket.getAction() == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) && PonderManager.isPondering(this.player)) {
-            PonderManager.activeScenes.get(this.player).stopPonderingSafely();
+            if(PonderManager.activeScenes.get(this.player).getCustomProperties().canLeave) PonderManager.activeScenes.get(this.player).stopPonderingSafely();
             ci.cancel();
         }
 
 
         if ((serverboundPlayerActionPacket.getAction() == ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND) && PonderManager.isPondering(this.player)) {
-            if(PonderManager.activeScenes.get(this.player).getMode() == PonderSceneMode.IDENTIFYING) PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.PLAYING);
-            else PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.IDENTIFYING);
+            if(PonderManager.activeScenes.get(this.player).getCustomProperties().canIdentify) {
+                if (PonderManager.activeScenes.get(this.player).getMode() == PonderSceneMode.IDENTIFYING)
+                    PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.PLAYING);
+                else PonderManager.activeScenes.get(this.player).setMode(PonderSceneMode.IDENTIFYING);
+            }
             ci.cancel();
         }
     }

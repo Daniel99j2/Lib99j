@@ -14,7 +14,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.joml.Vector3fc;
 
 public class PonderItemDisplayInternal extends ItemDisplayElement {
     private final PonderScene scene;
@@ -53,16 +52,11 @@ public class PonderItemDisplayInternal extends ItemDisplayElement {
         return element.getCurrentPos();
     }
 
-    @Override
-    public void setTranslation(Vector3fc vector3f) {
-        super.setTranslation(vector3f);
-    }
-
     public void setPos(Vector2i pos) {
         this.pos = pos;
         Vector3f scale = new Vector3f(0.01f, 0.01f, 0);
-        Vec2 coords = PonderCoordUtil.pixelsToWorld(new Vector2i(this.pos));
-        this.setTranslation(new Vector3f(coords.x, coords.y, -0.19f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
+        Vec2 coords = PonderCoordUtil.pixelsToWorld(new Vector2i(this.pos).add(28, 28));
+        this.setTranslation(new Vector3f(coords.x, coords.y, -0.199999999f).add(new Vector3f(0.5f, -0.5f, 0).mul(scale)));
     }
 
     public Vector2i getPos() {
@@ -70,7 +64,7 @@ public class PonderItemDisplayInternal extends ItemDisplayElement {
     }
 
     public void setSize(Vec2 size) {
-        Vector3f scale = new Vector3f(0.024f * size.x / 2, 0.024f * size.y / 2, 0.001f);
+        Vector3f scale = new Vector3f(0.024f * size.x / 2, 0.024f * size.y / 2, 0.00000001f);
         this.setScale(scale);
     }
 }

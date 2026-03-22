@@ -16,7 +16,7 @@ public class PonderHotbarGui extends HotbarGui {
 
     @Override
     public boolean onSelectedSlotChange(int slot) {
-        if (slot != 4 && this.scene.getMode().hasMovementControls()) {
+        if (slot != 4) {
             this.scene.addToSelectedStep(slot-4);
         }
         return false;

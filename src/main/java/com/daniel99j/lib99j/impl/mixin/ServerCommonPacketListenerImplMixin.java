@@ -24,6 +24,7 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Guardian;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -106,6 +107,15 @@ public abstract class ServerCommonPacketListenerImplMixin {
                     ci.cancel();
                     return;
                 }
+
+                //If a guardian is being updated whilst in a ponder, then dont update it
+                //It works because ponder guardians are in a different world
+                //This prevents extreme lag when guardian rays are being created
+                //The world reload fixes it automatically
+                if(packet instanceof ClientboundSetEntityDataPacket trackerUpdateS2CPacket && ((ServerPlayerConnection) this).getPlayer().level.getEntity(trackerUpdateS2CPacket.id()) instanceof Guardian) {
+                    ci.cancel();
+                    return;
+                }
             }
 
             if(GameProperties.isHideableBossBar() && packet instanceof ClientboundBossEventPacket clientboundBossEventPacket && clientboundBossEventPacket instanceof BossBarVisibility visibility) {
@@ -155,6 +165,8 @@ public abstract class ServerCommonPacketListenerImplMixin {
                     else if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.BLACK_HEARTS) && effectId == MobEffects.WITHER)
                         ci.cancel();
                     else if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.NIGHT_VISION) && effectId == MobEffects.NIGHT_VISION)
+                        ci.cancel();
+                    else if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.CONDUIT_POWER) && effectId == MobEffects.CONDUIT_POWER)
                         ci.cancel();
                     else if (VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.DARKNESS) && effectId == MobEffects.DARKNESS)
                         ci.cancel();

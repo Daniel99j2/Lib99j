@@ -1,4 +1,4 @@
-package com.daniel99j.lib99j.impl.mixin;
+package com.daniel99j.lib99j.impl.mixin.dev;
 
 import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
 import com.mojang.blaze3d.platform.InputConstants;

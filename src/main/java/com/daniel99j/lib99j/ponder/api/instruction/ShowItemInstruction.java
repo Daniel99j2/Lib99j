@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.ponder.api.instruction;
 
 import com.daniel99j.lib99j.ponder.api.PonderItemDisplay;
+import com.daniel99j.lib99j.ponder.api.PonderLine;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec2;
@@ -12,10 +13,10 @@ import java.util.List;
 public class ShowItemInstruction extends InstantPonderInstruction {
     private final List<ItemStack> items;
     private final float displayTime;
-    private final int line;
+    private final PonderLine line;
     private final Vector2i pos;
 
-    public ShowItemInstruction(float displayTime, List<ItemStack> items, Vector2i pos, int line) {
+    public ShowItemInstruction(float displayTime, List<ItemStack> items, Vector2i pos, PonderLine line) {
         this.items = items;
         this.displayTime = displayTime;
         this.line = line;
@@ -24,7 +25,7 @@ public class ShowItemInstruction extends InstantPonderInstruction {
 
     @Override
     public void start(PonderScene scene) {
-        scene.getElementHolder().addElement(new PonderItemDisplay((int) (displayTime * 20), new Vector2i(pos).add(line, 0), Vec2.ONE, this.items, scene, line));
+        scene.getElementHolder().addElement(new PonderItemDisplay((int) (displayTime * 20), pos, Vec2.ONE, this.items, scene, line));
     }
 
     @Override

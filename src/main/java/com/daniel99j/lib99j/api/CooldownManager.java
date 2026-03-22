@@ -20,7 +20,7 @@ public class CooldownManager {
 
     private static ItemStack getStackFromId(Identifier id) {
         ItemStack stack = Items.STONE.getDefaultInstance();
-        stack.set(DataComponents.USE_COOLDOWN, new UseCooldown(0.0001f, Optional.of(Identifier.fromNamespaceAndPath("lib99j_cooldown_manager", id.toString().replace(":", "_")))));
+        stack.set(DataComponents.USE_COOLDOWN, new UseCooldown(0.0001f, Optional.of(Identifier.fromNamespaceAndPath("lib99j_cooldown_manager", id.toString().replace(":", "_lib99jcolon_")))));
         return stack;
     }
 }

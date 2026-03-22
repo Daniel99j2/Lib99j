@@ -20,17 +20,17 @@ public class PonderItemDisplay extends GenericEntityElement {
     private Vec2 size;
     public int life;
     private final List<ItemStack> items;
-    private final int line;
+    private final PonderLine ponderLine;
 
     private final ArrayList<VirtualElement> elements = new ArrayList<>();
 
-    public PonderItemDisplay(int life, Vector2i pos, Vec2 size, List<ItemStack> items, PonderScene scene, int line) {
+    public PonderItemDisplay(int life, Vector2i pos, Vec2 size, List<ItemStack> items, PonderScene scene, PonderLine line) {
         this.items = items;
         this.life = life;
         this.size = size;
         this.pos = pos;
         this.scene = scene;
-        this.line = line;
+        this.ponderLine = line;
         this.update();
     }
 
@@ -81,17 +81,40 @@ public class PonderItemDisplay extends GenericEntityElement {
         }
         this.elements.clear();
 
+        PonderTextDisplay background = new PonderTextDisplay(1000000, new Vector2i(this.pos), this.size, Component.literal("       ".repeat(this.items.size())+"\n \n "), this.scene);
+
+        int textX = 0;
+
+        int lineX = 0;
+        int lineWidth = 0;
+        if(ponderLine.shouldShow() && ponderLine.lineSide() == PonderLine.LineSide.LEFT) {
+            textX = ponderLine.textStartPos();
+            lineX = (int) (textX+background.textUncentering.x);
+            lineWidth = pos.x-lineX;
+        } else if(ponderLine.shouldShow() && ponderLine.lineSide() == PonderLine.LineSide.RIGHT) {
+            textX = (int) (PonderCoordUtil.SCREEN_SIZE.x-ponderLine.textStartPos()-background.textUncentering.x);
+
+            lineWidth = textX-pos.x;
+            lineX = pos.x;
+
+            textX = (int) (textX - background.textUncentering.x);
+        }
+
+        background.setPos(new Vector2i(textX, pos.y));
+
+        this.elements.add(background);
+
+        if(ponderLine.shouldShow()) this.elements.add(new PonderLineDisplay(999999999, new Vector2i(0, pos.y), Vec2.ONE, scene, lineX, lineWidth));
+
+        //now items
+
         int offsetSize = 50;
-        int offset = offsetSize+15;
+        int offset = 0;
         for (ItemStack item : this.items) {
-            this.elements.add(new PonderItemDisplayInternal(this.scene, 1000000, new Vector2i(this.pos).add(offset, 50), this.size, item));
+            this.elements.add(new PonderItemDisplayInternal(this.scene, 1000000, new Vector2i(textX, this.pos.y).add(offset, 0), this.size, item));
 
             offset+=offsetSize;
         }
-
-        PonderTextDisplay display = new PonderTextDisplay(1000000, new Vector2i(this.pos), this.size, Component.literal("       ".repeat(this.items.size())+"\n \n "), this.scene);
-        display.scene = this.scene;
-        this.elements.add(display);
 
         for (VirtualElement element : this.elements) {
             this.getHolder().addElement(element);

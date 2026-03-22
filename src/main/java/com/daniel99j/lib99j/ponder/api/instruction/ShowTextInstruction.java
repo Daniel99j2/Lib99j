@@ -35,6 +35,8 @@ public class ShowTextInstruction extends InstantPonderInstruction {
 
             lineWidth = textX-pos.x;
             lineX = pos.x;
+
+            textX = (int) (textX - text.textUncentering.x);
         }
 
         text.setPos(new Vector2i(textX, pos.y));

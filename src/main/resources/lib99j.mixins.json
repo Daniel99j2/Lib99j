@@ -4,6 +4,8 @@
   "plugin": "com.daniel99j.lib99j.impl.Lib99jMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BookletPageMixin",
+    "BookletPageMixin2",
     "BossbarAccessor",
     "BossbarAccessor2",
     "BossbarAccessor3",
@@ -36,7 +38,7 @@
     "defaultRequire": 1
   },
   "client": [
-    "ClientPositionFinderMixin",
-    "GoAwayExperimentalWarningMixin"
+    "GoAwayExperimentalWarningMixin",
+    "dev.ClientPositionFinderMixin"
   ]
 }
