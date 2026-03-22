@@ -173,6 +173,11 @@ public class PonderBuilder {
         return startPonderingIgnoreRegistration(player);
     };
 
+    public void startPonderingSafely(ServerPlayer player) {
+        PonderManager.scenesAboutToStart.put(player, this.id);
+    };
+
+
     public PonderScene startPonderingIgnoreRegistration(ServerPlayer player) {
         return startPonderingFromGoTo(player, null, -1);
     };

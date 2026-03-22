@@ -16,6 +16,7 @@ import java.util.*;
 
 public class PonderManager {
     public static Map<ServerPlayer, PonderScene> activeScenes = new HashMap<>();
+    public static Map<ServerPlayer, Identifier> scenesAboutToStart = new HashMap<>();
 
     @ApiStatus.Internal
     public static Map<Item, List<Identifier>> itemToBuilders = new HashMap<>();
@@ -53,6 +54,11 @@ public class PonderManager {
 
     @ApiStatus.Internal
     public static void tick() {
+        scenesAboutToStart.forEach(((player, identifier) -> {
+            idToBuilder.get(identifier).startPondering(player);
+        }));
+        scenesAboutToStart.clear();
+
         activeScenes.entrySet().removeIf((scene) -> {
             boolean toRemove = scene.getValue().isToBeRemoved();
             if(toRemove) Lib99j.getServerOrThrow().levels.remove(scene.getValue().levelKey);

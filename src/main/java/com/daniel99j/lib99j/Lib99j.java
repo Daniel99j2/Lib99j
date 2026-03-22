@@ -185,6 +185,7 @@ public class Lib99j implements ModInitializer {
                 ponderScene.stopPondering(true);
             }));
             PonderManager.activeScenes.clear();
+            PonderManager.scenesAboutToStart.clear();
             RunCodeClickEvent.eventMap.clear();
             ServerParticleManager.clearParticles();
 

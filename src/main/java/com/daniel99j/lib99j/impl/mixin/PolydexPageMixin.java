@@ -48,7 +48,7 @@ public abstract class PolydexPageMixin extends ExtendedGui {
             Item item = this.pages.get(this.getPage()).entryIcon(this.entry, this.getPlayer()).getItem();
             if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).noDefaults().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).hideDefaultTooltip().setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {
                 this.close();
-                PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(item).getFirst()).startPondering(this.getPlayer());
+                PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(item).getFirst()).startPonderingSafely(this.getPlayer());
             }));
         }
     }
