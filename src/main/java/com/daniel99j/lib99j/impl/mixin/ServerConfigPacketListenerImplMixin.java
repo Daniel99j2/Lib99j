@@ -1,6 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
-import com.daniel99j.lib99j.api.RegistryPacketUtils;
+import com.daniel99j.lib99j.api.RegistryModificationUtils;
 import net.minecraft.network.protocol.configuration.ServerboundSelectKnownPacks;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,7 +17,7 @@ public abstract class ServerConfigPacketListenerImplMixin {
 
     @Inject(method = "handleSelectKnownPacks", at = @At("HEAD"), cancellable = true, order = 10000)
     private void amnesia(ServerboundSelectKnownPacks serverboundSelectKnownPacks, CallbackInfo ci) {
-        if(!serverboundSelectKnownPacks.knownPacks().isEmpty() && !RegistryPacketUtils.modifications.isEmpty()) {
+        if(!serverboundSelectKnownPacks.knownPacks().isEmpty() && !RegistryModificationUtils.modifications.isEmpty()) {
             ci.cancel();
             this.handleSelectKnownPacks(new ServerboundSelectKnownPacks(List.of()));
         }

@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityMixin {
     @Inject(method = "hurtServer", at = @At("TAIL"))
     private void lib99j$stopPondering(ServerLevel world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        if(((Object) this) instanceof ServerPlayer player) {
+        //noinspection ConstantValue
+        if(((Object) this) instanceof ServerPlayer player && cir.getReturnValue()) {
             if(PonderManager.isPondering(player)) {
                 PonderManager.activeScenes.get(player).stopPonderingSafely();
             }

@@ -123,7 +123,7 @@ public class Lib99j implements ModInitializer {
             }
         }
 
-        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().getParent().toString().contains("Lib99j");
+        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().toAbsolutePath().getParent().toString().contains("Lib99j");
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -144,7 +144,7 @@ public class Lib99j implements ModInitializer {
             RegUtil.finishedWithNamespace("lib99jtestelements");
 
             //this one is just for me
-            RegistryPacketUtils.addRegistryModification(Registries.BIOME.registry(), (id, tag) -> {
+            RegistryModificationUtils.addRegistryModification(Registries.BIOME.registry(), (id, tag) -> {
                 if(id.equals(Identifier.withDefaultNamespace("plains"))) {
                     if (tag instanceof CompoundTag compound) {
                         compound.putFloat("temperature", 0.0F);
@@ -178,6 +178,17 @@ public class Lib99j implements ModInitializer {
             ServerParticleManager.tick();
             VFXUtils.tick();
             PonderManager.tick();
+            if(isDevelopmentEnvironment) {
+                for (ServerPlayer player : Lib99j.getServer().getPlayerList().players) {
+                    if(player.getPlainTextName().contains("ponder")) {
+                        for (int i = 0; i < 10; i++) {
+                            Lib99j.LOGGER.error("====== VERY BAD ERROR!!!! =======");
+                        }
+                        Lib99j.LOGGER.error("Ponder players are being added to the player list! Report to Daniel99j IMMEDIATELY!!!");
+                        throw new IllegalStateException("OH SHIT I MESSED UP BAD SEE LOGS ABOVE FOR MORE INFO");
+                    }
+                }
+            }
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register((server) -> {

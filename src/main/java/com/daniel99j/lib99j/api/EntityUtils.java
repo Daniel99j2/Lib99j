@@ -249,6 +249,28 @@ public class EntityUtils {
         return fakeServerPlayerInternal(world, pos, gameMode, uuid, name, autoEditName);
     }
 
+    public static ServerGamePacketListenerImpl createDummyConnection(ServerPlayer player) {
+        return new ServerGamePacketListenerImpl(Lib99j.getServerOrThrow(),
+                new Connection(PacketFlow.CLIENTBOUND),
+                player,
+                CommonListenerCookie.createInitial(player.getGameProfile(), false)
+        ) {
+            @Override
+            public boolean isAcceptingMessages() {
+                return false;
+            }
+
+            @Override
+            public boolean shouldHandleMessage(Packet<?> packet) {
+                return false;
+            }
+
+            @Override
+            public void send(Packet<?> packet) {
+            }
+        };
+    }
+
     @ApiStatus.Internal
     private static ServerPlayer fakeServerPlayerInternal(ServerLevel world, BlockPos pos, GameType gameMode, UUID uuid, String name1, boolean autoEditName) {
         String name = autoEditName ? name1 + playerIdPrefix++ : name1;
@@ -286,39 +308,13 @@ public class EntityUtils {
         playerManagerAccessor.getAdvancements().put(uuid, customAdvancementTracker);
 
         ServerPlayer player = new ServerPlayer(Lib99j.getServerOrThrow(), world, new GameProfile(uuid, name), new ClientInformation("bot", 0, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, false, false, ParticleStatus.MINIMAL));
-        player.connection = new ServerGamePacketListenerImpl(Lib99j.getServerOrThrow(),
-                new Connection(PacketFlow.CLIENTBOUND),
-                player,
-                CommonListenerCookie.createInitial(player.getGameProfile(), false)
-        ) {
-            @Override
-            public boolean isAcceptingMessages() {
-                return false;
-            }
-
-            @Override
-            public boolean shouldHandleMessage(Packet<?> packet) {
-                return false;
-            }
-        };
-
-        playerManagerAccessor.getAdvancements().remove(uuid);
+        player.addTag("$lib99j:do_not_save");
+        player.connection = createDummyConnection(player);
 
         player.gameMode.changeGameModeForPlayer(gameMode);
 
         removeAllReferences(player);
-        world.removePlayerImmediately(player, Entity.RemovalReason.DISCARDED);
 
-        player.getAdvancements().stopListening();
-        UUID uUID = player.getUUID();
-        ServerPlayer serverPlayerEntity = playerManagerAccessor.getPlayersByUUID().get(uUID);
-        if (serverPlayerEntity == player) {
-            if(true) {
-                playerManagerAccessor.getPlayersByUUID().remove(uUID);
-                playerManagerAccessor.getStats().remove(uUID);
-                playerManagerAccessor.getAdvancements().remove(uUID);
-            } else playerManagerAccessor.getPlayersByUUID().put(uUID, player);
-        }
         player.connection.resumeFlushing();
         player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
         return player;
@@ -368,24 +364,28 @@ public class EntityUtils {
         return getFarPos(entity, 10_000_000);
     };
 
-    public static BlockPos getFarPos(Entity entity, int far) {
-        return getFarPos(entity.blockPosition(), BlockPos.ZERO, far);
+    public static BlockPos getFarPos(Entity entity, int far, BlockPos... cannotBeAt) {
+        return getFarPos(entity.blockPosition(), BlockPos.ZERO, far, cannotBeAt);
     };
 
-    public static BlockPos getFarPos(Entity entity, WorldBorder worldBorder) {
+    public static BlockPos getFarPos(Entity entity, WorldBorder worldBorder, BlockPos... cannotBeAt) {
         //7  thenths so that you arent right next to the wordborder
         int far = (int) (worldBorder.getSize()/2*7/10);
         BlockPos center = new BlockPos((int) worldBorder.getCenterX(), 0, (int) worldBorder.getCenterZ());
-        return getFarPos(entity.blockPosition(), center, far);
+        return getFarPos(entity.blockPosition(), center, far, cannotBeAt);
     };
 
-    public static BlockPos getFarPos(BlockPos current, BlockPos center, int far) {
-        BlockPos[] corners = {
+    public static BlockPos getFarPos(BlockPos current, BlockPos center, int far, BlockPos... cannotBeAt) {
+        List<BlockPos> corners = new ArrayList<>(List.of(
                 new BlockPos( far, 0,  far),
                 new BlockPos(-far, 0,  far),
                 new BlockPos( far, 0, -far),
                 new BlockPos(-far, 0, -far)
-        };
+        ));
+
+        for (BlockPos blockPos : cannotBeAt) {
+            corners.remove(blockPos);
+        }
 
         BlockPos furthest = BlockPos.ZERO;
         double furthestDistance = 0;

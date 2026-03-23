@@ -1,6 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
-import com.daniel99j.lib99j.api.RegistryPacketUtils;
+import com.daniel99j.lib99j.api.RegistryModificationUtils;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.Holder;
@@ -25,7 +25,7 @@ public class RegistrySynchronizationMixin {
             at = @At("TAIL")
     )
     private static <T> void editSyncedValues(Registry registry, Set set, RegistryDataLoader.RegistryData registryData, DynamicOps dynamicOps, List list, Holder.Reference reference, CallbackInfo ci, @Local Optional<Tag> optional, @Local boolean bl) throws Throwable {
-        if (!RegistryPacketUtils.modifications.containsKey(registry.key().registry())) return;
+        if (!RegistryModificationUtils.modifications.containsKey(registry.key().registry())) return;
         Tag tag1;
 
         if(optional.isPresent()) {
@@ -38,7 +38,7 @@ public class RegistrySynchronizationMixin {
 
         AtomicBoolean anyModified = new AtomicBoolean(false);
 
-        RegistryPacketUtils.modifications.forEach(((registryResourceKey, functions) -> {
+        RegistryModificationUtils.modifications.forEach(((registryResourceKey, functions) -> {
             if(registryResourceKey.equals(registry.key().registry())) {
                 functions.forEach((tagBooleanFunction -> {
                     boolean modified = tagBooleanFunction.apply(reference.key().identifier(), tag1);

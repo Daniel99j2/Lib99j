@@ -121,6 +121,8 @@ public class PonderScene {
     private CustomPonderProperties customProperties = new CustomPonderProperties(null, true, true, true, true, true, true, null);
 
     protected PonderScene(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
+        if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering(false);
+
         GameProperties.throwIfPonderNotEnabled("This code should never be reached");
 
         this.player = player;
@@ -141,7 +143,6 @@ public class PonderScene {
         boolean checkTime = Lib99j.isDevelopmentEnvironment && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
 
         double time = GLFW.glfwGetTime();
-        if (PonderManager.isPondering(player)) PonderManager.activeScenes.get(player).stopPondering(true);
 
         if (Lib99j.isDevelopmentEnvironment) {
             if (builder.y <= 2)
@@ -474,7 +475,7 @@ public class PonderScene {
 
                     List<PonderInstruction> persistentInstructions = new ArrayList<>();
 
-                    if(!this.activeInstructions.isEmpty() && Lib99j.isDevelopmentEnvironment) {
+                    if(!this.activeInstructions.isEmpty()) {
                         List<String> problems = new ArrayList<>();
                         for (PonderInstruction activeInstruction : this.activeInstructions) {
                             if(!activeInstruction.canPersist()) {
@@ -483,7 +484,7 @@ public class PonderScene {
                                 persistentInstructions.add(activeInstruction);
                             }
                         }
-                        if(!problems.isEmpty()) {
+                        if(!problems.isEmpty() && Lib99j.isDevelopmentEnvironment) {
                             this.player.sendSystemMessage(Component.literal("Warning: Active instructions were present whilst a step finished! See logs for more info.").withStyle(ChatFormatting.YELLOW));
                             Lib99j.LOGGER.error("Active instructions were present whilst a step finished! Instructions left over are auto-cleared, try adding a wait before going to the next step.");
                             for (String problem : problems) {
@@ -596,9 +597,7 @@ public class PonderScene {
     public void stopPondering(boolean willNotContinuePondering) {
         if(isToBeRemoved) return;
         this.activeInstructions.forEach((instruction) -> {
-            if(instruction.isComplete(this)) {
-                instruction.onRemove(this, InstructionRemovalReason.SCENE_CLOSED);
-            };
+            instruction.onRemove(this, InstructionRemovalReason.SCENE_CLOSED);
         });
         this.activeInstructions.clear();
 
@@ -632,13 +631,13 @@ public class PonderScene {
             this.showShortLoadingScreen();
 
             if (player.level.isRaining()) {
-                player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
-            } else {
                 player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+            } else {
+                player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
             }
 
             player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, player.level.getRainLevel(1)));
-            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, player.level.getRainLevel(1)));
+            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, player.level.getThunderLevel(1)));
 
         }
 

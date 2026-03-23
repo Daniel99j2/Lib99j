@@ -80,12 +80,11 @@ public class PonderLevel extends ServerLevel {
         }
     }
 
-    @ApiStatus.Internal
     public void syncRain() {
         if (this.isRaining()) {
-            this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
-        } else {
             this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+        } else {
+            this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
         }
 
         this.scene.packetRedirector.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));

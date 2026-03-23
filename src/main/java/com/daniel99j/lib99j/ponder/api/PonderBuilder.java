@@ -159,6 +159,9 @@ public class PonderBuilder {
     
     public PonderBuilder build() {
         this.throwIfBuilt();
+        if(this.steps.isEmpty()) {
+            throw new IllegalStateException("You must have steps in a builder");
+        }
         if(!this.currentStepInstructions.isEmpty()) {
             throw new IllegalStateException("Run builder.finishStep() before builder.build()");
         }
@@ -176,7 +179,6 @@ public class PonderBuilder {
     public void startPonderingSafely(ServerPlayer player) {
         PonderManager.scenesAboutToStart.put(player, this.id);
     };
-
 
     public PonderScene startPonderingIgnoreRegistration(ServerPlayer player) {
         return startPonderingFromGoTo(player, null, -1);

@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(ServerLevel.class)
@@ -16,8 +17,9 @@ public abstract class ServerLevelMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;getPlayers()Ljava/util/List;")
     )
     private List<ServerPlayer> modifyState(List<ServerPlayer> original) {
-        original.addAll(Lib99j.additionalPlayers);
-        return original;
+        List<ServerPlayer> newList = new ArrayList<>(original);
+        newList.addAll(Lib99j.additionalPlayers);
+        return newList;
     }
 
     @ModifyExpressionValue(
@@ -25,7 +27,8 @@ public abstract class ServerLevelMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;getPlayers()Ljava/util/List;")
     )
     private List<ServerPlayer> modifyState1(List<ServerPlayer> original) {
-        original.addAll(Lib99j.additionalPlayers);
-        return original;
+        List<ServerPlayer> newList = new ArrayList<>(original);
+        newList.addAll(Lib99j.additionalPlayers);
+        return newList;
     }
 }

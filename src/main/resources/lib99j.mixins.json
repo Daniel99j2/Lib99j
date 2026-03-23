@@ -20,6 +20,7 @@
     "LivingEntityMixin",
     "MinecraftServerMixin",
     "PlayerListAccessor",
+    "PlayerListMixin",
     "PolydexHiderMixin",
     "PolydexPageMixin",
     "PolymerEffectScreenMixin",
