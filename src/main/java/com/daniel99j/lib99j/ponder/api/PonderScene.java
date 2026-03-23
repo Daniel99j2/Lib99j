@@ -374,6 +374,7 @@ public class PonderScene {
     }
 
     public void tick(boolean forced) {
+        if(this.isToBeRemoved) return;
         if (this.isToBeStopped) {
             this.stopPondering(!this.stopWithoutVfx);
             return;
@@ -411,6 +412,8 @@ public class PonderScene {
                 }
             }
         } else if (this.inputCooldown > 0) this.inputCooldown--;
+
+        if (this.isToBeRemoved()) return;
 
         //update before too so the client always tick the entities properly
         updateTickStatus();
