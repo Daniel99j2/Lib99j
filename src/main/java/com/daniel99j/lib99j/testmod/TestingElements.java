@@ -57,6 +57,8 @@ public class TestingElements {
                     }))
                     .waitFor(1)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(4, 10, 4), Blocks.ANVIL.defaultBlockState());
+
                         scene.getLevel().setBlockAndUpdate(new BlockPos(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
                         Creeper creeper = new Creeper(EntityType.CREEPER, scene.getLevel()) {
                             @Override
@@ -82,7 +84,10 @@ public class TestingElements {
                     .waitFor(1)
                     .instruction(new ShowItemInstruction(1, List.of(Items.STICKY_PISTON.getDefaultInstance(), Items.SLIME_BLOCK.getDefaultInstance()), new Vector2i(798, 367), PonderLine.RIGHT))
                     .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().removeBlockWithParticles(new BlockPos(4, 0, 4));
+
                         Cow creeper = new Cow(EntityType.COW, scene.getLevel());
+                        //scene.getLevel().makeEntityDumb(creeper);
                         creeper.setPosRaw(5, 10, 5);
                         creeper.setPersistenceRequired();
                         scene.getLevel().addFreshEntity(creeper);

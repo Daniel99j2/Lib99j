@@ -216,11 +216,11 @@ public class PonderScene {
 
         Lib99j.getServerOrThrow().levels.put(this.levelKey, this.level);
 
-        this.packetRedirector = EntityUtils.fakeServerPlayer(this.level, BlockPos.ZERO, GameType.CREATIVE, UUID.randomUUID(), "ponder_scene_", true);
-
-        this.packetRedirector.setGameMode(GameType.SURVIVAL);
+        this.packetRedirector = EntityUtils.fakeServerPlayer(this.level, BlockPos.ZERO, GameType.SPECTATOR, UUID.randomUUID(), "ponder_scene_", true);
 
         ((PlayerListAdder) this.packetRedirector).lib99j$setAddToPlayerList(true);
+
+        this.level.players().add(this.packetRedirector);
 
         this.packetRedirector.updateOptions(new ClientInformation("ponder", 32, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, true, false, ParticleStatus.ALL));
 
@@ -297,9 +297,18 @@ public class PonderScene {
                         }
                     } else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
                 } else if (info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
+
+                //make most sounds infinite distance (except level event based sounds)
+                //unfortunately the attentuation distance doesnt work and I need to change volume
+                if(packet instanceof ClientboundSoundPacket sound) {
+                    packet = new ClientboundSoundPacket(sound.getSound(), sound.getSource(), sound.getX(), sound.getY(), sound.getZ(), sound.getVolume()*5, sound.getPitch(), sound.getSeed());
+                } else if (packet instanceof ClientboundSoundEntityPacket sound) {
+                    packet = new ClientboundSoundEntityPacket(sound.getSound(), sound.getSource(), EntityUtils.fakeEntityFromId(sound.getId()), sound.getVolume()*5, sound.getPitch(), sound.getSeed());
+                }
+
                 player1.connection.send(new BypassPacket(packet));
 
-                //simulate the client accepting the server's chunks
+                //simulate the client accepting the server's chunks'
                 if (packet instanceof ClientboundChunkBatchFinishedPacket) {
                     //the float is the desired chunks/tick (64 is max)
                     this.handleChunkBatchReceived(new ServerboundChunkBatchReceivedPacket(64));
