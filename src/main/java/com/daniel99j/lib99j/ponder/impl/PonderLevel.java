@@ -15,9 +15,11 @@ import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.world.RandomSequences;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -113,6 +115,17 @@ public class PonderLevel extends ServerLevel {
         }
 
         this.scene.canEscapeBounds = old;
+    }
+
+    public void removeBlockWithParticles(BlockPos pos) {
+        pos = newPos(pos);
+        BlockState old = this.getBlockState(pos);
+        old.getBlock().playerWillDestroy(this, pos, old, scene.packetRedirector);
+        this.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+    }
+
+    public void makeEntityDumb(Mob entity) {
+        entity.removeFreeWill();
     }
 
     //These make it so a 0,0,0 origin can be used if wanted
