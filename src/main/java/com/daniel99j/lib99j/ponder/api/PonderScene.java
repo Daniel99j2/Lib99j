@@ -310,7 +310,7 @@ public class PonderScene {
 
                 //simulate the client accepting the server's chunks'
                 if (packet instanceof ClientboundChunkBatchFinishedPacket) {
-                    //the float is the desired chunks/tick (64 is max)
+                    //the float is the desired chunks/tick (64 is minMax)
                     this.handleChunkBatchReceived(new ServerboundChunkBatchReceivedPacket(64));
                 }
 
@@ -513,6 +513,7 @@ public class PonderScene {
                     } else {
                         //player.sendSystemMessage(Component.nullToEmpty("Next step " + step.name()));
                         addInstruction(getCurrentInstruction());
+                        currentInstructionInStep++;
                         //player.sendSystemMessage(Component.nullToEmpty("Next step run " + getCurrentInstruction()));
                     }
                 }
@@ -925,5 +926,9 @@ public class PonderScene {
 
     public CustomPonderProperties getCustomProperties() {
         return customProperties;
+    }
+
+    public static MutableComponent overCapacity() {
+        return Component.translatable("ponder.scene.capacity_reached").withStyle(ChatFormatting.RED);
     }
 }

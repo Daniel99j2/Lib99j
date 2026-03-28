@@ -1,6 +1,8 @@
 package com.daniel99j.lib99j.impl;
 
+import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.ServerParticle;
+import com.daniel99j.lib99j.api.config.ConfigContext;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -17,6 +19,8 @@ import net.minecraft.resources.Identifier;
 
 public class ServerParticleCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        if(!((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).enableLib99jCommands) return;
+
         LiteralCommandNode<CommandSourceStack> rootCommand = Commands.literal("server-particle")
                 .requires(Permissions.require("lib99j.command.server_particle", 2))
                 .then(Commands.argument("particle", IdentifierArgument.id())

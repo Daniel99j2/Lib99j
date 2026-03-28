@@ -11,14 +11,21 @@
     "BossbarAccessor3",
     "BossbarMixin",
     "BossbarPacketMixin",
+    "ColorEntryAccessor",
     "CommandsMixin",
     "CommandSourceMixin",
     "CommandSourceStackMixin",
     "DamageSourceMixin",
+    "FieldBuilderMixin",
+    "FieldEntryMixin",
+    "GoalSelectorAccessor",
     "LanguageReaderMixin",
     "LevelChunkMixin",
     "LivingEntityMixin",
     "MinecraftServerMixin",
+    "NumberListEntryAccessor",
+    "NumberListEntryAccessor2",
+    "NumberListEntryAccessor3",
     "PlayerListAccessor",
     "PlayerListMixin",
     "PolydexHiderMixin",
@@ -39,6 +46,7 @@
   },
   "client": [
     "GoAwayExperimentalWarningMixin",
-    "dev.ClientPositionFinderMixin"
+    "dev.ClientPositionFinderMixin",
+    "dev.WavyUiMixin"
   ]
 }

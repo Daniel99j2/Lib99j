@@ -1,9 +1,9 @@
 package com.daniel99j.lib99j.impl.mixin.dev;
 
 import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetTooltipHolder;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -23,12 +23,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(Screen.class)
 public abstract class ClientPositionFinderMixin {
     @Shadow
     @Final
     protected Minecraft minecraft;
 
+    @Shadow
+    @Final
+    private List<Renderable> renderables;
+    @Shadow
+    public int width;
+    @Shadow
+    public int height;
     @Unique
     private boolean isDialog = false;
     @Unique
@@ -54,9 +63,6 @@ public abstract class ClientPositionFinderMixin {
             Minecraft.getInstance().keyboardHandler.setClipboard("new Vector2i("+convertedPos.x+", "+convertedPos.y+")");
             Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal("Copied pos"), null));
         };
-        if(isDialog && keyEvent.key() == InputConstants.KEY_EQUALS) {
-            Minecraft.getInstance().getWindow().setWindowed(854, 480);
-        };
     }
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
@@ -70,7 +76,6 @@ public abstract class ClientPositionFinderMixin {
             ci.cancel();
         }
         if(isDialog) {
-            if(Minecraft.getInstance().getWindow().getWidth() != 854 || Minecraft.getInstance().getWindow().getHeight() != 480) this.tooltipHolder.set(Tooltip.create(Component.literal("You must have the window at the default size and be not in fullscreen to use the pos convertor. Press = to set size and F11 to toggle fullscreen")));
             this.tooltipHolder.refreshTooltipForNextRenderPass(guiGraphics, (int) pos.x, (int) pos.y+10,true, true, new ScreenRectangle(0, 0, 20, 20));
         }
     }

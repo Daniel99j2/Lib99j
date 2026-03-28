@@ -1,4 +1,4 @@
-package com.daniel99j.lib99j.api;
+package com.daniel99j.lib99j.api.config;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.google.gson.Gson;

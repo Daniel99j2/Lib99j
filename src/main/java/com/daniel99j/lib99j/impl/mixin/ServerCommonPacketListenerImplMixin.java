@@ -72,7 +72,7 @@ public abstract class ServerCommonPacketListenerImplMixin {
                 if (RunCodeClickEvent.eventMap.containsKey(uuid)) {
                     RunCodeClickEvent event = RunCodeClickEvent.eventMap.get(uuid);
                     if (event != null && !event.isDisabled() && event.allowedPlayerUUID.equals(player.getUUID())) {
-                        event.run();
+                        event.run(packet.payload());
                     } else {
                         Lib99j.debug("The code was garbage collected or it was for a different player");
                         this.disconnect(Component.translatable("lib99j.invalid_run_code_uuid"));

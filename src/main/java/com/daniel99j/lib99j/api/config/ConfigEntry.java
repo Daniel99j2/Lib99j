@@ -13,13 +13,13 @@ public @interface ConfigEntry {
 
     boolean show() default true;
 
-    boolean sync() default true;
-
-    boolean requiresAdmin() default true;
-
     double min() default Double.NaN;
+
     double max() default Double.NaN;
 
-    double step() default 1.0; // for sliders
+    boolean sync() default false;
+
+    ConfigDisplayType displayType() default ConfigDisplayType.AUTO;
+
     boolean requiresRestart() default false;
 }

@@ -1,8 +1,9 @@
 package com.daniel99j.lib99j.api;
 
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.dialog.action.StaticAction;
+import net.minecraft.server.dialog.action.CustomAll;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -10,30 +11,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
 /**
  * A click event that runs arbitrary code when clicked
- * <p>If you want to use it you MUST store it somewhere, preferably in the context where it is being used (Example: A non-static list of RunCodeClickEvents should be put in your CustomGui class)</p>
- * <p>If you do not store it, then it will be periodically removed</p>
+ * <p>Use a RunCodeClickEventHolder in your context to store all active events. When finished, run holder.close()</p>
  */
 public class RunCodeClickEvent {
     @ApiStatus.Internal
     public static Map<UUID, RunCodeClickEvent> eventMap = new HashMap<>();
 
-    private final Runnable code;
+    private final Consumer<Optional<Tag>> code;
     private final Supplier<Boolean> allowedToRun;
     private final UUID uuid;
     private final boolean disableAfterUse;
-    private boolean disabled = false;
+    //volatile so if multiple threads try and check it then it will never run more than wanted
+    private volatile boolean disabled = false;
     public final UUID allowedPlayerUUID;
     private final RunCodeClickEventHolder holder;
 
-    /**
-     * This constructor does NOT add the event to your list, so it will not automatically be kept!
-     */
-    public RunCodeClickEvent(Runnable code, Supplier<Boolean> allowedToRun, boolean disableAfterUse, ServerPlayer player, RunCodeClickEventHolder holder) {
+    public RunCodeClickEvent(Consumer<Optional<Tag>> code, Supplier<Boolean> allowedToRun, boolean disableAfterUse, ServerPlayer player, RunCodeClickEventHolder holder) {
         this.code = code;
         this.allowedToRun = allowedToRun;
         this.uuid = UUID.randomUUID();
@@ -43,11 +42,11 @@ public class RunCodeClickEvent {
         holder.add(this);
     }
 
-    public void run() {
+    public void run(Optional<Tag> tag) {
         if(!disabled && allowedToRun.get()) {
             MiscUtils.runOnMainThread(() -> {
                 if (allowedToRun.get()) {
-                    this.code.run();
+                    this.code.accept(tag);
                 }
             });
         }
@@ -59,8 +58,8 @@ public class RunCodeClickEvent {
         return new ClickEvent.Custom(Identifier.fromNamespaceAndPath("lib99j_run_code_click_event", this.uuid.toString()), Optional.empty());
     }
 
-    public Optional<StaticAction> staticActionClickEvent() {
-        return Optional.of(new StaticAction(clickEvent()));
+    public CustomAll dialogActionClickEvent() {
+        return new CustomAll(Identifier.fromNamespaceAndPath("lib99j_run_code_click_event", this.uuid.toString()), Optional.empty());
     }
 
     public void disable() {

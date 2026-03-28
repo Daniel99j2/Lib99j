@@ -1,5 +1,8 @@
 package com.daniel99j.lib99j.impl.mixin;
 
+import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.config.ConfigContext;
+import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polydex.api.v1.recipe.PolydexEntry;
 import eu.pb4.polydex.api.v1.recipe.PolydexPage;
@@ -44,6 +47,8 @@ public abstract class PolydexPageMixin extends ExtendedGui {
 
     @Inject(method = "setupNavigator", at = @At("TAIL"))
     private void lib99j$addPonderButton(CallbackInfo ci) {
+        if(!((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).polydexPonderAdditions) return;
+
         if(this.entry != null) {
             Item item = this.pages.get(this.getPage()).entryIcon(this.entry, this.getPlayer()).getItem();
             if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).noDefaults().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).hideDefaultTooltip().setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {

@@ -1,7 +1,9 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.GoToThenStopGoal;
 import com.daniel99j.lib99j.impl.LevelChunkAccessor;
+import com.daniel99j.lib99j.impl.mixin.GoalSelectorAccessor;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -16,6 +18,7 @@ import net.minecraft.world.RandomSequences;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -57,8 +60,15 @@ public class PonderLevel extends ServerLevel {
                 0,
                 List.of(),
                 true,
-                new RandomSequences());
+                randomSequences()
+        );
         this.scene = scene;
+    }
+
+    private static RandomSequences randomSequences() {
+        RandomSequences sequences = new RandomSequences();
+        sequences.setSeedDefaults(0, false, false);
+        return sequences;
     }
 
     @Override
@@ -126,6 +136,10 @@ public class PonderLevel extends ServerLevel {
 
     public void makeEntityDumb(Mob entity) {
         entity.removeFreeWill();
+    }
+
+    public void makeEntityPathfindTo(PathfinderMob entity, BlockPos pos) {
+        ((GoalSelectorAccessor) entity).getGoalSelector().addGoal(-100, new GoToThenStopGoal(entity, newPos(pos)));
     }
 
     //These make it so a 0,0,0 origin can be used if wanted

@@ -4,6 +4,7 @@ import com.daniel99j.lib99j.Lib99j;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import org.jspecify.annotations.Nullable;
 
 public class MiscUtils {
     public static String getTextBetween(String text, String start, String end) {
@@ -35,5 +36,9 @@ public class MiscUtils {
         } else {
             Lib99j.getServerOrThrow().execute(code);
         }
+    }
+
+    public static <T> T fallback(@Nullable T check, T fallback) {
+        return check != null ? check : fallback;
     }
 }

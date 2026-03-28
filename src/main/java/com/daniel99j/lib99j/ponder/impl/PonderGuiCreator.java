@@ -149,7 +149,7 @@ public class PonderGuiCreator extends PonderScene {
         MutableComponent title = Component.literal(text);
         //eventStorage
         //Because this is dev-only, I dont care about security of the user running things whilst not in the UI
-        GuiUtils.styleText(title, title.getStyle().withClickEvent(new RunCodeClickEvent(() -> {
+        GuiUtils.styleText(title, title.getStyle().withClickEvent(new RunCodeClickEvent((payload) -> {
             code.run();
             this.closeMenu();
         }, () -> true, true, this.player, eventStorage).clickEvent()), false);

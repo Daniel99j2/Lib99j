@@ -34,5 +34,22 @@
   "ponder.scene.error_ticking_world": "Exception whilst ticking ponder scene. Contact an admin and see server logs for more info",
   "ponder.scene.currently_looking_at": "Currently looking at...",
   "commands.lib99j.on_cooldown": "This command is being ratelimited",
-  "commands.lib99j.ponder.failed_to_ponder": "Failed to setup ponder. Contact an admin and see server logs for more info"
+  "commands.lib99j.ponder.failed_to_ponder": "Failed to setup ponder. Contact an admin and see server logs for more info",
+  "ponder.scene.capacity_reached": "Ponder capacity has been reached. Try again later",
+  "commands.lib99j.config.saved": "Saved config",
+  "commands.lib99j.no_permission": "Insufficient permission",
+  "config.lib99j.context.dedicated_server": "Server",
+  "config.lib99j.context.common": "Common",
+  "config.lib99j.context.client": "Client",
+  "config.lib99j.context.save": "World",
+  "config.lib99j.max_concurrent_ponders": "Max concurrent ponders",
+  "config.lib99j.enable_lib99j_commands": "Enable Lib99j commands",
+  "config.lib99j.booklet_ponder_additions": "Booklet ponder compat",
+  "config.lib99j.polydex_ponder_additions": "Polydex ponder compat",
+  "config.category.lib99j.general": "General",
+  "lib99j.square_brackets": "[%1$s]",
+  "config.lib99j.context.category": "%1$s: %2$s",
+  "commands.lib99j.config.force_reset": "Use '/lib99j config <mod_id> reset --force-reset' to confirm reset",
+  "commands.lib99j.config.reset": "Reset config",
+  "commands.lib99j.config.reload": "Reloaded config"
 }

@@ -101,9 +101,10 @@ public class TestingElements {
                     .waitFor(1)
                     .instruction(new ExecuteCodeInstruction((scene) -> {
                         Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
-                        creeper.setPosRaw(5, 10, 5);
+                        creeper.setPosRaw(10, 5, 10);
                         creeper.setPersistenceRequired();
                         scene.getLevel().addFreshEntity(creeper);
+                        scene.getLevel().makeEntityPathfindTo(creeper, BlockPos.ZERO.offset(0, 0, 1));
 
                         scene.getLevel().setBlockAndUpdate(new BlockPos(5, 6, 5), Blocks.LAVA.defaultBlockState());
                     }))

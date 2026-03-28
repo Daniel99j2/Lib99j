@@ -1,9 +1,15 @@
 package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.*;
+import com.daniel99j.lib99j.api.config.ConfigManager;
+import com.daniel99j.lib99j.api.config.ModConfig;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
+import com.daniel99j.lib99j.impl.network.ClientboundLib99jHelloPacket;
+import com.daniel99j.lib99j.impl.network.ClientboundLib99jSyncConfigOptionPacket;
+import com.daniel99j.lib99j.impl.network.ServerboundLib99HelloPacket;
+import com.daniel99j.lib99j.impl.network.ServerboundLib99jInstalledModsPacket;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
@@ -18,6 +24,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -42,7 +49,6 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
@@ -63,7 +69,6 @@ import java.util.*;
  * @see com.daniel99j.lib99j.api External API's
  * @see TestingElements Example usage
  */
-@ApiStatus.Internal
 public class Lib99j implements ModInitializer {
     public static final String MOD_ID = "lib99j";
     public static final Logger LOGGER = LoggerFactory.getLogger("Lib99j");
@@ -78,6 +83,8 @@ public class Lib99j implements ModInitializer {
     public static boolean personalFeatures = System.getenv("DANIEL99J_MODE") != null;
 
     private static boolean hasLoadedLib99j = false;
+
+    public static ModConfig CONFIG;
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -124,6 +131,22 @@ public class Lib99j implements ModInitializer {
         }
 
         isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().toAbsolutePath().getParent().toString().contains("Lib99j");
+
+        PayloadTypeRegistry.playC2S().register(ServerboundLib99HelloPacket.ID, ServerboundLib99HelloPacket.CODEC);
+        PayloadTypeRegistry.playC2S().register(ServerboundLib99jInstalledModsPacket.ID, ServerboundLib99jInstalledModsPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientboundLib99jHelloPacket.ID, ClientboundLib99jHelloPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(ClientboundLib99jSyncConfigOptionPacket.ID, ClientboundLib99jSyncConfigOptionPacket.CODEC);
+
+        ModInstallManager.load();
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ServerConfigCopy.load();
+
+        ModInstallManager.syncInstalledStatus(MOD_ID);
+
+        ConfigManager.load();
+
+        Class<ExampleConfig> serverConfig = FabricLoader.getInstance().isDevelopmentEnvironment() ? ExampleConfig.class : null;
+
+        CONFIG = ConfigManager.addConfig("lib99j", new ModConfig(null, serverConfig, null, Lib99jCommonConfig.class));
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -228,6 +251,7 @@ public class Lib99j implements ModInitializer {
             if (!ServerParticleManager.particleTypes.isEmpty() && GameProperties.areContentModsLoaded()) ServerParticleCommand.register(dispatcher);
             if (GameProperties.areContentModsLoaded() || Lib99j.isDevelopmentEnvironment) VfxCommand.register(dispatcher);
             PonderCommand.register(dispatcher, registryAccess);
+            Lib99jCommand.register(dispatcher);
 
             LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("lib99j-dev");
 
@@ -307,8 +331,8 @@ public class Lib99j implements ModInitializer {
                 builder.then(Commands.literal("compacttext")
                         .executes((context) -> {
                             MutableComponent test = GuiUtils.compactText(Component.literal("testing").append("123").append(Component.literal("4")).append(Component.literal("5").withColor(0x00ff00)).append("6"));
-                            context.getSource().sendSystemMessage(test);
-                            context.getSource().sendSystemMessage(Component.literal(test.toString()));
+                            context.getSource().sendSuccess(() -> test, true);
+                            context.getSource().sendSuccess(() -> Component.literal(test.toString()), true);
                             return 1;
                         })
                         .build());
