@@ -1,5 +1,5 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 	id "com.modrinth.minotaur" version "2.+"
 }
@@ -50,11 +50,6 @@ repositories {
 	maven { url "https://maven.terraformersmc.com/releases/" }
 
 	maven {
-		name = 'ParchmentMC'
-		url = 'https://maven.parchmentmc.org'
-	}
-
-	maven {
 		name = "Terraformers"
 		url = "https://maven.terraformersmc.com/"
 	}
@@ -68,40 +63,36 @@ fabricApi {
 
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings loom.layered() {
-		officialMojangMappings()
-		parchment("org.parchmentmc.data:parchment-1.21.11:2025.12.20@zip")
-	}
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation include("me.lucko:fabric-permissions-api:0.6.1")
+	implementation include("me.lucko:fabric-permissions-api:0.7.0")
 
-	modImplementation include ("eu.pb4:polymer-autohost:${project.polymer_version}")
-	modImplementation include ("eu.pb4:polymer-core:${polymer_version}")
-	modImplementation include ("eu.pb4:polymer-blocks:${polymer_version}")
-	modImplementation include ("eu.pb4:polymer-resource-pack:${polymer_version}")
-	modImplementation include ("eu.pb4:polymer-resource-pack-extras:${polymer_version}")
-	modImplementation include ("eu.pb4:polymer-autohost:${polymer_version}")
-	modImplementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
-	modImplementation include("eu.pb4:map-canvas-api:0.7.1+1.21.11")
-	modImplementation include("eu.pb4:sidebar-api:0.5.1+1.21.1")
-	modImplementation include("eu.pb4:sgui:1.12.0+1.21.11")
-	modImplementation include("eu.pb4:factorytools:0.9.5+1.21.11")
-	modImplementation include("eu.pb4:common-protection-api:1.0.0")
-	modImplementation include("eu.pb4:placeholder-api:2.8.2+1.21.10")
+	implementation include ("eu.pb4:polymer-autohost:${project.polymer_version}")
+	implementation include ("eu.pb4:polymer-core:${polymer_version}")
+	implementation include ("eu.pb4:polymer-blocks:${polymer_version}")
+	implementation include ("eu.pb4:polymer-resource-pack:${polymer_version}")
+	implementation include ("eu.pb4:polymer-resource-pack-extras:${polymer_version}")
+	implementation include ("eu.pb4:polymer-autohost:${polymer_version}")
+	implementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
+	implementation include("eu.pb4:map-canvas-api:0.8.0+26.1")
+	implementation include("eu.pb4:sidebar-api:0.6.0+26.1")
+	implementation include("eu.pb4:sgui:2.0.0-beta.2+26.1")
+	implementation include("eu.pb4:factorytools:0.10.0-pre.2+26.1")
+	implementation include("eu.pb4:common-protection-api:1.0.0")
+	implementation include("eu.pb4:placeholder-api:2.8.2+1.21.10")
 
-	modImplementation include("me.shedaniel.cloth:cloth-config-fabric:21.11.153")
+	implementation include("me.shedaniel.cloth:cloth-config-fabric:26.1.154")
 
-	modImplementation ("com.terraformersmc:modmenu:17.0.0-beta.2")
+	implementation include("com.terraformersmc:modmenu:18.0.0-alpha.8")
 
-	modCompileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
+	compileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
 
-	modImplementation include("xyz.nucleoid:server-translations-api:2.5.2+1.21.9-pre3")
+	implementation include("xyz.nucleoid:server-translations-api:3.0.1+26.1")
 
-	modCompileOnly 'maven.modrinth:polydex:1.8.1+1.21.11'
-	modCompileOnly 'eu.pb4:booklet:0.1.0+1.21.11'
+	compileOnly 'maven.modrinth:polydex:1.9.2+26.1-rc-3'
+	compileOnly 'eu.pb4:booklet:0.2.0+26.1'
 }
 
 processResources {
@@ -113,7 +104,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
@@ -122,8 +113,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {

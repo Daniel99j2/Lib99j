@@ -132,10 +132,10 @@ public class Lib99j implements ModInitializer {
 
         isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().toAbsolutePath().getParent().toString().contains("Lib99j");
 
-        PayloadTypeRegistry.playC2S().register(ServerboundLib99HelloPacket.ID, ServerboundLib99HelloPacket.CODEC);
-        PayloadTypeRegistry.playC2S().register(ServerboundLib99jInstalledModsPacket.ID, ServerboundLib99jInstalledModsPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(ClientboundLib99jHelloPacket.ID, ClientboundLib99jHelloPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(ClientboundLib99jSyncConfigOptionPacket.ID, ClientboundLib99jSyncConfigOptionPacket.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ServerboundLib99HelloPacket.ID, ServerboundLib99HelloPacket.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ServerboundLib99jInstalledModsPacket.ID, ServerboundLib99jInstalledModsPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClientboundLib99jHelloPacket.ID, ClientboundLib99jHelloPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClientboundLib99jSyncConfigOptionPacket.ID, ClientboundLib99jSyncConfigOptionPacket.CODEC);
 
         ModInstallManager.load();
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ServerConfigCopy.load();
@@ -274,7 +274,7 @@ public class Lib99j implements ModInitializer {
                         .then(Commands.argument("icon", ItemArgument.item(registryAccess))
                                 .then(Commands.argument("title", ComponentArgument.textComponent(registryAccess))
                                         .executes((context) -> {
-                                            GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1, true), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
+                                            GuiUtils.toast(context.getSource().getPlayer(), ItemArgument.getItem(context, "icon").createItemStack(1), ComponentArgument.getRawComponent(context, "title"), Identifier.withDefaultNamespace("test"));
                                             return 1;
                                         }))).build());
 
@@ -348,8 +348,8 @@ public class Lib99j implements ModInitializer {
 
                 builder.then(Commands.literal("testrandomcode")
                         .executes((context) -> {
-                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_UI_ITEM.asStack());
-                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_VANILLA_GUI_ITEM.asStack());
+                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_UI_ITEM.create());
+                            context.getSource().getPlayer().getInventory().add(TestingElements.TEST_VANILLA_GUI_ITEM.create());
                             return 1;
                         })
                         .build());

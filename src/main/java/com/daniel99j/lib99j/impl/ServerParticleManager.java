@@ -34,11 +34,11 @@ public class ServerParticleManager {
 
     @ApiStatus.Internal
     public static void tick() {
-        for (ServerParticle particle : particles) {
-            particle.tick();
-        }
-
-        particles.removeIf(ServerParticle::isDead);
+//        for (ServerParticle particle : particles) {
+//            particle.tick();
+//        }
+//
+//        particles.removeIf(ServerParticle::isDead);
     }
 
     @ApiStatus.Internal

@@ -25,6 +25,7 @@ import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -37,7 +38,7 @@ import java.util.Optional;
 
 public class PonderGuiCreator extends PonderScene {
     public static final PonderBuilder PONDER_GUI_CREATOR_BUILDER = PonderManager.registerBuilder(
-            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j", "ponder_gui_creator"), Items.BARRIER.getDefaultInstance(), Component.literal("Ponder GUI Creator"), Component.literal("Ponder GUI Creator")).size(5, 5, 5).hideFromCommands()
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j", "ponder_gui_creator"), new ItemStackTemplate(Items.BARRIER), Component.literal("Ponder GUI Creator"), Component.literal("Ponder GUI Creator")).size(5, 5, 5).hideFromCommands()
                     .waitFor(1000000)
                     .finishStep()
                     .build()
@@ -154,7 +155,7 @@ public class PonderGuiCreator extends PonderScene {
             this.closeMenu();
         }, () -> true, true, this.player, eventStorage).clickEvent()), false);
 
-        return new ItemBody(Items.CRAFTING_TABLE.getDefaultInstance(), Optional.of(new PlainMessage(title, 200)), false, false, 16, 16);
+        return new ItemBody(ItemStackTemplate.fromNonEmptyStack(Items.CRAFTING_TABLE.getDefaultInstance()), Optional.of(new PlainMessage(title, 200)), false, false, 16, 16);
     }
 
     @Override

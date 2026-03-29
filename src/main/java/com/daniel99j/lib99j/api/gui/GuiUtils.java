@@ -3,8 +3,12 @@ package com.daniel99j.lib99j.api.gui;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.model.BasicItemModel;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.tint.CustomModelDataTintSource;
@@ -15,6 +19,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.core.ClientAsset;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
@@ -24,10 +29,13 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Util;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomModelData;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -135,11 +143,11 @@ public class GuiUtils {
     }
 
     public static GuiElementBuilder nextPage(boolean allowed) {
-        return (allowed ? DefaultGuiTextures.HEAD_NEXT_PAGE : DefaultGuiTextures.HEAD_NEXT_PAGE_BLOCKED).setName(Component.nullToEmpty("Next Page"));
+        return GuiElementBuilder.from(allowed ? DefaultGuiTextures.HEAD_NEXT_PAGE.create() : DefaultGuiTextures.HEAD_NEXT_PAGE_BLOCKED.create()).setName(Component.nullToEmpty("Next Page"));
     }
 
     public static GuiElementBuilder previousPage(boolean allowed) {
-        return (allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED).setName(Component.nullToEmpty("Previous Page"));
+        return GuiElementBuilder.from(allowed ? DefaultGuiTextures.HEAD_PREVIOUS_PAGE.create() : DefaultGuiTextures.HEAD_PREVIOUS_PAGE_BLOCKED.create()).setName(Component.nullToEmpty("Previous Page"));
     }
 
     public static MutableComponent styleText(MutableComponent component, Style style, boolean editFont) {
@@ -312,11 +320,11 @@ public class GuiUtils {
 //        assetWriter.accept("assets/lib99j/items/gen/ui/ponder/pondering_about.json", new ItemAsset(new BasicItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about_above"), List.of())).toJson().getBytes());
     }
 
-    public static GuiElementBuilder generateTexture(Identifier path) {
+    public static ItemStackTemplate generateTexture(Identifier path) {
         return generateTextureInternal(path, false);
     }
 
-    public static GuiElementBuilder generateColourableTexture(Identifier path) {
+    public static ItemStackTemplate generateColourableTexture(Identifier path) {
         return generateTextureInternal(path, true);
     }
 
@@ -329,7 +337,7 @@ public class GuiUtils {
         return stack;
     }
 
-    public static GuiElementBuilder generateItemModel(Identifier path, ItemAsset.Properties properties) {
+    public static ItemStackTemplate generateItemModel(Identifier path, ItemAsset.Properties properties) {
         String base = MiscUtils.getTextBetween(path.getPath(), "", "/");
         if(base.isEmpty()) throw new IllegalStateException("Error loading "+path.toString(), new Throwable("Texture paths must be prefixed, eg ui/test.png"));
         Identifier newPath = Identifier.fromNamespaceAndPath(path.getNamespace(), MiscUtils.replaceTextBetween(path.getPath(), "", "/", ""));
@@ -337,10 +345,11 @@ public class GuiUtils {
 
         customAssets.put(path, new ItemAsset(new BasicItemModel(path), properties));
 
-        return blank().model(Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+        DataComponentPatch patch = DataComponentPatch.builder().set(DataComponents.MAX_STACK_SIZE, 1).set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).set(DataComponents.ITEM_NAME, Component.literal("==NOT SET==")).build();
+        return new ItemStackTemplate(Items.BARRIER, patch);
     }
 
-    private static GuiElementBuilder generateTextureInternal(Identifier path, boolean coloured) {
+    private static ItemStackTemplate generateTextureInternal(Identifier path, boolean coloured) {
         String base = MiscUtils.getTextBetween(path.getPath(), "", "/");
         if(base.isEmpty()) throw new IllegalStateException("Error loading "+path.toString(), new Throwable("Texture paths must be prefixed, eg ui/test.png"));
         Identifier newPath = Identifier.fromNamespaceAndPath(path.getNamespace(), MiscUtils.replaceTextBetween(path.getPath(), "", "/", ""));
@@ -348,15 +357,21 @@ public class GuiUtils {
         ITEM_GUI_TEXTURES.add(texture);
         //add individual so it doesnt have huge assets from random folders that arent needed
         atlasAdditions.add(path.toString());
-        return blank().model(Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).setItemName(Component.nullToEmpty("==NOT SET=="));
+
+        DataComponentPatch patch = DataComponentPatch.builder().set(DataComponents.MAX_STACK_SIZE, 1).set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath(newPath.getNamespace(), "gen/" + base + "/" + newPath.getPath())).set(DataComponents.ITEM_NAME, Component.literal("==NOT SET==")).build();
+        return new ItemStackTemplate(Items.BARRIER, patch);
     }
 
-    public static GuiElementBuilder blank() {
-        return GuiElementBuilder.from(Items.BARRIER.getDefaultInstance()).noDefaults().setMaxCount(1);
+    public static ItemStackTemplate blank() {
+        DataComponentPatch patch = DataComponentPatch.builder().set(DataComponents.MAX_STACK_SIZE, 1).build();
+        return new ItemStackTemplate(Items.BARRIER, patch);
     }
 
-    public static GuiElementBuilder head(String texture) {
-        return GuiElementBuilder.from(Items.PLAYER_HEAD.getDefaultInstance()).noDefaults().setMaxCount(1).setSkullOwner(texture).setItemName(Component.nullToEmpty("==NOT SET=="));
+    public static ItemStackTemplate head(String texture) {
+        PropertyMap map = new PropertyMap(ImmutableMultimap.of("textures", new Property("textures", texture, null)));
+
+        DataComponentPatch patch = DataComponentPatch.builder().set(DataComponents.MAX_STACK_SIZE, 1).set(DataComponents.PROFILE, ResolvableProfile.createResolved(new GameProfile(Util.NIL_UUID, "", map))).set(DataComponents.ITEM_NAME, Component.literal("==NOT SET==")).build();
+        return new ItemStackTemplate(Items.BARRIER, patch);
     }
 
     public static GuiBarTexture generateBarTexture(Identifier path, int ascent, int height1, int width1) {
@@ -472,11 +487,11 @@ public class GuiUtils {
                 stack.set(DataComponents.MAX_DAMAGE, gui.getSize());
                 stack.set(DataComponents.DAMAGE, gui.getSize() - i);
             } else {
-                stack = DefaultGuiTextures.INVISIBLE.getItemStack();
+                stack = DefaultGuiTextures.INVISIBLE.create();
             }
 
-            if (gui.getSlotRedirect(i) != null) continue;
-            if (gui.getSlot(i) != null && gui.getSlot(i).getItemStack() != null && !gui.getSlot(i).getItemStack().isEmpty()) continue;
+            if (gui.getSlotRedirectOrPlayer(i) != null) continue;
+            if (gui.getGuiElement(i) != null && gui.getGuiElement(i).getItemStack() != null && !gui.getGuiElement(i).getItemStack().isEmpty()) continue;
             gui.setSlot(i, stack);
         }
     }
@@ -485,7 +500,7 @@ public class GuiUtils {
         AdvancementProgress progress = new AdvancementProgress();
         progress.update(AdvancementRequirements.allOf(Set.of("toast")));
         progress.grantProgress("toast");
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(icon, title, Component.empty(), Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(ItemStackTemplate.fromNonEmptyStack(icon), title, Component.empty(), Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
         player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "toast"), progress), true));
         player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "toast")), Map.of(), false));
     }

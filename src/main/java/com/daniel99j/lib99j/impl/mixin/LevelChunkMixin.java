@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class LevelChunkMixin extends ChunkAccess implements LevelChunkAccessor {
     @Shadow
     @Final
-    Level level;
+    private Level level;
 
     public LevelChunkMixin(ChunkPos chunkPos, UpgradeData upgradeData, LevelHeightAccessor levelHeightAccessor, PalettedContainerFactory palettedContainerFactory, long l, LevelChunkSection @Nullable [] levelChunkSections, @Nullable BlendingData blendingData) {
         super(chunkPos, upgradeData, levelHeightAccessor, palettedContainerFactory, l, levelChunkSections, blendingData);
@@ -43,7 +43,7 @@ public abstract class LevelChunkMixin extends ChunkAccess implements LevelChunkA
 //        ((Heightmap)this.heightmaps.get(Heightmap.Types.WORLD_SURFACE)).update(k, j, m, blockState);
 
         this.level.getChunkSource().getLightEngine().updateSectionStatus(blockPos, false);
-        this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x, SectionPos.blockToSectionCoord(j), this.chunkPos.z, false);
+        this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x(), SectionPos.blockToSectionCoord(j), this.chunkPos.z(), false);
         this.level.getChunkSource().getLightEngine().checkBlock(blockPos);
     }
 }

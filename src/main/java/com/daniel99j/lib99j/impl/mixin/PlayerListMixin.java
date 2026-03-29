@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class PlayerListMixin {
     @Inject(method = "save", at = @At("HEAD"), cancellable = true)
     private void lib99j$dontSaveFakePlayers(ServerPlayer player, CallbackInfo ci) {
-        if(player.getTags().contains("$lib99j:do_not_save")) ci.cancel();
+        if(player.entityTags().contains("$lib99j:do_not_save")) ci.cancel();
     }
 
     @Inject(method = "broadcast", at = @At("HEAD"))

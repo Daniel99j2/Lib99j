@@ -14,11 +14,11 @@ import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.ConstantInt;
-import net.minecraft.world.RandomSequences;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -50,25 +50,19 @@ public class PonderLevel extends ServerLevel {
                         true,
                         true,
                         false,
+                        false,
                         1,
                         playerLevel.dimensionTypeRegistration().value().minY(),
                         playerLevel.dimensionTypeRegistration().value().height(),
                         playerLevel.dimensionTypeRegistration().value().logicalHeight(),
-                        null,
-                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, DimensionType.CardinalLightType.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty())), new PonderChunkGenerator(biomeResourceKey, playerLevel.getMaxY())),
+                        Lib99j.getServerOrThrow().overworld().dimensionType().infiniburn(),
+                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, CardinalLighting.Type.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty(), Lib99j.getServerOrThrow().overworld().dimensionType().defaultClock())), new PonderChunkGenerator(biomeResourceKey, playerLevel.getMaxY())),
                 false,
                 0,
                 List.of(),
-                true,
-                randomSequences()
+                true
         );
         this.scene = scene;
-    }
-
-    private static RandomSequences randomSequences() {
-        RandomSequences sequences = new RandomSequences();
-        sequences.setSeedDefaults(0, false, false);
-        return sequences;
     }
 
     @Override

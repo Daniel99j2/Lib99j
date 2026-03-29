@@ -35,7 +35,7 @@ public abstract class GoAwayExperimentalWarningMixin extends Screen {
         };
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     public void fuckOff1(CallbackInfo ci) {
         if(shouldRemove) ci.cancel();
     }

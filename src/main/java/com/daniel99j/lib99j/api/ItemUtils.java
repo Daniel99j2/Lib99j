@@ -1,13 +1,19 @@
 package com.daniel99j.lib99j.api;
 
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.DyedItemColor;
+
+import java.util.Map;
+import java.util.Optional;
 
 @SuppressWarnings({"unused"})
 public class ItemUtils {
@@ -59,5 +65,18 @@ public class ItemUtils {
 
     public static ItemStack getBasicModelItemStack() {
         return getBasicModelItem().getDefaultInstance();
+    }
+
+    public static <T> ItemStackTemplate with(ItemStackTemplate other, DataComponentType<T> component, T value) {
+        DataComponentPatch components = other.components();
+        DataComponentPatch.Builder builder = DataComponentPatch.builder();
+
+        for (Map.Entry<DataComponentType<?>, Optional<?>> dataComponentTypeOptionalEntry : components.entrySet()) {
+            builder.map.put(dataComponentTypeOptionalEntry.getKey(), dataComponentTypeOptionalEntry.getValue());
+        }
+
+        builder.map.put(component, Optional.of(value));
+
+        return new ItemStackTemplate(other.item(), other.count(), builder.build());
     }
 }

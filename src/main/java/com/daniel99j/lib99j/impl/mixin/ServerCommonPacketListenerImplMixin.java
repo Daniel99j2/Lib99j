@@ -6,7 +6,7 @@ import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderMenu;
-import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
+import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import io.netty.channel.ChannelFutureListener;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -176,7 +176,7 @@ public abstract class ServerCommonPacketListenerImplMixin {
                     for (SynchedEntityData.DataValue<?> entry : trackerUpdateS2CPacket.packedItems()) {
                         if (entry.id() != Entity.DATA_TICKS_FROZEN.id() || !VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.SNOW)) {
                             out.add(entry);
-                        } else if (entry.id() != EntityTrackedData.FLAGS.id() || !(entry.value() instanceof Byte value) || (value & (1 << EntityTrackedData.ON_FIRE_FLAG_INDEX)) == 0 || !VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.FIRE)) {
+                        } else if (entry.id() != EntityData.FLAGS.id() || !(entry.value() instanceof Byte value) || (value & (1 << EntityData.ON_FIRE_FLAG_INDEX)) == 0 || !VFXUtils.hasGenericScreenEffect(player, GenericScreenEffect.FIRE)) {
                             out.add(entry);
                         }
                     }

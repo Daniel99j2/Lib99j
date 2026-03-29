@@ -2,7 +2,7 @@ package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.ItemUtils;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -86,7 +86,7 @@ public class Lib99jClient implements ClientModInitializer {
                 .build()
         );
 
-        ItemGroupEvents.modifyEntriesEvent(ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(), Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "models"))).register(entries -> {
+        CreativeModeTabEvents.modifyOutputEvent(ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(), Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "models"))).register(entries -> {
             Minecraft.getInstance().getModelManager().bakedItemStackModels.keySet().stream().sorted(Comparator.comparing(Identifier::toString)).toList().forEach((id) -> {
                 ItemStack i = ItemUtils.getBasicModelItemStack();
                 i.set(DataComponents.ITEM_MODEL, id);

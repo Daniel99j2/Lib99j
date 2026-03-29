@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.api;
 
 import eu.pb4.polymer.core.api.item.PolymerItem;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -10,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
-import xyz.nucleoid.packettweaker.PacketContext;
+
 
 @SuppressWarnings({"unused"})
 public class PolymerSpawnEgg extends SpawnEggItem implements PolymerItem {

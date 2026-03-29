@@ -100,7 +100,7 @@ public class PonderCommand {
                 })
                 .executes(context -> {
                     if(checkIfOnGround(context)) return 0;
-                    Item currentItem = ItemArgument.getItem(context, "item").getItem();
+                    Item currentItem = ItemArgument.getItem(context, "item").item().value();
                     if (PonderManager.itemToBuilders.containsKey(currentItem) && !PonderManager.itemToBuilders.get(currentItem).isEmpty()) {
                         return openPonderFromId(context, PonderManager.itemToBuilders.get(currentItem).getFirst());
                     } else {
@@ -110,7 +110,7 @@ public class PonderCommand {
                 })
                 .then(Commands.literal("scene").then(Commands.argument("id", IdentifierArgument.id()).suggests(((context, builder) -> {
                     List<String> allowedIds = new ArrayList<>();
-                    Item currentItem = ItemArgument.getItem(context, "item").getItem();
+                    Item currentItem = ItemArgument.getItem(context, "item").item().value();
                     if (PonderManager.itemToBuilders.containsKey(currentItem)) {
                         PonderManager.itemToBuilders.get(currentItem).forEach((id) -> allowedIds.add(id.toString()));
                     }
@@ -118,7 +118,7 @@ public class PonderCommand {
                 })).executes((context -> {
                     if(checkIfOnGround(context)) return 0;
                     Identifier id = IdentifierArgument.getId(context, "id");
-                    Item currentItem = ItemArgument.getItem(context, "item").getItem();
+                    Item currentItem = ItemArgument.getItem(context, "item").item().value();
 
                     PonderBuilder builder = PonderManager.idToBuilder.get(id);
                     if (builder == null) {

@@ -22,6 +22,8 @@ import net.minecraft.server.dialog.body.DialogBody;
 import net.minecraft.server.dialog.body.ItemBody;
 import net.minecraft.server.dialog.body.PlainMessage;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStackTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,10 +50,10 @@ public class PonderMenu {
         if(title.getStyle().getHoverEvent() == null) GuiUtils.styleText(title, title.getStyle().withHoverEvent(new HoverEvent.ShowText(builder.description)), false);
 
         List<DialogBody> body = new ArrayList<>();
-        body.add(new ItemBody(PonderGuiTextures.PONDERING_ABOUT_ITEM.asStack(), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
         body.add(renderBuilder(builder, false));
         body.add(spacer());
-        if(!builder.getGroups().isEmpty()) body.add(new ItemBody(DefaultGuiTextures.INVISIBLE.getItemStack(), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!builder.getGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
 
         for (Identifier group : builder.getGroups()) {
             body.add(renderGroup(PonderManager.idToGroup.get(group)));
@@ -65,19 +67,20 @@ public class PonderMenu {
     public static void buildGroupMenu(ServerPlayer player, Identifier id) {
         PonderGroup group = PonderManager.idToGroup.get(id);
 
-        MutableComponent title = group.id.getNamespace().contains("_item_") ? MutableComponent.create(Lib99j.getServerOrThrow().overworld().registryAccess().getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(group.id.getNamespace().replace("_item_", ""), group.id.getPath()))).value().getName().getContents()) : Component.translatable("ponder.scene.group."+group.id.getNamespace()+"."+group.id.getPath());
+        Item item = Lib99j.getServerOrThrow().overworld().registryAccess().getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(group.id.getNamespace().replace("_item_", ""), group.id.getPath()))).value();
+        MutableComponent title = group.id.getNamespace().contains("_item_") ? MutableComponent.create(item.getName(item.getDefaultInstance()).getContents()) : Component.translatable("ponder.scene.group."+group.id.getNamespace()+"."+group.id.getPath());
 
         List<DialogBody> body = new ArrayList<>();
-        body.add(new ItemBody(PonderGuiTextures.PONDERING_ABOUT_ITEM.asStack(), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
         body.add(new ItemBody(group.icon, Optional.of(new PlainMessage(title, 200)), false, false, 16, 16));
         body.add(spacer());
-        if(!group.builders.isEmpty()) body.add(new ItemBody(DefaultGuiTextures.INVISIBLE.getItemStack(), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_scenes").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!group.builders.isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_scenes").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
         for (PonderBuilder builder : group.builders) {
             body.add(renderBuilder(builder, true));
         }
 
         body.add(spacer());
-        if(!group.getRelatedGroups().isEmpty()) body.add(new ItemBody(DefaultGuiTextures.INVISIBLE.getItemStack(), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!group.getRelatedGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
         for (PonderGroup group1 : group.getRelatedGroups()) {
             body.add(renderGroup(group1));
         }
@@ -88,7 +91,8 @@ public class PonderMenu {
     }
 
     private static ItemBody renderGroup(PonderGroup group) {
-        MutableComponent title = group.id.getNamespace().contains("_item_") ? MutableComponent.create(Lib99j.getServerOrThrow().overworld().registryAccess().getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(group.id.getNamespace().replace("_item_", ""), group.id.getPath()))).value().getName().getContents()) : Component.translatable("ponder.scene.group."+group.id.getNamespace()+"."+group.id.getPath());
+        Item item = Lib99j.getServerOrThrow().overworld().registryAccess().getOrThrow(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(group.id.getNamespace().replace("_item_", ""), group.id.getPath()))).value();
+        MutableComponent title = group.id.getNamespace().contains("_item_") ? MutableComponent.create(item.getName(item.getDefaultInstance()).getContents()) : Component.translatable("ponder.scene.group."+group.id.getNamespace()+"."+group.id.getPath());
 
         CompoundTag tag = new CompoundTag();
         tag.putString("id", group.id.toString());
@@ -109,6 +113,6 @@ public class PonderMenu {
     }
 
     private static ItemBody spacer() {
-        return new ItemBody(DefaultGuiTextures.INVISIBLE.getItemStack(), Optional.of(new PlainMessage(Component.empty(), 200)), false, false, 16, 16);
+        return new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.empty(), 200)), false, false, 16, 16);
     }
 }

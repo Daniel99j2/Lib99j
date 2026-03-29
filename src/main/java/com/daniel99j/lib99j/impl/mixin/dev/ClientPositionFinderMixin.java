@@ -2,7 +2,7 @@ package com.daniel99j.lib99j.impl.mixin.dev;
 
 import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetTooltipHolder;
@@ -51,7 +51,7 @@ public abstract class ClientPositionFinderMixin {
         isDialog = ((Object) this) instanceof DialogScreen<?> dialogScreen && dialogScreen.getTitle().getContents() instanceof PlainTextContents plainTextContents && plainTextContents.text().equals("Ponder GUI Editor");
     }
 
-    @Inject(method = "renderBackground", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
     private void lib99j$removeBackground(CallbackInfo ci) {
         if(isDialog && Minecraft.getInstance().hasShiftDown()) ci.cancel();
     }
@@ -65,8 +65,8 @@ public abstract class ClientPositionFinderMixin {
         };
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void lib99j$cursorPos(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    private void lib99j$cursorPos(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a, CallbackInfo ci) {
         if(isDialog && Minecraft.getInstance().hasShiftDown()) {
             pos = new Vector2i(mouseX, mouseY);
             Vector2i convertedPos = convertPos(pos);
@@ -76,7 +76,7 @@ public abstract class ClientPositionFinderMixin {
             ci.cancel();
         }
         if(isDialog) {
-            this.tooltipHolder.refreshTooltipForNextRenderPass(guiGraphics, (int) pos.x, (int) pos.y+10,true, true, new ScreenRectangle(0, 0, 20, 20));
+            this.tooltipHolder.refreshTooltipForNextRenderPass(graphics, (int) pos.x, (int) pos.y+10,true, true, new ScreenRectangle(0, 0, 20, 20));
         }
     }
 

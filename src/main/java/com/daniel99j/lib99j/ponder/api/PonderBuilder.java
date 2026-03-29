@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
@@ -47,7 +47,7 @@ import java.util.ArrayList;
 public class PonderBuilder {
     protected Identifier id = null;
     @ApiStatus.Internal
-    public ItemStack icon = null;
+    public ItemStackTemplate icon = null;
     @ApiStatus.Internal
     public MutableComponent description;
     protected boolean registered = false;
@@ -72,14 +72,14 @@ public class PonderBuilder {
 
     protected ArrayList<Identifier> groups = new ArrayList<>();
 
-    private PonderBuilder(Identifier id, ItemStack icon, MutableComponent title, MutableComponent description) {
+    private PonderBuilder(Identifier id, ItemStackTemplate icon, MutableComponent title, MutableComponent description) {
         this.id = id;
         this.icon = icon;
         this.title = title.copy();
         this.description = description.copy();
     }
 
-    public static PonderBuilder create(Identifier id, ItemStack icon, MutableComponent title, MutableComponent description) {
+    public static PonderBuilder create(Identifier id, ItemStackTemplate icon, MutableComponent title, MutableComponent description) {
         GameProperties.throwIfPonderNotEnabled("Ponder has not been enabled! Use GameProperties.enablePonder()");
         return new PonderBuilder(id, icon, title, description);
     }
@@ -229,7 +229,7 @@ public class PonderBuilder {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("mymod").then(Commands.literal("test-ponder")
                     .executes((context -> {
-                        PonderScene hotswapScene = PonderBuilder.create(Identifier.fromNamespaceAndPath("mymod", "my_ponder"), Items.TNT.getDefaultInstance(), Component.translatable("ponder.scene.mymod.my_ponder"), Component.translatable("ponder.scene.mymod.my_ponder.description"))
+                        PonderScene hotswapScene = PonderBuilder.create(Identifier.fromNamespaceAndPath("mymod", "my_ponder"), new ItemStackTemplate(Items.TNT), Component.translatable("ponder.scene.mymod.my_ponder"), Component.translatable("ponder.scene.mymod.my_ponder.description"))
                                 .waitFor(2)
                                 .instruction(new ExecuteCodeInstruction((scene -> {
                                     scene.getLevel().setBlockAndUpdate(new BlockPos(0, 0, 3), Blocks.COAL_ORE.defaultBlockState());

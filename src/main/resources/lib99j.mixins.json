@@ -28,6 +28,7 @@
     "NumberListEntryAccessor3",
     "PlayerListAccessor",
     "PlayerListMixin",
+    "PlayerMixin",
     "PolydexHiderMixin",
     "PolydexPageMixin",
     "PolymerEffectScreenMixin",

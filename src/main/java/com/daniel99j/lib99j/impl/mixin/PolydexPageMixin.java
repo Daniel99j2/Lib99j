@@ -38,12 +38,12 @@ public abstract class PolydexPageMixin extends ExtendedGui {
     @Final
     protected List<PolydexPage> pages;
 
-    @Shadow
-    public abstract int getPage();
-
     public PolydexPageMixin(MenuType<?> type, ServerPlayer player, boolean manipulatePlayerSlots) {
         super(type, player, manipulatePlayerSlots);
     }
+
+    @Shadow
+    public abstract int getPage();
 
     @Inject(method = "setupNavigator", at = @At("TAIL"))
     private void lib99j$addPonderButton(CallbackInfo ci) {
@@ -51,7 +51,7 @@ public abstract class PolydexPageMixin extends ExtendedGui {
 
         if(this.entry != null) {
             Item item = this.pages.get(this.getPage()).entryIcon(this.entry, this.getPlayer()).getItem();
-            if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).noDefaults().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).hideDefaultTooltip().setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {
+            if(PonderManager.itemToBuilders.containsKey(item)) this.setSlot(52, new GuiElementBuilder(Items.LIGHT.getDefaultInstance()).hideDefaultTooltip().setComponent(DataComponents.BLOCK_STATE, new BlockItemStateProperties(Map.of("level", "15"))).hideDefaultTooltip().setItemName(Component.translatable("ponder.scene.ponder_about")).setCallback(() -> {
                 this.close();
                 PonderManager.idToBuilder.get(PonderManager.itemToBuilders.get(item).getFirst()).startPonderingSafely(this.getPlayer());
             }));

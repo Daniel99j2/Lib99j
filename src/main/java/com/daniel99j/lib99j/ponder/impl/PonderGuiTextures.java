@@ -5,8 +5,8 @@ import com.daniel99j.lib99j.api.GameProperties;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.api.gui.SimpleFontTexture;
 import eu.pb4.polymer.resourcepack.extras.api.format.item.ItemAsset;
-import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStackTemplate;
 
 public class PonderGuiTextures {
     static {
@@ -33,7 +33,7 @@ public class PonderGuiTextures {
     public static final SimpleFontTexture STEP_GOTO_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/go_to_step"), 28*2+1, -28*2, 28*2, 28*2);
     public static final SimpleFontTexture RESTART_BUTTON = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/restart"), 28*2+1, -28*2*2, 28*2, 28*2);
 
-    public static final GuiElementBuilder PONDERING_ABOUT_ITEM = GuiUtils.generateItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about"), new ItemAsset.Properties(false, true));
+    public static final ItemStackTemplate PONDERING_ABOUT_ITEM = GuiUtils.generateItemModel(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/ponder/pondering_about"), new ItemAsset.Properties(false, true));
 
     public static final SimpleFontTexture WHITE_LINE = new SimpleFontTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ponder/text/white_line"), 1, 10, 16, 0);
 

@@ -5,8 +5,8 @@ import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.impl.mixin.PlayerListAccessor;
 import com.mojang.authlib.GameProfile;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
+import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
-import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
 import eu.pb4.polymer.virtualentity.mixin.accessors.EntityAccessor;
 import net.fabricmc.fabric.impl.networking.server.ServerNetworkingImpl;
 import net.minecraft.advancements.AdvancementHolder;
@@ -351,7 +351,7 @@ public class EntityUtils {
      * Sets a data tracker's data to be an invisible, small, marker armor stand
      */
     public static void dummyArmorStandData(List<SynchedEntityData.DataValue<?>> data) {
-        data.add(SynchedEntityData.DataValue.create(EntityTrackedData.FLAGS, (byte) (1 << EntityTrackedData.INVISIBLE_FLAG_INDEX)));
+        data.add(SynchedEntityData.DataValue.create(EntityData.FLAGS, (byte) (1 << EntityData.INVISIBLE_FLAG_INDEX)));
         data.add(new SynchedEntityData.DataValue<>(EntityAccessor.getDATA_NO_GRAVITY().id(), EntityAccessor.getDATA_NO_GRAVITY().serializer(), true));
         data.add(SynchedEntityData.DataValue.create(ArmorStand.DATA_CLIENT_FLAGS, (byte) (ArmorStand.CLIENT_FLAG_SMALL | ArmorStand.CLIENT_FLAG_MARKER)));
     }

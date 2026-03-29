@@ -1,7 +1,7 @@
 package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.Lib99j;
-import eu.pb4.sgui.api.gui.GuiInterface;
+import eu.pb4.sgui.api.gui.GuiLike;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public class ServerDialog implements GuiInterface {
+public class ServerDialog implements GuiLike {
     private ServerDialogScreenHandler screenHandler;
     private final ServerPlayer player;
     private Component title = Component.empty();

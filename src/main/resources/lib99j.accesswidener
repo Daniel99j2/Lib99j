@@ -1,4 +1,4 @@
-accessWidener	v2	named
+classTweaker v1 official
 accessible class net/minecraft/server/level/ChunkMap$TrackedEntity
 accessible class net/minecraft/world/entity/Entity
 accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
@@ -19,7 +19,6 @@ accessible field net/minecraft/world/level/ServerExplosion fire Z
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase cache Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache;
 accessible class net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache
 accessible field net/minecraft/client/resources/model/ModelManager bakedItemStackModels Ljava/util/Map;
-accessible method net/minecraft/world/item/InstrumentItem getInstrument (Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/core/HolderLookup$Provider;)Ljava/util/Optional;
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties id Lnet/minecraft/resources/ResourceKey;
 accessible field net/minecraft/server/level/ChunkMap playerMap Lnet/minecraft/server/level/PlayerMap;
 accessible field net/minecraft/world/level/ServerExplosion damageCalculator Lnet/minecraft/world/level/ExplosionDamageCalculator;
@@ -44,3 +43,4 @@ accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$
 accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$UpdateStyleOperation
 accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$OperationType
 accessible field net/minecraft/server/network/ServerGamePacketListenerImpl waitingForSwitchToConfig Z
+accessible field net/minecraft/core/component/DataComponentPatch$Builder map Lit/unimi/dsi/fastutil/objects/Reference2ObjectMap;

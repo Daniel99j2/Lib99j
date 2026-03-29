@@ -8,7 +8,7 @@ import eu.pb4.polymer.core.api.item.PolymerBlockItem;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import eu.pb4.polymer.rsm.api.RegistrySyncUtils;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
+import net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
-import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -71,10 +70,9 @@ public class RegUtil {
 
     // ITEM MODIFIERS
 
-    public static <T extends LootItemFunction> LootItemFunctionType<T> registerItemModifier(String id, MapCodec<T> codec) {
-        LootItemFunctionType<T> out = (LootItemFunctionType) Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), id), new LootItemFunctionType(codec));
-        RegistrySyncUtils.setServerEntry(BuiltInRegistries.LOOT_FUNCTION_TYPE, out);
-        return out;
+    public static <T extends LootItemFunction> void registerItemModifier(String id, MapCodec<T> codec) {
+        Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), id), codec);
+        RegistrySyncUtils.setServerEntry(BuiltInRegistries.LOOT_FUNCTION_TYPE, codec);
     }
 
     // ITEMS
@@ -182,7 +180,7 @@ public class RegUtil {
     // POTIONS
     public static Holder<Potion> registerPotion(String name, Potion out, Item in1, Holder<Potion> in2) {
         Holder<Potion> registry = Registry.registerForHolder(BuiltInRegistries.POTION, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), out);
-        FabricBrewingRecipeRegistryBuilder.BUILD.register(builder -> builder.addMix(in2, in1, registry));
+        FabricPotionBrewingBuilder.BUILD.register(builder -> builder.addMix(in2, in1, registry));
         return registry;
     }
 

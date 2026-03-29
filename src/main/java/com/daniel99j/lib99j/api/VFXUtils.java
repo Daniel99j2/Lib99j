@@ -2,7 +2,7 @@ package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
-import eu.pb4.polymer.virtualentity.api.tracker.EntityTrackedData;
+import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -111,9 +111,9 @@ public class VFXUtils {
             case SNOW ->
                     instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(Entity.DATA_TICKS_FROZEN, 2147483646))));
             case FIRE -> {
-                byte flags = instance.player.getEntityData().get(EntityTrackedData.FLAGS);
-                byte updatedFlags = (byte) (flags | (1 << EntityTrackedData.ON_FIRE_FLAG_INDEX));
-                instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.FLAGS, updatedFlags))));
+                byte flags = instance.player.getEntityData().get(EntityData.FLAGS);
+                byte updatedFlags = (byte) (flags | (1 << EntityData.ON_FIRE_FLAG_INDEX));
+                instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, updatedFlags))));
             }
             case NAUSEA ->
                     instance.player.connection.send(new ClientboundUpdateMobEffectPacket(instance.player.getId(), new MobEffectInstance(MobEffects.NAUSEA, -1, 0, true, false), false));
@@ -145,9 +145,9 @@ public class VFXUtils {
                 case SNOW ->
                         instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(Entity.DATA_TICKS_FROZEN, 0))));
                 case FIRE -> {
-                    byte flags = instance.player.getEntityData().get(EntityTrackedData.FLAGS);
-                    byte updatedFlags = (byte) (flags & ~(1 << EntityTrackedData.ON_FIRE_FLAG_INDEX));
-                    instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(EntityTrackedData.FLAGS, updatedFlags))));
+                    byte flags = instance.player.getEntityData().get(EntityData.FLAGS);
+                    byte updatedFlags = (byte) (flags & ~(1 << EntityData.ON_FIRE_FLAG_INDEX));
+                    instance.player.connection.send(new ClientboundSetEntityDataPacket(instance.player.getId(), List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, updatedFlags))));
                 }
                 case NAUSEA -> {
                     if (instance.player.hasEffect(MobEffects.NAUSEA)) {
@@ -450,7 +450,7 @@ public class VFXUtils {
                     }
                 }
 
-                if (this.fire && this.level().random.nextInt(3) == 0 && this.level().getBlockState(blockPos).isAir() && !list.contains(blockPos.below()) && this.level().getBlockState(blockPos.below()).isSolidRender()) {
+                if (this.fire && this.level().getRandom().nextInt(3) == 0 && this.level().getBlockState(blockPos).isAir() && !list.contains(blockPos.below()) && this.level().getBlockState(blockPos.below()).isSolidRender()) {
                     for (ServerPlayer player : players) {
                         player.connection.send(new ClientboundBlockUpdatePacket(blockPos, Blocks.FIRE.defaultBlockState()));
                     }

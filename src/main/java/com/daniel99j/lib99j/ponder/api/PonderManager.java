@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -95,7 +96,7 @@ public class PonderManager {
 
         Identifier groupId = Identifier.fromNamespaceAndPath("_item_"+BuiltInRegistries.ITEM.getKey(builder.item).getNamespace(), BuiltInRegistries.ITEM.getKey(builder.item).getPath());
 
-        if(!idToGroup.containsKey(groupId)) PonderManager.registerGroup(new PonderGroup(groupId, builder.item.getDefaultInstance(), new ArrayList<>()));
+        if(!idToGroup.containsKey(groupId)) PonderManager.registerGroup(new PonderGroup(groupId, new ItemStackTemplate(builder.item), new ArrayList<>()));
 
         idToGroup.get(groupId).builders.add(builder);
 

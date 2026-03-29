@@ -34,7 +34,10 @@ import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.*;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.Mth;
@@ -168,7 +171,7 @@ public class PonderScene {
         AdvancementProgress progress = new AdvancementProgress();
         progress.update(AdvancementRequirements.allOf(Set.of("yes")));
         progress.grantProgress("yes");
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(DefaultGuiTextures.INVISIBLE.getItemStack(), Component.empty(), Component.empty(), Optional.of(new ClientAsset.ResourceTexture(Identifier.withDefaultNamespace("block/white_concrete"))), AdvancementType.TASK, false, false, false)), AdvancementRewards.EMPTY, Map.of("yes", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("yes")), false, Optional.of(Component.empty())))), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(DefaultGuiTextures.INVISIBLE, Component.empty(), Component.empty(), Optional.of(new ClientAsset.ResourceTexture(Identifier.withDefaultNamespace("block/white_concrete"))), AdvancementType.TASK, false, false, false)), AdvancementRewards.EMPTY, Map.of("yes", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("yes")), false, Optional.of(Component.empty())))), Set.of(), Map.of(), true));
         player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), progress), true));
 
         this.builder = builder;
@@ -251,8 +254,8 @@ public class PonderScene {
 
         //player.connection.send(new ClientboundContainerClosePacket(-1));
 
-        this.titleTopBar = new ServerBossEvent(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
-        this.subtitleTopBar = new ServerBossEvent(this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
+        this.titleTopBar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
+        this.subtitleTopBar = new ServerBossEvent(UUID.randomUUID(), this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
 
         ((BossBarVisibility) this.titleTopBar).lib99j$setVisible(false);
         ((BossBarVisibility) this.subtitleTopBar).lib99j$setVisible(false);
@@ -345,7 +348,7 @@ public class PonderScene {
 
         this.level.syncRain();
 
-        ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.asStack(), 0x111111));
+        ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.create(), 0x111111));
         background.setOverridePos(origin.getBottomCenter());
         background.setScale(new Vector3f(-1000, -1000, -1000));
         background.setViewRange(100f);
@@ -526,7 +529,7 @@ public class PonderScene {
         VFXUtils.setCameraPos(player,  Vec3.atCenterOf(this.origin).add(cameraPos));
         VFXUtils.setCameraPitch(player, this.cameraRotation.x);
         VFXUtils.setCameraYaw(player, this.cameraRotation.y);
-        this.packetRedirector.connection.send(new ClientboundSetTimePacket(this.level.getGameTime(), this.level.getDayTime(), false));
+        this.packetRedirector.connection.send(this.level.clockManager().createFullSyncPacket());
 
         this.player.connection.send(new ClientboundSetActionBarTextPacket(buildActionBar()));
         MutableComponent identify = PonderGuiTextures.IDENTIFY_BUTTON.text();
@@ -632,7 +635,7 @@ public class PonderScene {
             this.player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
             this.player.connection.teleport(new PositionMoveRotation(this.player.position(), initialVelocity, this.player.getYRot(), this.player.getXRot()), Set.of());
             this.player.connection.send(ClientboundTickingStatePacket.from(this.player.level.tickRateManager()));
-            this.player.connection.send(new ClientboundSetTimePacket(this.player.level.getGameTime(), this.player.level.getDayTime(), ((ServerLevel) this.player.level).getGameRules().get(GameRules.ADVANCE_TIME)));
+            this.player.connection.send(this.player.level().clockManager().createFullSyncPacket());
 
             player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer")), Map.of(), false));
 
