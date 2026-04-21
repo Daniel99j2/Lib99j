@@ -1,22 +1,25 @@
 package com.daniel99j.lib99j;
 
 import com.daniel99j.lib99j.api.*;
+import com.daniel99j.lib99j.api.config.ConfigContext;
 import com.daniel99j.lib99j.api.config.ConfigManager;
 import com.daniel99j.lib99j.api.config.ModConfig;
+import com.daniel99j.lib99j.api.config.SimpleModConfig;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
-import com.daniel99j.lib99j.impl.network.ClientboundLib99jHelloPacket;
-import com.daniel99j.lib99j.impl.network.ClientboundLib99jSyncConfigOptionPacket;
-import com.daniel99j.lib99j.impl.network.ServerboundLib99HelloPacket;
-import com.daniel99j.lib99j.impl.network.ServerboundLib99jInstalledModsPacket;
+import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
+import com.daniel99j.lib99j.impl.network.*;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
+import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
+import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -26,6 +29,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.SharedConstants;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
@@ -34,20 +39,27 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.TextComponentTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
-import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
-import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.PacketType;
+import net.minecraft.network.protocol.common.CommonPacketTypes;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +68,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +98,9 @@ public class Lib99j implements ModInitializer {
 
     private static boolean hasLoadedLib99j = false;
 
-    public static ModConfig CONFIG;
+    public static SimpleModConfig<Lib99jClientConfig, Lib99jCommonConfig, Object, Object> CONFIG;
+
+    public static final Map<String, DebugArg> debugArgForScreens = new HashMap<>();
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -136,6 +152,7 @@ public class Lib99j implements ModInitializer {
         PayloadTypeRegistry.serverboundPlay().register(ServerboundLib99jInstalledModsPacket.ID, ServerboundLib99jInstalledModsPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundLib99jHelloPacket.ID, ClientboundLib99jHelloPacket.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ClientboundLib99jSyncConfigOptionPacket.ID, ClientboundLib99jSyncConfigOptionPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClientboundLib99jPonderItemsPacket.ID, ClientboundLib99jPonderItemsPacket.CODEC);
 
         ModInstallManager.load();
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ServerConfigCopy.load();
@@ -146,7 +163,7 @@ public class Lib99j implements ModInitializer {
 
         Class<ExampleConfig> serverConfig = FabricLoader.getInstance().isDevelopmentEnvironment() ? ExampleConfig.class : null;
 
-        CONFIG = ConfigManager.addConfig("lib99j", new ModConfig(null, serverConfig, null, Lib99jCommonConfig.class));
+        CONFIG = new SimpleModConfig<>(ConfigManager.addConfig("lib99j", new ModConfig(Lib99jClientConfig.class, serverConfig, null, Lib99jCommonConfig.class)));
 
         ServerParticleManager.load();
         GuiUtils.load();
@@ -176,6 +193,42 @@ public class Lib99j implements ModInitializer {
                 }
                 return false;
             });
+
+            List<String> issues = new ArrayList<>();
+
+            for (Field field : GamePacketTypes.class.getFields()) {
+                try {
+                    PacketType<?> type = ((PacketType<?>) field.get(null));
+                    try {
+                        GameCommonPacketList.getInfo(type);
+                    } catch (Exception e) {
+                        issues.add(type.toString());
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            for (Field field : CommonPacketTypes.class.getFields()) {
+                try {
+                    PacketType<?> type = ((PacketType<?>) field.get(null));
+                    try {
+                        GameCommonPacketList.getInfo(type);
+                    } catch (Exception e) {
+                        issues.add(type.toString());
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            if(!issues.isEmpty()) {
+                StringBuilder out = new StringBuilder("Packet tags not set for: ");
+                for (String issue : issues) {
+                   out.append(", ").append(issue);
+                }
+                throw new IllegalStateException(out.toString());
+            }
         };
 
         ServerLifecycleEvents.SERVER_STARTING.register((server1) -> {
@@ -294,6 +347,18 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
+                builder.then(Commands.literal("clientitemfull")
+                        .executes((context) -> {
+                            var player = context.getSource().getPlayerOrException();
+                            var stack = PolymerItemUtils.getPolymerItemStack(player.getMainHandItem(), player.connection.getPacketContext(), player.level().registryAccess()).copy();
+
+                            context.getSource().sendSuccess(() -> (new TextComponentTagVisitor("")).visit(
+                                    ItemStack.OPTIONAL_CODEC.encodeStart(context.getSource().registryAccess().createSerializationContext(NbtOps.INSTANCE), stack).getOrThrow()
+                            ), false);
+                            return 1;
+                        })
+                        .build());
+
                 builder.then(Commands.literal("clearparticles")
                         .executes((context) -> {
                             VFXUtils.clearParticles(context.getSource().getPlayer());
@@ -315,6 +380,68 @@ public class Lib99j implements ModInitializer {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
                             VFXUtils.fireworkExplode(players, List.of(new FireworkExplosion(FireworkExplosion.Shape.BURST, IntList.of(0x0000ff), IntList.of(0xff0000), true, true)), context.getSource().getPosition(), new Vec3(1, -1, 0));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("offsetshulker")
+                        .executes((context) -> {
+                            int mount = VirtualEntityUtils.requestEntityId();
+                            int shulker = VirtualEntityUtils.requestEntityId();
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.ARMOR_STAND, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(shulker, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.SHULKER, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(VirtualEntityUtils.createClientboundSetPassengersPacket(mount, IntList.of(shulker)));
+                            context.getSource().getPlayerOrException().connection.send(VirtualEntityUtils.createClientboundSetPassengersPacket(shulker, IntList.of(mount)));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundTeleportEntityPacket(mount, PositionMoveRotation.of(new TeleportTransition(null, context.getSource().getPosition(), Vec3.ZERO, 1, 1, false, false, Set.of(), TeleportTransition.DO_NOTHING)), Set.of(), false));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.ARMADILLO, 0, Vec3.ZERO, 0));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("flyflylikeabirdbutuareabirdflyflylikearocketship")
+                        .executes((context) -> {
+
+                            EntityType<?> type = SpawnEggItem.getType(context.getSource().getPlayerOrException().getMainHandItem());
+                            int entityId = VirtualEntityUtils.requestEntityId();
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, context.getSource().getPlayer().getXRot(), context.getSource().getPlayer().getYRot(), type, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundSetEntityDataPacket(entityId, List.of(SynchedEntityData.DataValue.create(EntityData.POSE, Pose.FALL_FLYING))));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundSetEntityDataPacket(entityId, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, (byte) ((1 << EntityData.GLIDING_FLAG_INDEX))))));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("swim1")
+                        .executes((context) -> {
+
+                            EntityType<?> type = SpawnEggItem.getType(context.getSource().getPlayerOrException().getMainHandItem());
+                            int entityId = VirtualEntityUtils.requestEntityId();
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, context.getSource().getPlayer().getXRot(), context.getSource().getPlayer().getYRot(), type, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundSetEntityDataPacket(entityId, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, (byte) ((1 << EntityData.SWIMMING_FLAG_INDEX))))));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("swim2")
+                        .executes((context) -> {
+
+                            EntityType<?> type = SpawnEggItem.getType(context.getSource().getPlayerOrException().getMainHandItem());
+                            int entityId = VirtualEntityUtils.requestEntityId();
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, context.getSource().getPlayer().getXRot(), context.getSource().getPlayer().getYRot(), type, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundSetEntityDataPacket(entityId, List.of(SynchedEntityData.DataValue.create(EntityData.POSE, Pose.SWIMMING))));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("pose")
+                        .executes((context) -> {
+
+                            EntityType<?> type = SpawnEggItem.getType(context.getSource().getPlayerOrException().getMainHandItem());
+                            int entityId = VirtualEntityUtils.requestEntityId();
+                            int p = Integer.parseInt(context.getSource().getPlayerOrException().getMainHandItem().getCustomName().getString());
+                            Pose pose = Pose.values()[p];
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(entityId, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, context.getSource().getPlayer().getXRot(), context.getSource().getPlayer().getYRot(), type, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundSetEntityDataPacket(entityId, List.of(SynchedEntityData.DataValue.create(EntityData.POSE, pose))));
+                            context.getSource().getPlayer().sendSystemMessage(Component.literal(pose.getSerializedName() + "(" + p + ")"));
                             return 1;
                         })
                         .build());
@@ -342,6 +469,20 @@ public class Lib99j implements ModInitializer {
                             Vec3 pos = ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$getCameraWorldPos();
                             ((Lib99jPlayerUtilController) context.getSource().getPlayer()).lib99j$unlockCamera();
                             context.getSource().getPlayer().connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(pos, Vec3.ZERO, 0, 0), Set.of())));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("confignow")
+                        .executes((context) -> {
+                            ((PlayerReconfigurator) context.getSource().getPlayerOrException().connection).lib99j$reconfigurate();
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("noconfig")
+                        .executes((context) -> {
+                            ((PlayerReconfigurator) context.getSource().getPlayerOrException().connection).lib99j$reconfigurate();
                             return 1;
                         })
                         .build());
@@ -382,6 +523,54 @@ public class Lib99j implements ModInitializer {
         PonderBuilder.hotswapExample();
 
         PonderManager.load();
+
+        if(((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).getOrThrow()).debugArgumentOptions) {
+            for (Method declaredMethod : SharedConstantsAccessor.class.getDeclaredMethods()) {
+                try {
+                    Field f = SharedConstants.class.getDeclaredField(declaredMethod.getName());
+
+                    String name = declaredMethod.getName().toLowerCase();
+
+                    if(!name.equals("debug_enabled")) {
+                        debugArgForScreens.put(name, new DebugArg(name, (b) -> {
+                            List<String> config = ((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).getOrThrow()).enabledDebugArgs;
+                            if (b && !config.contains(name)) config.add(name);
+                            else if (!b) config.remove(name);
+
+                            ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).save();
+
+                            try {
+                                declaredMethod.invoke(null, b);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }));
+
+                        if ((Boolean) f.get(null)) {
+                            Lib99j.LOGGER.info("Debug option 1 was enabled through arguments, but Lib99j has a custom handler. Use the in-game F3+F6 to change debug options instead.".replace("1", name));
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            SharedConstantsAccessor.DEBUG_ENABLED(true);
+
+            for (String name : ((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).enabledDebugArgs) {
+                debugArgForScreens.get(name).setter().accept(true);
+            }
+        }
+
         LOGGER.info("Ready to rumble!");
     }
+
+        public static void runOnMainThread(Runnable code) {
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            Minecraft.getInstance().execute(code);
+        } else {
+            Lib99j.getServerOrThrow().execute(code);
+        }
+    }
+
 }

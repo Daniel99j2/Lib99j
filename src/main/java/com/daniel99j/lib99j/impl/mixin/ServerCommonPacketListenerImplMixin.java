@@ -4,8 +4,10 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.impl.BypassPacket;
+import com.daniel99j.lib99j.impl.PlayerReconfigurator;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderMenu;
+import com.mojang.authlib.GameProfile;
 import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import io.netty.channel.ChannelFutureListener;
 import net.minecraft.core.Holder;
@@ -13,6 +15,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ServerboundCustomClickActionPacket;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -38,7 +41,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 @Mixin(ServerCommonPacketListenerImpl.class)
-public abstract class ServerCommonPacketListenerImplMixin {
+public abstract class ServerCommonPacketListenerImplMixin implements PlayerReconfigurator {
     @Shadow public abstract void send(Packet<?> packet, @Nullable ChannelFutureListener channelFutureListener);
 
     @Shadow
@@ -47,6 +50,12 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Shadow
     @Final
     public Connection connection;
+
+    @Shadow
+    protected abstract GameProfile playerProfile();
+
+    @Unique
+    private ArrayList<Packet<?>> heldPackets = new ArrayList<>();
 
     @Inject(method = "handleCustomClickAction", at = @At("TAIL"))
     private void handleCustomPayload(ServerboundCustomClickActionPacket packet, CallbackInfo ci) {
@@ -84,6 +93,14 @@ public abstract class ServerCommonPacketListenerImplMixin {
             }
         }
     }
+    @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;)V", at = @At("HEAD"), cancellable = true, order = 1001)
+    private void holdReconfigPackets(Packet<?> packet, @Nullable ChannelFutureListener listener, CallbackInfo ci) {
+        if(this instanceof ServerPlayerConnection networkHandler && ((PlayerReconfigurator) networkHandler).lib99j$isReconfigurating()) {
+            heldPackets.add(packet);
+            ci.cancel();
+        }
+    }
+
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true, order = 1001)
     private void cancelUnwantedPackets(Packet<?> packet, CallbackInfo ci) {
@@ -94,16 +111,18 @@ public abstract class ServerCommonPacketListenerImplMixin {
             ServerPlayer player = networkHandler.getPlayer();
 
             if(PonderManager.isPondering(player)) {
-                PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
+                GameCommonPacketList.PacketInfo info = GameCommonPacketList.getInfo(packet);
                 //dont send world packets, but update display entities so that vfx still works!
-                if(info != null && info.hasTag(PlayPacketUtils.PacketTag.MANY_USES)) {
+                if(info != null && info.hasTag(PacketTag.MANY_USES)) {
                     if(packet instanceof ClientboundGameEventPacket gameEventPacket) {
                         if(gameEventPacket.getEvent() == ClientboundGameEventPacket.START_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.STOP_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.RAIN_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT || gameEventPacket.getEvent() == ClientboundGameEventPacket.PLAY_ARROW_HIT_SOUND) {
                              ci.cancel();
                             return;
                         }
+                    } else if(packet instanceof ClientboundCustomPayloadPacket) {
+
                     } else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
-                } else if (info != null && info.hasTag(PlayPacketUtils.PacketTag.WORLD) && !info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT) && !info.hasTag(PlayPacketUtils.PacketTag.ENTITY)) {
+                } else if (info != null && info.hasTag(PacketTag.WORLD) && !info.hasTag(PacketTag.PLAYER_CLIENT) && !info.hasTag(PacketTag.ENTITY)) {
                     ci.cancel();
                     return;
                 }
@@ -194,5 +213,12 @@ public abstract class ServerCommonPacketListenerImplMixin {
     @Unique
     private void sendFromThis(Packet<?> packet) {
         ((ServerCommonPacketListenerImpl) (Object) this).send(new BypassPacket(packet));
+    }
+
+    @Override
+    public void lib99j$sendHeldPackets() {
+        for (Packet<?> heldPacket : heldPackets) {
+            this.send(heldPacket, null);
+        }
     }
 }

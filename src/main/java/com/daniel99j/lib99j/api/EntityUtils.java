@@ -1,5 +1,6 @@
 package com.daniel99j.lib99j.api;
 
+import com.daniel99j.djutil.ValueHolder;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.impl.mixin.PlayerListAccessor;

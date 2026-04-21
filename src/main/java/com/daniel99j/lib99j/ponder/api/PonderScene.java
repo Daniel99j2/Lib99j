@@ -5,8 +5,10 @@ import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
+import com.daniel99j.lib99j.impl.mixin.PacketContextImplAccessor;
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.impl.*;
+import eu.pb4.polymer.common.impl.CommonImplPacketKeys;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
@@ -15,6 +17,7 @@ import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.sidebars.api.Sidebar;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.impl.networking.context.PacketContextImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
@@ -29,6 +32,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
 import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.game.*;
@@ -59,6 +63,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
+import xyz.nucleoid.server.translations.impl.ServerTranslations;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -289,17 +294,20 @@ public class PonderScene {
 
             @Override
             public void send(@NonNull Packet<?> packet) {
-                PlayPacketUtils.PacketInfo info = PlayPacketUtils.getInfo(packet);
+                GameCommonPacketList.PacketInfo info = GameCommonPacketList.getInfo(packet);
                 if (info == null || !player1.connection.isAcceptingMessages()) {
                     return;
                 }
-                if(info.hasTag(PlayPacketUtils.PacketTag.MANY_USES)) {
+                if(info.hasTag(PacketTag.MANY_USES)) {
                     if(packet instanceof ClientboundGameEventPacket gameEventPacket) {
                         if(!(gameEventPacket.getEvent() == ClientboundGameEventPacket.START_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.STOP_RAINING || gameEventPacket.getEvent() == ClientboundGameEventPacket.RAIN_LEVEL_CHANGE || gameEventPacket.getEvent() == ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE)) {
                             return;
                         }
-                    } else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
-                } else if (info.hasTag(PlayPacketUtils.PacketTag.PLAYER_CLIENT)) return;
+                    } else if(packet instanceof ClientboundCustomPayloadPacket) {
+                        return;
+                    }
+                    else this.disconnect(Component.literal("Custom handler not setup for packet {}. Check logs and report to Daniel99j (https://modrinth.com/mod/lib99j)".replace("{}", packet.toString())));
+                } else if (info.hasTag(PacketTag.PLAYER_CLIENT)) return;
 
                 //make most sounds infinite distance (except level event based sounds)
                 //unfortunately the attentuation distance doesnt work and I need to change volume
@@ -323,6 +331,16 @@ public class PonderScene {
             }
         };
 
+        Map<Identifier, Object> playerContext = new HashMap<>();
+        ((PacketContextImplAccessor) this.player.connection.getPacketContext()).getMap().forEach((key, value) -> {
+            if(key instanceof PacketContextImpl.KeyImpl<?> key1) playerContext.put(key1.key(), value);
+        });
+        this.packetRedirector.getPacketContext().set(ServerTranslations.LANGUAGE_KEY, ((String) playerContext.get(Identifier.fromNamespaceAndPath("server_translations_api", "lang"))));
+        this.packetRedirector.getPacketContext().set(PacketContextImpl.GAME_PROFILE, this.player.getGameProfile());
+        this.packetRedirector.getPacketContext().set(PacketContextImpl.SERVER_INSTANCE, Lib99j.getServer());
+        this.packetRedirector.getPacketContext().set(PacketContextImpl.REGISTRY_ACCESS, this.player.registryAccess());
+        this.packetRedirector.getPacketContext().set(PacketContextImpl.CONNECTION, this.packetRedirector.connection.connection);
+        this.packetRedirector.getPacketContext().set(CommonImplPacketKeys.HOLDER_LOOKUP, this.player.registryAccess());
         level.addNewPlayer(this.packetRedirector);
 
         this.packetRedirector.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(this.origin.getX()), SectionPos.blockToSectionCoord(this.origin.getZ())));

@@ -26,6 +26,7 @@
     "NumberListEntryAccessor",
     "NumberListEntryAccessor2",
     "NumberListEntryAccessor3",
+    "PacketContextImplAccessor",
     "PlayerListAccessor",
     "PlayerListMixin",
     "PlayerMixin",
@@ -38,6 +39,7 @@
     "ServerGamePacketListenerImplMixin",
     "ServerLevelMixin",
     "ServerPlayerMixin",
+    "SharedConstantsAccessor",
     "SystemLanguageMixin",
     "dev.DogBoneMixin",
     "dev.Vec2StringifierMixin"
@@ -46,6 +48,8 @@
     "defaultRequire": 1
   },
   "client": [
+    "AbstractContainerScreenMixin",
+    "DebugScreenMixin",
     "GoAwayExperimentalWarningMixin",
     "dev.ClientPositionFinderMixin",
     "dev.WavyUiMixin"

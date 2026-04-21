@@ -10,7 +10,7 @@ import java.nio.file.Path;
 public enum ConfigContext {
     CLIENT("client"),
     DEDICATED_SERVER("dedicated_server"),
-    WORLD("world"),
+    LEVEL("level"),
     COMMON("common");
 
     private final String type;
@@ -27,7 +27,7 @@ public enum ConfigContext {
         return switch (this) {
             case CLIENT -> "Client";
             case DEDICATED_SERVER -> "Dedicated Server";
-            case WORLD -> "World";
+            case LEVEL -> "Level";
             case COMMON -> "Common";
         };
     }
@@ -36,7 +36,7 @@ public enum ConfigContext {
         return switch (this) {
             case CLIENT -> FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
             case DEDICATED_SERVER -> FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER || Lib99j.getServer() != null;
-            case WORLD -> Lib99j.getServer() != null;
+            case LEVEL -> Lib99j.getServer() != null;
             case COMMON -> true;
         };
     }
@@ -44,7 +44,7 @@ public enum ConfigContext {
     public Path resolveFolder(String modId) {
         return switch (this) {
             case CLIENT, DEDICATED_SERVER, COMMON -> FabricLoader.getInstance().getConfigDir().resolve(modId);
-            case WORLD -> Lib99j.getServerOrThrow().getWorldPath(LevelResource.ROOT).resolve("config").resolve(modId);
+            case LEVEL -> Lib99j.getServerOrThrow().getWorldPath(LevelResource.ROOT).resolve("config").resolve(modId);
         };
     }
 }

@@ -1,15 +1,21 @@
 package com.daniel99j.lib99j.api;
 
+import com.daniel99j.lib99j.api.config.ConfigContext;
 import com.daniel99j.lib99j.api.config.ConfigManager;
+import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.impl.network.ClientboundLib99jHelloPacket;
+import com.daniel99j.lib99j.impl.network.ClientboundLib99jPonderItemsPacket;
 import com.daniel99j.lib99j.impl.network.ServerboundLib99HelloPacket;
 import com.daniel99j.lib99j.impl.network.ServerboundLib99jInstalledModsPacket;
+import com.daniel99j.lib99j.ponder.api.PonderManager;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -35,6 +41,7 @@ public class ModInstallManager {
     @ApiStatus.Internal
     public static void load() {
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ClientPlayConnectionEvents.JOIN.register((listener, sender, minecraft) -> {
+            if(!((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).allowSyncing) return;
             ClientPlayNetworking.send(new ServerboundLib99HelloPacket());
         });
 
@@ -43,18 +50,28 @@ public class ModInstallManager {
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ServerboundLib99HelloPacket.ID, (payload, context) -> {
+            if(!((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).allowSyncing) return;
             playerModList.remove(context.player().getUUID());
             playerModList.put(context.player().getUUID(), new ArrayList<>());
             ServerPlayNetworking.send(context.player(), new ClientboundLib99jHelloPacket());
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ServerboundLib99jInstalledModsPacket.ID, (payload, context) -> {
+            if(!((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).allowSyncing) return;
             playerModList.get(context.player().getUUID()).addAll(payload.installedMods());
 
             ConfigManager.syncConfigs(context.player());
+
+            List<Identifier> ponderItemIds = new ArrayList<>();
+            PonderManager.itemToBuilders.forEach(((item, _) -> {
+                ponderItemIds.add(BuiltInRegistries.ITEM.getKey(item));
+            }));
+
+            ServerPlayNetworking.send(context.player(), new ClientboundLib99jPonderItemsPacket(ponderItemIds));
         });
 
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) ClientPlayNetworking.registerGlobalReceiver(ClientboundLib99jHelloPacket.ID, (payload, context) -> {
+            if(!((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).allowSyncing) return;
             List<String> installedMods = new ArrayList<>();
             for (String syncedModId : syncedModIds) {
                 if(FabricLoader.getInstance().isModLoaded(syncedModId)) installedMods.add(syncedModId);

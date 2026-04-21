@@ -1,7 +1,7 @@
 package com.daniel99j.lib99j.ponder.api;
 
+import com.daniel99j.djutil.MiscUtils;
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.impl.PonderGuiTextures;

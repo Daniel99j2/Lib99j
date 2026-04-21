@@ -5,6 +5,7 @@ import com.daniel99j.lib99j.api.CommandSourceAccessor;
 import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.daniel99j.lib99j.impl.PlayerReconfigurator;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import com.daniel99j.lib99j.ponder.impl.PonderDevEdits;
@@ -15,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketUtils;
+import net.minecraft.network.protocol.configuration.ConfigurationProtocols;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,9 +40,18 @@ import java.util.List;
 import java.util.Objects;
 
 @Mixin(ServerGamePacketListenerImpl.class)
-public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPacketListenerImpl {
+public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPacketListenerImpl implements PlayerReconfigurator {
     @Shadow
     public ServerPlayer player;
+
+    @Shadow
+    public boolean waitingForSwitchToConfig;
+
+    @Shadow
+    protected abstract void removePlayerFromWorld();
+
+    @Unique
+    private boolean isReconfigurating = false;
 
     public ServerGamePacketListenerImplMixin(MinecraftServer server, Connection connection, CommonListenerCookie clientData) {
         super(server, connection, clientData);
@@ -169,5 +180,21 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
     @Inject(method = "parseCommand", at = @At("TAIL"))
     private void addPacketContext(String command, CallbackInfoReturnable<ParseResults<CommandSourceStack>> cir) {
         ((CommandSourceAccessor) cir.getReturnValue().getContext().getSource()).lib99j$setFromPacket(true);
+    }
+
+
+    @Override
+    public boolean lib99j$isReconfigurating() {
+        return isReconfigurating;
+    }
+
+    @Override
+    public void lib99j$reconfigurate() {
+        this.waitingForSwitchToConfig = true;
+        //this.removePlayerFromWorld();
+        this.send(ClientboundStartConfigurationPacket.INSTANCE);
+        this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
+
+        isReconfigurating = true;
     }
 }

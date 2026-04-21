@@ -1,7 +1,10 @@
 package com.daniel99j.lib99j.api;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.config.ConfigContext;
+import com.daniel99j.lib99j.api.config.ConfigManager;
 import com.daniel99j.lib99j.api.config.ConfigUtils;
+import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.impl.network.ClientboundLib99jSyncConfigOptionPacket;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -62,6 +65,7 @@ public class ServerConfigCopy {
 
 
         ClientPlayNetworking.registerGlobalReceiver(ClientboundLib99jSyncConfigOptionPacket.ID, (payload, context) -> {
+            if(!((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).get()).allowSyncing) return;
             configOptionsCache.clear();
             configOptions.putIfAbsent(payload.modId(), new HashMap<>());
             configOptions.get(payload.modId()).put(payload.name(), payload.value());

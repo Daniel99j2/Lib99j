@@ -29,14 +29,14 @@ public class ConfigManager {
                 serverConfig.reload();
             }
 
-            ConfigHolder<?> saveConfig = config.get(ConfigContext.WORLD);
+            ConfigHolder<?> saveConfig = config.get(ConfigContext.LEVEL);
             if (saveConfig != null) {
                 saveConfig.reload();
             }
         }));
 
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> configs.values().forEach(config -> {
-            config.unload(ConfigContext.WORLD);
+            config.unload(ConfigContext.LEVEL);
             config.unload(ConfigContext.DEDICATED_SERVER);
         }));
 

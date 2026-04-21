@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import eu.pb4.polymer.core.api.block.SimplePolymerBlock;
 import eu.pb4.polymer.core.api.entity.PolymerEntityUtils;
 import eu.pb4.polymer.core.api.item.PolymerBlockItem;
+import eu.pb4.polymer.core.api.item.PolymerSpawnEggItem;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import eu.pb4.polymer.rsm.api.RegistrySyncUtils;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
@@ -20,7 +21,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.StairBlock;
@@ -90,7 +91,7 @@ public class RegUtil {
     }
 
     public static Item registerSpawnEgg(EntityType<?> entityType) {
-        return registerItem(ResourceKey.create(Registries.ITEM, EntityType.getKey(entityType).withSuffix("_spawn_egg")), SpawnEggItem::new, (new Item.Properties()).spawnEgg(entityType));
+        return registerItem(ResourceKey.create(Registries.ITEM, EntityType.getKey(entityType).withSuffix("_spawn_egg")), (p) -> new PolymerSpawnEggItem(Items.CHICKEN_SPAWN_EGG, p), (new Item.Properties()).spawnEgg(entityType));
     }
 
     public static Item registerBlockItem(Block block) {

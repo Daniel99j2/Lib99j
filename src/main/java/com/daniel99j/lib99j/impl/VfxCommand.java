@@ -3,7 +3,6 @@ package com.daniel99j.lib99j.impl;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
-import com.daniel99j.lib99j.api.config.ConfigContext;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -20,7 +19,7 @@ import java.util.Objects;
 
 public class VfxCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        if(!((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).enableLib99jCommands) return;
+        if(!Lib99j.CONFIG.getCommon().enableLib99jCommands) return;
 
         LiteralCommandNode<CommandSourceStack> rootCommand = Commands.literal("vfx")
                 .requires(Permissions.require("lib99j.command.vfx", 2))

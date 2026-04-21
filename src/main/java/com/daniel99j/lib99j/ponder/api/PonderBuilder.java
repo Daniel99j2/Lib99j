@@ -2,8 +2,6 @@ package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.GameProperties;
-import com.daniel99j.lib99j.api.config.ConfigContext;
-import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.WaitInstruction;
@@ -188,7 +186,7 @@ public class PonderBuilder {
 
     protected PonderScene startPonderingFromGoTo(ServerPlayer player, PonderScene from, int goTo) {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
-        if(PonderManager.activeScenes.size()+1 >= ((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).maxConcurrentPonders) {
+        if(PonderManager.activeScenes.size()+1 >= Lib99j.CONFIG.getCommon().maxConcurrentPonders) {
             player.sendSystemMessage(PonderScene.overCapacity());
             return null;
         };

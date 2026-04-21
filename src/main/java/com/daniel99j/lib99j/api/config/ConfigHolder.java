@@ -1,7 +1,7 @@
 package com.daniel99j.lib99j.api.config;
 
+import com.daniel99j.djutil.MiscUtils;
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.MiscUtils;
 import com.daniel99j.lib99j.impl.config.ConfigMinMax;
 import com.google.gson.annotations.SerializedName;
 import net.fabricmc.api.Environment;

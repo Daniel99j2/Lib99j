@@ -2,17 +2,18 @@ package com.daniel99j.lib99j.api.config;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.ModInstallManager;
-import com.daniel99j.lib99j.impl.config.AutomaticConfigScreen;
+import com.daniel99j.lib99j.impl.config.AutomaticDialogInputs;
 import com.daniel99j.lib99j.impl.network.ClientboundLib99jSyncConfigOptionPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.level.ServerPlayer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
 public class ModConfig {
-    private final AutomaticConfigScreen screen = new AutomaticConfigScreen(this);
+    private final AutomaticDialogInputs dialogInputs = new AutomaticDialogInputs(this);
     private final EnumMap<ConfigContext, ConfigHolder<?>> configs = new EnumMap<>(ConfigContext.class);
     private String modId;
     private boolean dirty = false;
@@ -21,15 +22,15 @@ public class ModConfig {
         this(
                 clientConfig == null ? null : new ConfigHolder<A>(ConfigContext.CLIENT, clientConfig),
                 serverConfig == null ? null : new ConfigHolder<B>(ConfigContext.DEDICATED_SERVER, serverConfig),
-                saveConfig == null ? null : new ConfigHolder<C>(ConfigContext.WORLD, saveConfig),
+                saveConfig == null ? null : new ConfigHolder<C>(ConfigContext.LEVEL, saveConfig),
                 commonConfig == null ? null : new ConfigHolder<D>(ConfigContext.COMMON, commonConfig)
         );
     }
 
-    public ModConfig(@Nullable ConfigHolder<?> clientConfig, @Nullable ConfigHolder<?> serverConfig, @Nullable ConfigHolder<?> saveConfig, @Nullable ConfigHolder<?> commonConfig) {
+    public <A, B, C, D> ModConfig(@Nullable ConfigHolder<A> clientConfig, @Nullable ConfigHolder<B> serverConfig, @Nullable ConfigHolder<C> saveConfig, @Nullable ConfigHolder<D> commonConfig) {
         if(clientConfig != null && clientConfig.getContext() != ConfigContext.CLIENT) throw new IllegalStateException("Client configs must have a CLIENT context");
         if(serverConfig != null && serverConfig.getContext() != ConfigContext.DEDICATED_SERVER) throw new IllegalStateException("Server configs must have a DEDICATED_SERVER context");
-        if(saveConfig != null && saveConfig.getContext() != ConfigContext.WORLD) throw new IllegalStateException("World configs must have a WORLD context");
+        if(saveConfig != null && saveConfig.getContext() != ConfigContext.LEVEL) throw new IllegalStateException("World configs must have a LEVEL context");
         if(commonConfig != null && commonConfig.getContext() != ConfigContext.COMMON) throw new IllegalStateException("Common configs must have a COMMON context");
         add(clientConfig);
         add(serverConfig);
@@ -45,8 +46,8 @@ public class ModConfig {
         }
     }
 
-    public AutomaticConfigScreen getScreen() {
-        return screen;
+    public AutomaticDialogInputs getDialogInputs() {
+        return dialogInputs;
     }
 
     public String getModId() {
@@ -107,7 +108,7 @@ public class ModConfig {
         }
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     void setModId(String modId) {
         if (this.modId != null && !this.modId.equals(modId)) {
             throw new IllegalStateException("Config is already bound to mod id " + this.modId);

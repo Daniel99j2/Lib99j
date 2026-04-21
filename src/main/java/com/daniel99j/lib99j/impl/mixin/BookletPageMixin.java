@@ -1,8 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.config.ConfigContext;
-import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.llamalad7.mixinextras.sugar.Local;
 import eu.pb4.booklet.impl.BookletPage;
@@ -19,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BookletPageMixin {
     @Inject(method = "readPage", at = @At(value = "INVOKE", target = "Leu/pb4/booklet/impl/PageParser$BodyBuilder;add(Ljava/lang/StringBuilder;IILeu/pb4/booklet/api/body/AlignedMessage$Align;)V", ordinal = 7))
     private void addPonderEntry(Identifier identifier, String pag1e, CallbackInfoReturnable<BookletPage> cir, @Local(name = "contents") StringBuilder contents, @Local(name = "title") String title) {
-        if(!((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).bookletPonderAdditions) return;
+        if(!Lib99j.CONFIG.getCommon().bookletPonderAdditions) return;
 
         if(title.contains("<item '")) {
             Identifier id = Identifier.parse(title.replace("<item '", "").replace("'>", ""));

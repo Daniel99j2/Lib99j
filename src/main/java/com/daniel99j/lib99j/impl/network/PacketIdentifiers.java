@@ -10,4 +10,6 @@ public class PacketIdentifiers {
     public static final Identifier SERVERBOUND_LIB99J_INSTALLED_MODS = Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "serverbound_installed_mods");
 
     public static final Identifier CLIENTBOUND_CONFIG_OPTION_SYNC = Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "clientbound_sync_config");
+
+    public static final Identifier CLIENTBOUND_PONDER_ITEMS = Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "clientbound_ponder_items");
 }

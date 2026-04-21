@@ -122,6 +122,7 @@ public class PonderManager {
     @Deprecated
     public static boolean registerIdToBuilderNoThrow(PonderBuilder builder) {
         if(frozen) throw new IllegalStateException("Ponder builder {} was registered after load".replace("{}", builder.id.toString()));
+        if(idToBuilder.containsKey(builder.id) && idToBuilder.get(builder.id).equals(builder)) return true; //if its already registered allow it so that multiple items can use a single ponder
         if(idToBuilder.containsKey(builder.id)) return false;
         idToBuilder.put(builder.id, builder);
         builder.registered = true;

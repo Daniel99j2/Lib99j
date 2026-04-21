@@ -1,8 +1,6 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.config.ConfigContext;
-import com.daniel99j.lib99j.impl.Lib99jCommonConfig;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polydex.api.v1.recipe.PolydexEntry;
 import eu.pb4.polydex.api.v1.recipe.PolydexPage;
@@ -47,7 +45,7 @@ public abstract class PolydexPageMixin extends ExtendedGui {
 
     @Inject(method = "setupNavigator", at = @At("TAIL"))
     private void lib99j$addPonderButton(CallbackInfo ci) {
-        if(!((Lib99jCommonConfig) Lib99j.CONFIG.getOrThrow(ConfigContext.COMMON).getOrThrow()).polydexPonderAdditions) return;
+        if(!Lib99j.CONFIG.getCommon().polydexPonderAdditions) return;
 
         if(this.entry != null) {
             Item item = this.pages.get(this.getPage()).entryIcon(this.entry, this.getPlayer()).getItem();

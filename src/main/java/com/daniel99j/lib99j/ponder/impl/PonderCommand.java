@@ -86,7 +86,7 @@ public class PonderCommand {
                                 context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.item_id_not_found", BuiltInRegistries.ITEM.getKey(currentItem).toString(), id.toString()));
                                 return 0;
                             }
-                            context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), true);
+                            context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), false);
                             builder.startPondering(context.getSource().getPlayerOrException());
                             return 1;
                         })
@@ -126,7 +126,7 @@ public class PonderCommand {
                         return 0;
                     }
                     //send before so it isn't blocked by packet redirection
-                    context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), true);
+                    context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), false);
                     builder.startPondering(context.getSource().getPlayerOrException());
                     return 1;
                 }))))
@@ -139,7 +139,7 @@ public class PonderCommand {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
                 currentScene.setMode(PonderSceneMode.PAUSED);
-                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.paused"), true);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.paused"), false);
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
@@ -150,7 +150,7 @@ public class PonderCommand {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
                 currentScene.setMode(PonderSceneMode.PLAYING);
-                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.unpaused"), true);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.unpaused"), false);
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
@@ -161,7 +161,7 @@ public class PonderCommand {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
                 currentScene.stopPonderingSafely();
-                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.exited"), true);
+                context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.scene.exited"), false);
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
@@ -179,7 +179,7 @@ public class PonderCommand {
                     new PonderGuiCreator(currentScene.player, currentScene.builder, currentScene, currentScene.getStep());
                 };
                 context.getSource().sendSuccess(() -> Component.literal("Entered UI creator mode. Open the menu [L] to start editing"), true);
-                context.getSource().sendSuccess(() -> Component.literal("If Lib99j is running on your client, hold [LEFT-SHIFT] to see the position you are hovering over whilst in the menu [L], then use [CTRL-C] to copy the position").withStyle(ChatFormatting.BLUE), true);
+                context.getSource().sendSuccess(() -> Component.literal("If Lib99j is running on your client, hold [LEFT-SHIFT] to see the position you are hovering over whilst in the menu [L], then use [CTRL-C] to copy the position").withStyle(ChatFormatting.BLUE), false);
                 return 1;
             }
             context.getSource().sendFailure(Component.translatable("commands.lib99j.ponder.scene.no_scene"));
@@ -192,17 +192,17 @@ public class PonderCommand {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());
                 if (currentScene.ponderDevEdits.blockEdits.isEmpty()) {
-                    context.getSource().sendSuccess(() -> Component.literal("You have no block edits. Use /ponder dev toggle_free_movement and place a block down to add to the list"), true);
+                    context.getSource().sendSuccess(() -> Component.literal("You have no block edits. Use /ponder dev toggle_free_movement and place a block down to add to the list"), false);
                     return 1;
                 }
-                context.getSource().sendSuccess(() -> Component.literal("Current edits:").withColor(ChatFormatting.GRAY.getColor()), true);
+                context.getSource().sendSuccess(() -> Component.literal("Current edits:").withColor(ChatFormatting.GRAY.getColor()), false);
                 currentScene.ponderDevEdits.blockEdits.forEach((blockEdit -> {
                     String type = blockEdit.type() == PonderDevEdits.EditType.ADD ? "+ " : blockEdit.type() == PonderDevEdits.EditType.REMOVE ? "- " : "= ";
                     int colour = blockEdit.type() == PonderDevEdits.EditType.ADD ? ChatFormatting.GREEN.getColor() : blockEdit.type() == PonderDevEdits.EditType.REMOVE ? ChatFormatting.RED.getColor() : ChatFormatting.AQUA.getColor();
 
                     context.getSource().sendSuccess(() -> Component.literal(type).withStyle(Style.EMPTY.withClickEvent(
                             new ClickEvent.CopyToClipboard("scene.setBlockAndUpdate(new BlockPos(" + blockEdit.pos().getX() + ", " + blockEdit.pos().getY() + ", " + blockEdit.pos().getZ() + "), ModBlocks." + BuiltInRegistries.BLOCK.getKey(blockEdit.block()).getPath().toUpperCase() + ".defaultBlockState())")
-                    ).withColor(colour).withHoverEvent(new HoverEvent.ShowText(Component.literal("[Click to copy]")))).append(blockEdit.block().getName()).append(" at ").append(blockEdit.pos().toShortString()), true);
+                    ).withColor(colour).withHoverEvent(new HoverEvent.ShowText(Component.literal("[Click to copy]")))).append(blockEdit.block().getName()).append(" at ").append(blockEdit.pos().toShortString()), false);
                 }));
                 return 1;
             }
@@ -286,7 +286,7 @@ public class PonderCommand {
             return 0;
         }
         //send before so it isn't blocked by packet redirection
-        context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), true);
+        context.getSource().sendSuccess(() -> Component.translatable("commands.lib99j.ponder.pondering_from_id", id.toString()), false);
 
         //if you try and ponder from a command block it causes a problem!
         try {

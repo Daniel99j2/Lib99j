@@ -51,5 +51,11 @@
   "config.lib99j.context.category": "%1$s: %2$s",
   "commands.lib99j.config.force_reset": "Use '/lib99j config <mod_id> reset --force-reset' to confirm reset",
   "commands.lib99j.config.reset": "Reset config",
-  "commands.lib99j.config.reload": "Reloaded config"
+  "commands.lib99j.config.reload": "Reloaded config",
+  "lib99j.debug.debug_args": "Debug args",
+  "debug.entry.on": "On",
+  "debug.entry.off": "Off",
+  "config.lib99j.debug_argument_options": "Debug argument toggles",
+  "ponder.hold": "Hold [%1$s] to ponder",
+  "key.lib99j.ponder": "Ponder about item"
 }

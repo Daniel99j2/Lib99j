@@ -29,6 +29,9 @@ public class Lib99jMixinPlugin implements IMixinConfigPlugin {
         if(targetClassName.toLowerCase().contains("booklet")) {
             return FabricLoader.getInstance().isModLoaded("booklet");
         }
+        if(targetClassName.toLowerCase().contains("clothconfig2")) {
+            return FabricLoader.getInstance().isModLoaded("cloth-config");
+        }
         if(mixinClassName.contains("dev")) {
             return Lib99j.isDevelopmentEnvironment;
         }

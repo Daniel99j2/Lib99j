@@ -10,8 +10,14 @@ public class PonderHotbarGui extends HotbarGui {
 
     public PonderHotbarGui(ServerPlayer player, PonderScene scene) {
         super(player);
-        setSelectedSlot(4);
         this.scene = scene;
+    }
+
+    @Override
+    public boolean open() {
+        if(!super.open()) return false;
+        this.setSelectedSlot(4);
+        return true;
     }
 
     @Override

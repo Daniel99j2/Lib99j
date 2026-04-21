@@ -88,7 +88,7 @@ public class ModConfigDialog extends ServerDialog {
 
         MutableComponent contextPicker = Component.empty();
 
-        List<Input> inputs = config.getScreen().buildDialogInputs(context);
+        List<Input> inputs = config.getDialogInputs().buildDialogInputs(context);
 
         ModConfigDialog dialog = new ModConfigDialog(player, inputs, new ArrayList<>(), config);
 

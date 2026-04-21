@@ -3,8 +3,17 @@ package com.daniel99j.lib99j.impl;
 import com.daniel99j.lib99j.api.config.ConfigEntry;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
+
 @SuppressWarnings("ALL")
 public class Lib99jCommonConfig {
+    @ConfigEntry(requiresRestart = true)
+    @SerializedName("debug_argument_options")
+    public boolean debugArgumentOptions = false;
+
+    @ConfigEntry(show = false)
+    public ArrayList<String> enabledDebugArgs = new ArrayList<>();
+
     @ConfigEntry(show = false)
     public boolean allowSyncing = true;
 
@@ -24,4 +33,8 @@ public class Lib99jCommonConfig {
     @SerializedName("polydex_ponder_additions")
     @ConfigEntry
     public boolean polydexPonderAdditions = true;
+
+    @SerializedName("easy_ponder")
+    @ConfigEntry(sync = true)
+    public boolean easyPonder = true;
 }

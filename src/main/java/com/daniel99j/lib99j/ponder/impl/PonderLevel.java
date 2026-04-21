@@ -163,7 +163,7 @@ public class PonderLevel extends ServerLevel {
     public boolean setBlock(BlockPos blockPos, BlockState blockState, @Block.UpdateFlags int i, int j) {
         BlockPos newPos = newPos(blockPos);
         if (!isValidPos(newPos, false)) {
-            if(Lib99j.isDevelopmentEnvironment) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
+            if(Lib99j.isDevelopmentEnvironment && !this.getBlockState(blockPos).equals(blockState)) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
             return false;
         };
         return super.setBlock(newPos, blockState, i, j);

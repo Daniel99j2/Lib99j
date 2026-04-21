@@ -38,7 +38,12 @@ public class Lib99jCommand {
                                 })
                                 .executes(Lib99jCommand::modConfig)
                         .then(Commands.literal("reload").executes(Lib99jCommand::reloadModConfig))
-                        .then(Commands.literal("reset").then(Commands.argument("confirmation", StringArgumentType.string()).executes(Lib99jCommand::resetModConfig))
+                        .then(Commands.literal("reset")
+                                .executes((context -> {
+                                    context.getSource().sendFailure(Component.translatable("commands.lib99j.config.force_reset"));
+                                    return 1;
+                                }))
+                                .then(Commands.argument("confirmation", StringArgumentType.string()).executes(Lib99jCommand::resetModConfig))
                 )))
                 .build();
 

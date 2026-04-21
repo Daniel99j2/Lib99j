@@ -22,4 +22,6 @@ public @interface ConfigEntry {
     ConfigDisplayType displayType() default ConfigDisplayType.AUTO;
 
     boolean requiresRestart() default false;
+
+    boolean save() default true;
 }

@@ -1,21 +1,6 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
-	id "com.modrinth.minotaur" version "2.+"
-}
-
-modrinth {
-	token = System.getenv("MODRINTH_TOKEN")
-	projectId = "lib99j"
-	versionNumber = project.mod_version
-	versionType = "release"
-	uploadFile = jar
-	gameVersions = ["${project.minecraft_version}"]
-	loaders = ["fabric","quilt"]
-	dependencies {
-		required.project "fabric-api"
-		embedded.project "polymer"
-	}
 }
 
 version = project.mod_version
@@ -53,6 +38,8 @@ repositories {
 		name = "Terraformers"
 		url = "https://maven.terraformersmc.com/"
 	}
+
+	maven { url = 'https://dj.ucc.asn.au/maven/' }
 }
 
 fabricApi {
@@ -69,6 +56,8 @@ dependencies {
 
 	implementation include("me.lucko:fabric-permissions-api:0.7.0")
 
+	implementation include("com.daniel99j:djutil:1.1")
+
 	implementation include ("eu.pb4:polymer-autohost:${project.polymer_version}")
 	implementation include ("eu.pb4:polymer-core:${polymer_version}")
 	implementation include ("eu.pb4:polymer-blocks:${polymer_version}")
@@ -78,14 +67,13 @@ dependencies {
 	implementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
 	implementation include("eu.pb4:map-canvas-api:0.8.0+26.1")
 	implementation include("eu.pb4:sidebar-api:0.6.0+26.1")
-	implementation include("eu.pb4:sgui:2.0.0-beta.2+26.1")
-	implementation include("eu.pb4:factorytools:0.10.0-pre.2+26.1")
-	implementation include("eu.pb4:common-protection-api:1.0.0")
-	implementation include("eu.pb4:placeholder-api:2.8.2+1.21.10")
+	implementation include("eu.pb4:sgui:2.0.0+26.1")
+	implementation include("eu.pb4:factorytools:0.10.0+26.1")
+	implementation include("eu.pb4:placeholder-api:3.0.0+26.1")
 
-	implementation include("me.shedaniel.cloth:cloth-config-fabric:26.1.154")
+	compileOnly include("me.shedaniel.cloth:cloth-config-fabric:26.1.154")
 
-	implementation include("com.terraformersmc:modmenu:18.0.0-alpha.8")
+	compileOnly include("com.terraformersmc:modmenu:18.0.0-alpha.8")
 
 	compileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
 
@@ -125,7 +113,6 @@ jar {
 	}
 }
 
-// configure the maven publication
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
@@ -135,11 +122,30 @@ publishing {
 		}
 	}
 
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
 	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
+		maven {
+			name = "UccMaven"
+			url = uri("sftp://ssh.ucc.asn.au:22/home/ucc/dj/public-html/maven/")
+			credentials {
+				username = "dj"
+				password = System.getenv("UCC_SSH_PASSWORD")
+			}
+		}
 	}
 }
+
+tasks.register('bumpVersion') {
+	doFirst {
+		def scanner = new Scanner(System.in)
+		logger.lifecycle("====================================================")
+		logger.lifecycle("> Have you changed the version???? Current: '${project.version}'")
+		logger.lifecycle("> Y for yes, else no")
+		def input = scanner.nextLine().trim()
+		if (!input.toLowerCase().equals("y")) {
+			throw new IllegalStateException("Please update version");
+		}
+		logger.lifecycle("====================================================")
+	}
+}
+
+build.dependsOn(bumpVersion)

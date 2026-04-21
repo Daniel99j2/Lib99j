@@ -1,5 +1,9 @@
 package com.daniel99j.lib99j.api;
 
+import com.daniel99j.lib99j.Lib99j;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.resources.Identifier;
@@ -44,7 +48,7 @@ public class RunCodeClickEvent {
 
     public void run(Optional<Tag> tag) {
         if(!disabled && allowedToRun.get()) {
-            MiscUtils.runOnMainThread(() -> {
+            runOnMainThread(() -> {
                 if (allowedToRun.get()) {
                     this.code.accept(tag);
                 }
@@ -73,5 +77,13 @@ public class RunCodeClickEvent {
 
     public boolean isDisabled() {
         return disabled;
+    }
+
+    private static void runOnMainThread(Runnable code) {
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            Minecraft.getInstance().execute(code);
+        } else {
+            Lib99j.getServerOrThrow().execute(code);
+        }
     }
 }

@@ -38,6 +38,10 @@ import java.util.List;
 
 @ApiStatus.Internal
 public class TestingElements {
+    public static final Item TESTITEM = RegUtil.registerItem(
+            "test_item"
+    );
+
     public static final Block TEST = RegUtil.registerBlock(
             "test_block",
             TestBlock::new,
@@ -290,5 +294,7 @@ public class TestingElements {
 
     public static final Item TEST_BLOCKITEM = RegUtil.registerBlockItem(TEST);
 
-    public static void init() {}
+    public static void init() {
+        PonderManager.registerItemToBuilder(TESTITEM, TEST_PONDER);
+    }
 }
