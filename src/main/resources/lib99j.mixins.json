@@ -19,6 +19,7 @@
     "FieldBuilderMixin",
     "FieldEntryMixin",
     "GoalSelectorAccessor",
+    "ItemStackMixin",
     "LanguageReaderMixin",
     "LevelChunkMixin",
     "LivingEntityMixin",
@@ -49,6 +50,8 @@
   },
   "client": [
     "AbstractContainerScreenMixin",
+    "CreativeInventoryScreenAccessor",
+    "CreativeSlotMixin",
     "DebugScreenMixin",
     "GoAwayExperimentalWarningMixin",
     "dev.ClientPositionFinderMixin",

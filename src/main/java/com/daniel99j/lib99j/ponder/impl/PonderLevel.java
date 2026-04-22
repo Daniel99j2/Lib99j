@@ -106,9 +106,10 @@ public class PonderLevel extends ServerLevel {
         boolean old = this.scene.canEscapeBounds;
         this.scene.canEscapeBounds = true;
 
-        for (int x = start.getX(); x <= end.getX(); x++) {
-            for (int y = start.getY(); y <= end.getY(); y++) {
-                for (int z = start.getZ(); z <= end.getZ(); z++) {
+        //y then z then x so it is nicer in animated rebuild
+        for (int y = start.getY(); y <= end.getY(); y++) {
+            for (int z = start.getZ(); z <= end.getZ(); z++) {
+                for (int x = start.getX(); x <= end.getX(); x++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (!skipAllUpdates) setBlockAndUpdate(pos, blockState);
                     else {
@@ -166,6 +167,10 @@ public class PonderLevel extends ServerLevel {
             if(Lib99j.isDevelopmentEnvironment && !this.getBlockState(blockPos).equals(blockState)) Lib99j.LOGGER.warn("Tried to set block outside scene at {}: {}", blockPos, blockState);
             return false;
         };
+        if(scene.animatedRebuildChanges != null) {
+            scene.animatedRebuildChanges.add(new AnimatedRebuildChange(blockPos, blockState, i, j));
+            return true;
+        }
         return super.setBlock(newPos, blockState, i, j);
     }
 

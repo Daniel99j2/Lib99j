@@ -12,6 +12,7 @@ import eu.pb4.polymer.common.impl.CommonImplPacketKeys;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
@@ -36,6 +37,7 @@ import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
 import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
 import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ClientInformation;
@@ -122,6 +124,8 @@ public class PonderScene {
     private int time;
     @ApiStatus.Internal
     public Runnable runOnceDone = null;
+    @ApiStatus.Internal
+    public ArrayList<AnimatedRebuildChange> animatedRebuildChanges = null;
 
     /**
      * Options for developers who want finer control over their ponder scenes (eg, an intro to a minigame might be unskippable)
@@ -560,6 +564,25 @@ public class PonderScene {
 
         updateTickStatus();
         updateTitleBar();
+
+        if(this.mode.equals(PonderSceneMode.DEV_EDITING)) {
+            Vec3 pos = this.identifyPos;
+            double yawRad = Math.toRadians(this.identifyYaw);
+            double pitchRad = Math.toRadians(this.identifyPitch);
+
+            double x = -Math.sin(yawRad) * Math.cos(pitchRad);
+            double y = -Math.sin(pitchRad);
+            double z = Math.cos(yawRad) * Math.cos(pitchRad);
+
+            Vec3 accelerationVector = new Vec3(x, y, z).normalize().scale(3);
+
+            pos = pos.add(accelerationVector);
+
+            Vec3 pos1 = BlockPos.containing(pos).getCenter();
+
+            this.player.connection.send(new ClientboundEntityPositionSyncPacket(-8048054, new PositionMoveRotation(pos1.subtract(0, 0.2f, 0), Vec3.ZERO, 0, 0), false));
+            this.player.connection.send(new ClientboundSetEntityDataPacket(-8048054, List.of(SynchedEntityData.DataValue.create(EntityData.CUSTOM_NAME, Optional.of(Component.literal(pos1.subtract(this.origin.getBottomCenter().add(0, 0.5f, 0)).toString()))), SynchedEntityData.DataValue.create(EntityData.NAME_VISIBLE, true))));
+        }
     }
 
     private void updateTitleBar() {
@@ -571,7 +594,7 @@ public class PonderScene {
 
             float max = 6;
             Vec3 vec3 = this.identifyPos;
-            Vec3 vec32 =  this.packetRedirector.calculateViewVector(this.identifyYaw, this.identifyPitch);
+            Vec3 vec32 =  this.packetRedirector.calculateViewVector(this.identifyPitch, this.identifyYaw);
             Vec3 vec33 = vec3.add(vec32.x * max, vec32.y * max, vec32.z * max);
             HitResult result = this.level.clip(new ClipContext(vec3, vec33, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, this.packetRedirector));
 
@@ -876,7 +899,7 @@ public class PonderScene {
 
         if(this.packetRedirector.connection == null) return;
 
-        if (this.mode.isPaused()) this.packetRedirector.connection.send(new ClientboundTickingStatePacket(20, true));
+        if (this.mode.isPaused() && !this.mode.equals(PonderSceneMode.DEV_EDITING)) this.packetRedirector.connection.send(new ClientboundTickingStatePacket(20, true));
         else if (this.stepFFTo != -1) this.packetRedirector.connection.send(new ClientboundTickingStatePacket(1000, true));
         else this.packetRedirector.connection.send(new ClientboundTickingStatePacket(20, false));
     }
@@ -911,6 +934,13 @@ public class PonderScene {
         }
         if(!oldMode.locksHotbar() && newMode.locksHotbar()) {
             this.hotbarGui.open();
+        }
+
+        if(!oldMode.equals(PonderSceneMode.DEV_EDITING) && newMode.equals(PonderSceneMode.DEV_EDITING)) {
+            this.player.connection.send(new ClientboundAddEntityPacket(-8048054, UUID.randomUUID(), 0, 0, 0, 0, 0, EntityType.BEE, 0, Vec3.ZERO, 0));
+        }
+        if(oldMode.equals(PonderSceneMode.DEV_EDITING) && !newMode.equals(PonderSceneMode.DEV_EDITING)) {
+            this.player.connection.send(new ClientboundRemoveEntitiesPacket(-8048054));
         }
     }
 

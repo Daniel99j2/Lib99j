@@ -46,8 +46,8 @@ public class PonderManager {
         VFXUtils.registerCameraLockHandler(Identifier.fromNamespaceAndPath("ponder", "ponder_lock"), ((player, packet) -> {
             if (PonderManager.isPondering(player)) {
                 if(packet.hasPosition()) PonderManager.activeScenes.get(player).identifyPos = new Vec3(packet.getX(0), packet.getY(0)+player.getEyeHeight(), packet.getZ(0));
-                if(packet.hasRotation()) PonderManager.activeScenes.get(player).identifyYaw = packet.getXRot(0);
-                if(packet.hasRotation()) PonderManager.activeScenes.get(player).identifyPitch = packet.getYRot(0);
+                if(packet.hasRotation()) PonderManager.activeScenes.get(player).identifyPitch = packet.getXRot(0);
+                if(packet.hasRotation()) PonderManager.activeScenes.get(player).identifyYaw = packet.getYRot(0);
 
             }
         }));

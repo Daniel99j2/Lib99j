@@ -45,3 +45,5 @@ accessible class net/minecraft/network/protocol/game/ClientboundBossEventPacket$
 accessible field net/minecraft/server/network/ServerGamePacketListenerImpl waitingForSwitchToConfig Z
 accessible field net/minecraft/core/component/DataComponentPatch$Builder map Lit/unimi/dsi/fastutil/objects/Reference2ObjectMap;
 accessible class net/minecraft/client/gui/screens/debug/DebugOptionsScreen$CategoryEntry
+accessible class net/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen$CustomCreativeSlot
+accessible method net/minecraft/world/item/CreativeModeTabs buildAllTabContents (Lnet/minecraft/world/item/CreativeModeTab$ItemDisplayParameters;)V

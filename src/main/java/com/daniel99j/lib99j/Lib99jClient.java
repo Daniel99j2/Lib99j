@@ -22,10 +22,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.CustomData;
@@ -45,6 +47,7 @@ public class Lib99jClient implements ClientModInitializer {
     private static int ponderHoldAmount = 0;
     private static Identifier hoveredPonderItem = null;
     private static final List<Identifier> ponderItems = new ArrayList<>();
+    public static final List<ItemStack> storedItems = new ArrayList<>();
     public static KeyMapping ponderKey;
     private static boolean ponderKeyWasHeld = false;
 
@@ -64,6 +67,13 @@ public class Lib99jClient implements ClientModInitializer {
                     .title(Component.literal("Item Models"))
                     .build()
             );
+
+            PolymerCreativeModeTabUtils.registerPolymerCreativeModeTab(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "storage"), CreativeModeTab.builder(CreativeModeTab.Row.BOTTOM, -1)
+                    .icon(Items.BUNDLE::getDefaultInstance)
+                    .title(Component.literal("Stored items"))
+                    .build()
+            );
+
 
             PolymerCreativeModeTabUtils.registerPolymerCreativeModeTab(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "blocks"), CreativeModeTab.builder(CreativeModeTab.Row.BOTTOM, -1)
                     .icon(Items.TEST_INSTANCE_BLOCK::getDefaultInstance)
@@ -123,6 +133,16 @@ public class Lib99jClient implements ClientModInitializer {
                     i.set(DataComponents.ITEM_NAME, Component.literal(id.toString()).withStyle(ChatFormatting.YELLOW));
                     entries.accept(i, CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
                 });
+            });
+
+            CreativeModeTabEvents.modifyOutputEvent(ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(), Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "storage"))).register(entries -> {
+                ItemStack reload = Items.COMPASS.getDefaultInstance();
+                reload.set(DataComponents.CREATIVE_SLOT_LOCK, Unit.INSTANCE);
+                reload.set(DataComponents.ITEM_NAME, Component.literal("Reload list"));
+                CompoundTag tag = new CompoundTag();
+                tag.putBoolean("lib99j$reloadStorage", true);
+                reload.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+                entries.accept(reload);
             });
         }
 
@@ -188,5 +208,11 @@ public class Lib99jClient implements ClientModInitializer {
             ponderKeyWasHeld = true;
             ponderHoldAmount++;
         }
+    }
+
+    public static void addItem(ItemStack stack) {
+        if(stack.isEmpty() || storedItems.contains(stack) || stack.getComponentsPatch().entrySet().isEmpty()) return;
+        if(storedItems.size() > 100) storedItems.removeFirst();
+        storedItems.add(stack);
     }
 }

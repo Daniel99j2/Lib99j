@@ -123,6 +123,24 @@ public class TestingElements {
 
     public static final PonderBuilder TEST_VANILLA = PonderManager.registerBuilder(PonderBuilder.create(Identifier.withDefaultNamespace("icecream"), new ItemStackTemplate(Items.EXPOSED_CHISELED_COPPER), Component.literal("Vanilla"), Component.empty()).waitFor(10).finishStep().build());
 
+    public static final PonderBuilder ANIMATED_REBUILD = PonderManager.registerItemToBuilder(Items.STICK,
+            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "animated_rebuild"), new ItemStackTemplate(Items.STICK), Component.literal("Animated rebuild"), Component.literal("")).size(5, 5, 5)
+                    .instruction(new BeginAnimatedRebuildInstruction())
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(2, 0, 2), Blocks.TNT.defaultBlockState());
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(1, 3, 1), Blocks.FARMLAND.defaultBlockState());
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(0, 0, 0), Blocks.VAULT.defaultBlockState());
+                        scene.getLevel().fillBlocks(BlockPos.ZERO, new BlockPos(4, 4, 4), Blocks.GLASS.defaultBlockState(), false);
+                    }))
+                    .instruction(new AnimatedRebuildInstruction(5, 126))
+                    .instruction(new ExecuteCodeInstruction((scene) -> {
+                        scene.getLevel().setBlockAndUpdate(new BlockPos(3, 0, 2), Blocks.REDSTONE_TORCH.defaultBlockState());
+                    }))
+                    .waitFor(6)
+                    .finishStep()
+                    .build()
+    );
+
     public static final PonderBuilder TEST_ITEM_PONDER = PonderManager.registerItemToBuilder(Items.TNT,
             PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "tnt_explodes"), new ItemStackTemplate(Items.TNT), Component.literal("TNT explosions"), Component.literal("When TNT is lit and not in water, after a short delay it explodes!")).size(5, 5, 5).defaultBiome(Biomes.BADLANDS).floorBlocks(Blocks.TERRACOTTA.defaultBlockState(), Blocks.TERRACOTTA.defaultBlockState())
                     .instruction(new ExecuteCodeInstruction((scene) -> {

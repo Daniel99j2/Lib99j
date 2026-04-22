@@ -12,4 +12,8 @@ public class Lib99jClientConfig {
     @ConfigEntry(requiresRestart = true)
     @SerializedName("extra_item_groups")
     public boolean extraItemGroups = false;
+
+    @ConfigEntry
+    @SerializedName("store_items_from_packets")
+    public boolean storeItems = false;
 }
