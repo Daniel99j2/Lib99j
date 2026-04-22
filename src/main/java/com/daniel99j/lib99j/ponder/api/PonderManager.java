@@ -2,8 +2,11 @@ package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.djutil.SupplyingEvent;
 import com.daniel99j.lib99j.Lib99j;
-import com.daniel99j.lib99j.api.GameProperties;
+import com.daniel99j.lib99j.api.CustomEvents;
+import com.daniel99j.lib99j.api.ModInstallManager;
 import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.impl.network.ClientboundLib99jPonderItemsPacket;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +47,6 @@ public class PonderManager {
 
     @ApiStatus.Internal
     public static void load() {
-        if(!GameProperties.isPonderEnabled()) return;
         VFXUtils.registerCameraLockHandler(Identifier.fromNamespaceAndPath("ponder", "ponder_lock"), ((player, packet) -> {
             if (PonderManager.isPondering(player)) {
                 if(packet.hasPosition()) PonderManager.activeScenes.get(player).identifyPos = new Vec3(packet.getX(0), packet.getY(0)+player.getEyeHeight(), packet.getZ(0));
@@ -53,7 +56,7 @@ public class PonderManager {
             }
         }));
 
-        reload();
+        CustomEvents.GAME_LOADED.register(PonderManager::reload);
     }
 
     public static void reload() {
@@ -74,6 +77,19 @@ public class PonderManager {
             }
         });
         isLoading = false;
+
+        if(Lib99j.getServer() != null) {
+            for (ServerPlayer player : Lib99j.getServerOrThrow().getPlayerList().players) {
+                if(ModInstallManager.isInstalled(Lib99j.MOD_ID, player)) {
+                    List<Identifier> ponderItemIds = new ArrayList<>();
+                    PonderManager.itemToBuilders.forEach(((item, _) -> {
+                        ponderItemIds.add(BuiltInRegistries.ITEM.getKey(item));
+                    }));
+
+                    ServerPlayNetworking.send(player, new ClientboundLib99jPonderItemsPacket(ponderItemIds));
+                }
+            }
+        }
     }
 
     @ApiStatus.Internal
