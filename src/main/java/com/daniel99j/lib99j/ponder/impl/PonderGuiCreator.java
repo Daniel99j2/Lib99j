@@ -7,7 +7,6 @@ import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderCoordUtil;
-import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
@@ -37,12 +36,12 @@ import java.util.List;
 import java.util.Optional;
 
 public class PonderGuiCreator extends PonderScene {
-    public static final PonderBuilder PONDER_GUI_CREATOR_BUILDER = PonderManager.registerBuilder(
-            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j", "ponder_gui_creator"), new ItemStackTemplate(Items.BARRIER), Component.literal("Ponder GUI Creator"), Component.literal("Ponder GUI Creator")).size(5, 5, 5).hideFromCommands()
-                    .waitFor(1000000)
-                    .finishStep()
-                    .build()
-    );
+//    public static final PonderBuilder PONDER_GUI_CREATOR_BUILDER = PonderManager.registerBuilder(
+//            PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j", "ponder_gui_creator"), new ItemStackTemplate(Items.BARRIER), Component.literal("Ponder GUI Creator"), Component.literal("Ponder GUI Creator")).size(5, 5, 5).hideFromCommands()
+//                    .waitFor(1000000)
+//                    .finishStep()
+//                    .build()
+//    );
 
     private final ItemDisplayElement screenSizeDisplay;
 

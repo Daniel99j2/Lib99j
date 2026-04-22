@@ -2,14 +2,11 @@ package com.daniel99j.lib99j.ponder.api;
 
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.GameProperties;
-import com.daniel99j.lib99j.ponder.api.instruction.ExecuteCodeInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.api.instruction.WaitInstruction;
 import com.daniel99j.lib99j.ponder.impl.PonderLevel;
 import com.daniel99j.lib99j.ponder.impl.PonderStep;
 import com.daniel99j.lib99j.testmod.TestingElements;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -19,7 +16,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
@@ -31,7 +27,6 @@ import java.util.ArrayList;
 /**
  * The ponder builder
  * <p>See {@link TestingElements} for a simple example of how to make one</p>
- * <p>Whilst developing a ponder scene, it is recommended to use something like {@link PonderBuilder#hotswapExample()} to allow for hotswapping. Note that non-registered builders throw an exception when opening the menu</p>
  * <p>Extra info:</p>
  * <p>1. The scene is NOT at 0,0,0. Use {@link PonderScene#getOrigin()} to find the origin point. Some common methods like {@link PonderLevel#getBlockState(BlockPos)} or {@link PonderLevel#addFreshEntity(Entity)} auto-convert, so usage varies (see {@link PonderLevel} for method overrides)</p>
  * <p>2. Scenes create a new world every time that it starts</p>
@@ -205,7 +200,6 @@ public class PonderBuilder {
 
     public ArrayList<Identifier> getGroups() {
         if(!this.done) throw new IllegalStateException("PonderBuilder has not been built");
-        if(!PonderManager.frozen) throw new IllegalStateException("Ponder groups have not been finalized");
         return groups;
     }
 
@@ -220,32 +214,5 @@ public class PonderBuilder {
 
     public boolean shouldHideFromCommands() {
         return hideFromCommands;
-    }
-
-    @ApiStatus.Internal
-    public static void hotswapExample() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(Commands.literal("mymod").then(Commands.literal("test-ponder")
-                    .executes((context -> {
-                        PonderScene hotswapScene = PonderBuilder.create(Identifier.fromNamespaceAndPath("mymod", "my_ponder"), new ItemStackTemplate(Items.TNT), Component.translatable("ponder.scene.mymod.my_ponder"), Component.translatable("ponder.scene.mymod.my_ponder.description"))
-                                .waitFor(2)
-                                .instruction(new ExecuteCodeInstruction((scene -> {
-                                    scene.getLevel().setBlockAndUpdate(new BlockPos(0, 0, 3), Blocks.COAL_ORE.defaultBlockState());
-                                })))
-                                .waitFor(2)
-                                .instruction(new ExecuteCodeInstruction((scene -> {
-                                    scene.getLevel().setBlockAndUpdate(new BlockPos(3, 0, 0), Blocks.GOLD_BLOCK.defaultBlockState());
-                                })))
-                                .finishStep()
-                                .waitFor(6)
-                                .finishStep()
-                                .build().startPonderingIgnoreRegistration(context.getSource().getPlayerOrException());
-
-                        hotswapScene.setCustomProperties(new CustomPonderProperties(null, false, true, false, true, true, false, () -> {
-                            Lib99j.LOGGER.info("test");
-                        }));
-                        return 0;
-                    }))));
-        });
     }
 }

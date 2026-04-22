@@ -10,7 +10,6 @@ import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
 import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
 import com.daniel99j.lib99j.impl.network.*;
-import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
@@ -519,8 +518,6 @@ public class Lib99j implements ModInitializer {
                 dispatcher.getRoot().addChild(builder.build());
             }
         });
-
-        PonderBuilder.hotswapExample();
 
         PonderManager.load();
 

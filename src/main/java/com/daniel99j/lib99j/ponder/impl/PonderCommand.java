@@ -225,6 +225,11 @@ public class PonderCommand {
             return 0;
         }));
 
+        dev.then(Commands.literal("reload").executes((context) -> {
+            PonderManager.reload();
+            return 0;
+        }));
+
         if(Lib99j.isDevelopingLib99j) dev.then(Commands.literal("go_to_real_ponder_world").executes((context) -> {
             if (PonderManager.isPondering(context.getSource().getPlayerOrException())) {
                 PonderScene currentScene = PonderManager.activeScenes.get(context.getSource().getPlayerOrException());

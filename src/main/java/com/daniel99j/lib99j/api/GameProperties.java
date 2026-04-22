@@ -1,9 +1,7 @@
 package com.daniel99j.lib99j.api;
 
-import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.BossBarVisibility;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
-import com.daniel99j.lib99j.ponder.impl.PonderGuiCreator;
 import com.daniel99j.lib99j.ponder.impl.PonderGuiTextures;
 
 /**
@@ -94,9 +92,9 @@ public class GameProperties {
         enableHideableBossBar();
         enableAddingAssetTranslationsToServer();
         PonderGuiTextures.load();
-        //load it!
-        if(Lib99j.isDevelopmentEnvironment) //noinspection ResultOfMethodCallIgnored
-            PonderGuiCreator.PONDER_GUI_CREATOR_BUILDER.shouldHideFromCommands();
+//        //load it!
+//        if(Lib99j.isDevelopmentEnvironment) //noinspection ResultOfMethodCallIgnored
+//            PonderGuiCreator.PONDER_GUI_CREATOR_BUILDER.shouldHideFromCommands();
     }
 
     public static void enableAddingAssetTranslationsToServer() {
