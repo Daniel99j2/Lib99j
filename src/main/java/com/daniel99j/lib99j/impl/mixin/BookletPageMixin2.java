@@ -1,6 +1,8 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.mixin.MixinCondition;
+import com.daniel99j.lib99j.api.mixin.MixinLoadConditions;
 import eu.pb4.booklet.impl.textnode.PolydexNode;
 import eu.pb4.placeholders.api.ParserContext;
 import net.minecraft.network.chat.ClickEvent;
@@ -13,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+@MixinLoadConditions(conditions = @MixinCondition(mod = "booklet", condition = "*"))
 @Mixin(PolydexNode.class)
 public class BookletPageMixin2 {
     @Shadow

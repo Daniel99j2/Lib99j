@@ -60,23 +60,29 @@ public abstract class ClientPositionFinderMixin {
     private void lib99j$cursorPosAdd(KeyEvent keyEvent, CallbackInfoReturnable<Boolean> cir) {
         if(isDialog && keyEvent.isCopy()) {
             Vector2i convertedPos = convertPos(pos);
+            if(Minecraft.getInstance().hasAltDown()) convertedPos.x = PonderCoordUtil.SCREEN_SIZE.x-convertedPos.x;
             Minecraft.getInstance().keyboardHandler.setClipboard("new Vector2i("+convertedPos.x+", "+convertedPos.y+")");
-            Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal("Copied pos"), null));
+            Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(Minecraft.getInstance().hasAltDown() ? "Copied opposite pos" : "Copied pos"), null));
         };
     }
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
     private void lib99j$cursorPos(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a, CallbackInfo ci) {
-        if(isDialog && Minecraft.getInstance().hasShiftDown()) {
-            pos = new Vector2i(mouseX, mouseY);
-            Vector2i convertedPos = convertPos(pos);
-            this.tooltipHolder.set(Tooltip.create(Component.literal("Pos: "+convertedPos.x+", "+convertedPos.y+"\nOpposite pos: "+(PonderCoordUtil.SCREEN_SIZE.x-convertedPos.x)+", "+convertedPos.y)));
+        if (isDialog && Minecraft.getInstance().hasShiftDown()) {
+            if (Minecraft.getInstance().options.fov().get() != 70) {
+                this.tooltipHolder.set(Tooltip.create(Component.literal("FOV must be 70")));
+                ci.cancel();
+            } else {
+                pos = new Vector2i(mouseX, mouseY);
+                Vector2i convertedPos = convertPos(pos);
+                this.tooltipHolder.set(Tooltip.create(Component.literal("Pos: " + convertedPos.x + ", " + convertedPos.y + "\nOpposite pos: " + (PonderCoordUtil.SCREEN_SIZE.x - convertedPos.x) + ", " + convertedPos.y)));
 
-            //cancelling makes it not render the rest of the ui
-            ci.cancel();
+                //cancelling makes it not render the rest of the ui
+                ci.cancel();
+            }
         }
-        if(isDialog) {
-            this.tooltipHolder.refreshTooltipForNextRenderPass(graphics, (int) pos.x, (int) pos.y+10,true, true, new ScreenRectangle(0, 0, 20, 20));
+        if (isDialog) {
+            this.tooltipHolder.refreshTooltipForNextRenderPass(graphics, (int) pos.x, (int) pos.y + 10, true, true, new ScreenRectangle(0, 0, 20, 20));
         }
     }
 

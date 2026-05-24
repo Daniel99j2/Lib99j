@@ -23,6 +23,9 @@
     "LanguageReaderMixin",
     "LevelChunkMixin",
     "LivingEntityMixin",
+    "LodDisplayAccessor",
+    "LodDisplayMixin",
+    "LodDisplayMixin2",
     "MinecraftServerMixin",
     "NumberListEntryAccessor",
     "NumberListEntryAccessor2",
@@ -42,8 +45,9 @@
     "ServerPlayerMixin",
     "SharedConstantsAccessor",
     "SystemLanguageMixin",
-    "dev.DogBoneMixin",
-    "dev.Vec2StringifierMixin"
+    "Vec2StringifierMixin",
+    "dev.ChunkSenderMixin",
+    "dev.DogBoneMixin"
   ],
   "injectors": {
     "defaultRequire": 1

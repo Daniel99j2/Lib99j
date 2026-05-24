@@ -27,19 +27,20 @@ public class DebugArgForScreen extends DebugOptionsScreen.AbstractOptionEntry {
         this.children = Lists.<AbstractWidget>newArrayList();
         this.name = name;
 
+        this.off = CycleButton.booleanBuilder(
+                        Component.translatable("debug.entry.off").withColor(-2142128), Component.translatable("debug.entry.off").withColor(-4539718), false
+                )
+                .displayOnlyValue()
+                .create(10, 5, 60, 16, Component.literal(name), (button, newValue) -> this.setValue(name, false));
+
         this.on = CycleButton.booleanBuilder(
                         Component.translatable("debug.entry.on").withColor(-1), Component.translatable("debug.entry.on").withColor(-4539718), false
                 )
                 .displayOnlyValue()
                 .create(10, 5, 60, 16, Component.literal(name), (button, newValue) -> this.setValue(name, true));
 
-        this.off = CycleButton.booleanBuilder(
-                        Component.translatable("debug.entry.off").withColor(-2142128), Component.translatable("debug.entry.off").withColor(-4539718), false
-                )
-                .displayOnlyValue()
-                .create(10, 5, 60, 16, Component.literal(name), (button, newValue) -> this.setValue(name, false));
-        this.children.add(this.on);
         this.children.add(this.off);
+        this.children.add(this.on);
 
         this.refreshEntry();
     }

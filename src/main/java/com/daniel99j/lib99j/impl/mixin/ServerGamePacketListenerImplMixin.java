@@ -4,13 +4,18 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.CommandSourceAccessor;
 import com.daniel99j.lib99j.api.GenericScreenEffect;
 import com.daniel99j.lib99j.api.VFXUtils;
+import com.daniel99j.lib99j.api.mixin.MixinTargetVerify;
 import com.daniel99j.lib99j.impl.Lib99jPlayerUtilController;
+import com.daniel99j.lib99j.impl.PlayerElementHolder;
 import com.daniel99j.lib99j.impl.PlayerReconfigurator;
+import com.daniel99j.lib99j.impl.sable.CustomSableDisplay;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.api.PonderScene;
 import com.daniel99j.lib99j.ponder.impl.PonderDevEdits;
 import com.daniel99j.lib99j.ponder.impl.PonderSceneMode;
 import com.mojang.brigadier.ParseResults;
+import eu.pb4.factorytools.api.util.VirtualDestroyStage;
+import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.Connection;
@@ -28,6 +33,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -110,6 +117,37 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
             this.player.connection.send(new ClientboundContainerClosePacket(-1));
             PonderManager.activeScenes.get(this.player).openMenu();
             ci.cancel();
+        }
+    }
+
+    //Runs once there is no valid entity
+    @Inject(method = "handleAttack", at = @At(value = "RETURN", ordinal = 1))
+    @MixinTargetVerify(hash="")
+    private void sableDisplayHandler(ServerboundAttackPacket packet, CallbackInfo ci) {
+        if(Lib99j.sableCollisionMap.containsKey(packet.entityId())) {
+            ItemDisplayElement virtualDestroyStage = new ItemDisplayElement(VirtualDestroyStage.MODELS[0].get());
+            virtualDestroyStage.setOverridePos(Vec3.atLowerCornerOf(Lib99j.sableDisplayData.get(Lib99j.sableCollisionMap.get(packet.entityId())).pos()));
+            virtualDestroyStage.setGlowing(true);
+            Lib99j.sableDisplayData.get(Lib99j.sableCollisionMap.get(packet.entityId())).customSableDisplayList().add(new CustomSableDisplay() {
+                @Override
+                public int getId() {
+                    return virtualDestroyStage.getEntityId();
+                }
+
+                @Override
+                public Matrix4f getTransform(Matrix4f matrix) {
+//                    Matrix4f matrix4fStack = new Matrix4f();
+//                    matrix4fStack.translate(virtualDestroyStage.getCurrentPos().toV   ector3f());
+//                    matrix4fStack.add4x3(matrix);
+                    return matrix;
+                }
+
+                @Override
+                public void setPos(Vec3 position) {
+                    virtualDestroyStage.setOverridePos(position);
+                }
+            });
+            ((PlayerElementHolder) this.player).lib99j$getPlayerElementHolder().addElement(virtualDestroyStage);
         }
     }
 

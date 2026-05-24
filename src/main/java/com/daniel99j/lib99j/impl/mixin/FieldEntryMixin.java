@@ -1,11 +1,14 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.api.config.ConfigHolder;
+import com.daniel99j.lib99j.api.mixin.MixinCondition;
+import com.daniel99j.lib99j.api.mixin.MixinLoadConditions;
 import com.daniel99j.lib99j.impl.ConfigEntryValueHolder;
 import me.shedaniel.clothconfig2.api.AbstractConfigEntry;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
+@MixinLoadConditions(conditions = @MixinCondition(mod = "cloth-config", condition = "*"))
 @Mixin({AbstractConfigEntry.class})
 public abstract class FieldEntryMixin implements ConfigEntryValueHolder {
     @Unique

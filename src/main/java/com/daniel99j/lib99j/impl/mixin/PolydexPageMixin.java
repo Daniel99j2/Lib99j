@@ -1,6 +1,8 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.mixin.MixinCondition;
+import com.daniel99j.lib99j.api.mixin.MixinLoadConditions;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polydex.api.v1.recipe.PolydexEntry;
 import eu.pb4.polydex.api.v1.recipe.PolydexPage;
@@ -25,6 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 import java.util.Map;
 
+@MixinLoadConditions(conditions = @MixinCondition(mod = "polydex", condition = "*"))
 @Mixin(PageViewerGui.class)
 public abstract class PolydexPageMixin extends ExtendedGui {
     @Shadow

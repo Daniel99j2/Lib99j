@@ -1,4 +1,4 @@
-package com.daniel99j.lib99j.impl.mixin.dev;
+package com.daniel99j.lib99j.impl.mixin;
 
 import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Final;

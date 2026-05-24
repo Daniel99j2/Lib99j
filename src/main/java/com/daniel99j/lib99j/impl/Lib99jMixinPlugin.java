@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.impl;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.mixin.MixinConditionPlugin;
 import net.fabricmc.loader.api.FabricLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -23,19 +24,11 @@ public class Lib99jMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if(targetClassName.toLowerCase().contains("polydex")) {
-            return FabricLoader.getInstance().isModLoaded("polydex");
-        }
-        if(targetClassName.toLowerCase().contains("booklet")) {
-            return FabricLoader.getInstance().isModLoaded("booklet");
-        }
-        if(targetClassName.toLowerCase().contains("clothconfig2")) {
-            return FabricLoader.getInstance().isModLoaded("cloth-config");
-        }
         if(mixinClassName.contains("dev")) {
             return Lib99j.isDevelopmentEnvironment;
         }
-        return true;
+        if(mixinClassName.contains("PolydexPageMixin")) return FabricLoader.getInstance().isModLoaded("polydex");
+        return MixinConditionPlugin.meetsConditions(mixinClassName);
     }
 
     @Override

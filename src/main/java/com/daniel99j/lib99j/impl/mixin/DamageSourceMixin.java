@@ -1,6 +1,8 @@
 package com.daniel99j.lib99j.impl.mixin;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -14,7 +16,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public abstract class DamageSourceMixin {
         lib99j$damageSourceTimers.entrySet().removeIf(entry -> entry.getValue().intValue() <= 0);
     }
 
-    @Redirect(
+    @WrapOperation(
             method = "hurtServer(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;F)Z",
             at = @At(
                     value = "INVOKE",
@@ -41,9 +42,9 @@ public abstract class DamageSourceMixin {
                     ordinal = 3
             )
     )
-    private boolean lib99j$multiTickDamage(DamageSource source, TagKey<DamageType> tag) {
+    private boolean lib99j$multiTickDamage(DamageSource instance, TagKey<DamageType> tag, Operation<Boolean> original) {
         if (tag == DamageTypeTags.BYPASSES_COOLDOWN) {
-            return source.is(tag) || lib99j$checkMultiTick(source);
+            return original.call(instance, tag) || lib99j$checkMultiTick(instance);
         }
         throw new IllegalStateException("Lib99j MultiTickDamage mixin targeting the wrong method!");
     }

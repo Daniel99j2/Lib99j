@@ -120,11 +120,11 @@ public class RegUtil {
         return registerItem((ResourceKey)blockIdToItemId(block.builtInRegistryHolder().key()), (propertiesx) -> (Item)biFunction.apply(block, propertiesx), properties.useBlockDescriptionPrefix());
     }
 
-    public static Item registerItem(String string, Function<Item.Properties, Item> function) {
+    public static <T extends Item> T registerItem(String string, Function<Item.Properties, T> function) {
         return registerItem(namespaceItemId(string), function, new Item.Properties());
     }
 
-    public static Item registerItem(String string, Function<Item.Properties, Item> function, Item.Properties properties) {
+    public static <T extends Item> T registerItem(String string, Function<Item.Properties, T> function, Item.Properties properties) {
         return registerItem(namespaceItemId(string), function, properties);
     }
 
@@ -136,17 +136,17 @@ public class RegUtil {
         return registerItem(namespaceItemId(string), SimplePolymerItem::new, new Item.Properties());
     }
 
-    public static Item registerItem(ResourceKey<Item> resourceKey, Function<Item.Properties, Item> function) {
+    public static <T extends Item> T registerItem(ResourceKey<Item> resourceKey, Function<Item.Properties, T> function) {
         return registerItem(resourceKey, function, new Item.Properties());
     }
 
-    public static Item registerItem(ResourceKey<Item> resourceKey, Function<Item.Properties, Item> function, Item.Properties properties) {
-        Item item = (Item)function.apply(properties.setId(resourceKey));
+    public static <T extends Item> T registerItem(ResourceKey<Item> resourceKey, Function<Item.Properties, T> function, Item.Properties properties) {
+        T item = function.apply(properties.setId(resourceKey));
         if (item instanceof BlockItem blockItem) {
             blockItem.registerBlocks(Item.BY_BLOCK, item);
         }
 
-        return (Item)Registry.register(BuiltInRegistries.ITEM, resourceKey, item);
+        return Registry.register(BuiltInRegistries.ITEM, resourceKey, item);
     }
 
     // BLOCKS
@@ -154,16 +154,16 @@ public class RegUtil {
         return registerBlock(string, (properties) -> new StairBlock(block.defaultBlockState(), properties), BlockBehaviour.Properties.ofFullCopy(block));
     }
 
-    public static Block registerBlock(ResourceKey<Block> resourceKey, Function<BlockBehaviour.Properties, Block> function, BlockBehaviour.Properties properties) {
-        Block block = (Block)function.apply(properties.setId(resourceKey));
-        return (Block)Registry.register(BuiltInRegistries.BLOCK, resourceKey, block);
+    public static <T extends Block> T registerBlock(ResourceKey<Block> resourceKey, Function<BlockBehaviour.Properties, T> function, BlockBehaviour.Properties properties) {
+        T block = function.apply(properties.setId(resourceKey));
+        return Registry.register(BuiltInRegistries.BLOCK, resourceKey, block);
     }
 
     private static ResourceKey<Block> namespaceBlockId(String string) {
         return ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(currentNamespaceSafe(), string));
     }
 
-    public static Block registerBlock(String string, Function<BlockBehaviour.Properties, Block> function, BlockBehaviour.Properties properties) {
+    public static <T extends Block> T registerBlock(String string, Function<BlockBehaviour.Properties, T> function, BlockBehaviour.Properties properties) {
         return registerBlock(namespaceBlockId(string), function, properties);
     }
 
@@ -179,13 +179,13 @@ public class RegUtil {
     }
 
     // POTIONS
-    public static Holder<Potion> registerPotion(String name, Potion out, Item in1, Holder<Potion> in2) {
-        Holder<Potion> registry = Registry.registerForHolder(BuiltInRegistries.POTION, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), out);
-        FabricPotionBrewingBuilder.BUILD.register(builder -> builder.addMix(in2, in1, registry));
+    public static <T extends Potion> Holder<T> registerPotion(String name, T out, Item in1, Holder<Potion> in2) {
+        Holder<T> registry = Registry.registerForHolder(BuiltInRegistries.POTION, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), out);
+        FabricPotionBrewingBuilder.BUILD.register(builder -> builder.addMix(in2, in1, (Holder<Potion>) registry));
         return registry;
     }
 
-    public static Holder<MobEffect> registerEffect(String name, MobEffect effect) {
+    public static <T extends MobEffect> Holder<T> registerEffect(String name, T effect) {
         return Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), effect);
     }
 

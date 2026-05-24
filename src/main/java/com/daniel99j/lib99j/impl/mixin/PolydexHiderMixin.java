@@ -1,5 +1,7 @@
 package com.daniel99j.lib99j.impl.mixin;
 
+import com.daniel99j.lib99j.api.mixin.MixinCondition;
+import com.daniel99j.lib99j.api.mixin.MixinLoadConditions;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import eu.pb4.polydex.impl.display.PolydexTargetImpl;
 import net.minecraft.core.BlockPos;
@@ -19,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+@MixinLoadConditions(conditions = @MixinCondition(mod = "polydex", condition = "*"))
 @Mixin(PolydexTargetImpl.class)
 public abstract class PolydexHiderMixin {
     @Shadow

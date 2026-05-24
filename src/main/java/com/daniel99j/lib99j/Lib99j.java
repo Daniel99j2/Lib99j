@@ -6,19 +6,25 @@ import com.daniel99j.lib99j.api.config.ConfigManager;
 import com.daniel99j.lib99j.api.config.ModConfig;
 import com.daniel99j.lib99j.api.config.SimpleModConfig;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
+import com.daniel99j.lib99j.api.mixin.MixinTargetVerifier;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
 import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
 import com.daniel99j.lib99j.impl.network.*;
+import com.daniel99j.lib99j.impl.sable.CustomSableDisplay;
+import com.daniel99j.lib99j.impl.sable.SableDisplayData;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.math.MatrixUtil;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
+import eu.pb4.polymer.virtualentity.api.data.DisplayEntityData;
 import eu.pb4.polymer.virtualentity.api.data.EntityData;
+import eu.pb4.polymer.virtualentity.impl.SafeBundler;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -55,13 +61,19 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +99,7 @@ public class Lib99j implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("Lib99j");
     @Nullable
     private static MinecraftServer server = null;
+    @ApiStatus.Internal
     public static ArrayList<ServerPlayer> additionalPlayers = new ArrayList<>();
 
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
@@ -100,6 +113,9 @@ public class Lib99j implements ModInitializer {
     public static SimpleModConfig<Lib99jClientConfig, Lib99jCommonConfig, Object, Object> CONFIG;
 
     public static final Map<String, DebugArg> debugArgForScreens = new HashMap<>();
+
+    public static Map<Long, SableDisplayData> sableDisplayData = new HashMap<>();
+    public static Map<Integer, Long> sableCollisionMap = new HashMap<>();
 
     public static @Nullable MinecraftServer getServer() {
         return server;
@@ -146,6 +162,8 @@ public class Lib99j implements ModInitializer {
         }
 
         isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().toAbsolutePath().getParent().toString().contains("Lib99j");
+
+        MixinTargetVerifier.verify(MOD_ID);
 
         PayloadTypeRegistry.serverboundPlay().register(ServerboundLib99HelloPacket.ID, ServerboundLib99HelloPacket.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ServerboundLib99jInstalledModsPacket.ID, ServerboundLib99jInstalledModsPacket.CODEC);
@@ -501,6 +519,35 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
+                builder.then(Commands.literal("shulkerblock")
+                        .executes((context) -> {
+                            //getCollision(context.getSource().getLevel(), context.getSource().getEntity().blockPosition(), context.getSource().getPlayer());
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("sablechunktransform")
+                        .executes((context) -> {
+                            SafeBundler bundler = new SafeBundler(context.getSource().getPlayer().connection::send);
+                            for (SableDisplayData d : sableDisplayData.values()) {
+                                //bundler.accept(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(DisplayEntityData.TRANSLATION, context.getSource().getPosition().toVector3f().sub(80, 100, 80)))));
+                                update(d.blockId(), d.offset(), context.getSource().getPlayer(), bundler, null);
+
+                                int i = 0;
+                                for (Integer id : d.collisionIds()) {
+                                    update(id, d.offset().add(d.collisionOffsets()[i]), context.getSource().getPlayer(), bundler, null);
+                                    i++;
+                                }
+
+                                for (CustomSableDisplay customSableDisplay : d.customSableDisplayList()) {
+                                    update(customSableDisplay.getId(), d.offset(), context.getSource().getPlayer(), bundler, customSableDisplay);
+                                }
+                            }
+                            bundler.finish();
+                            return 1;
+                        })
+                        .build());
+
                 builder.then(Commands.literal("closeallmenus")
                         .executes((context) -> {
                             context.getSource().getPlayer().connection.send(new ClientboundContainerClosePacket(-1));
@@ -528,7 +575,7 @@ public class Lib99j implements ModInitializer {
 
                     String name = declaredMethod.getName().toLowerCase();
 
-                    if(!name.equals("debug_enabled")) {
+                    if(!name.equals("debug_enabled") && (!name.equals("is_running_in_ide") || Lib99j.isDevelopmentEnvironment)) {
                         debugArgForScreens.put(name, new DebugArg(name, (b) -> {
                             List<String> config = ((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).getOrThrow()).enabledDebugArgs;
                             if (b && !config.contains(name)) config.add(name);
@@ -570,4 +617,37 @@ public class Lib99j implements ModInitializer {
         }
     }
 
+    private static void update(int id, Vec3 transform, ServerPlayer player, SafeBundler bundler, @Nullable CustomSableDisplay customSableDisplay) {
+        Matrix4f matrix = new Matrix4f();
+
+        Vector3f offset = player.getMainHandItem().is(Items.STICK) ? player.position().toVector3f() : new Vector3f(0, 100, 0);
+        matrix.translate(offset);
+
+        if(!player.getMainHandItem().is(Items.BAMBOO)) matrix.rotateXYZ((float) Math.toRadians(-player.getXRot()), (float) Math.toRadians(-player.getYRot()), 0);
+
+        matrix.translate(new Vector3f((float) transform.x, (float) transform.y, (float) transform.z));
+
+        Vec3 position = new Vec3(matrix.m30(), matrix.m31(), matrix.m32());
+        matrix.m30(0);
+        matrix.m31(0);
+        matrix.m32(0);
+
+        if(customSableDisplay != null) {
+            matrix = customSableDisplay.getTransform(new Matrix4f(matrix));
+            customSableDisplay.setPos(position);
+        }
+
+        //from DisplayElement#setTransformation
+        float f = 1.0F / matrix.m33();
+        List<SynchedEntityData.DataValue<?>> data = new ArrayList<>();
+
+        var triple = MatrixUtil.svdDecompose(new Matrix3f(matrix).scale(f));
+        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.TRANSLATION, matrix.getTranslation(new Vector3f())));
+        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.LEFT_ROTATION, new Quaternionf(triple.getLeft())));
+        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.SCALE, new Vector3f(triple.getMiddle())));
+        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.RIGHT_ROTATION, new Quaternionf(triple.getRight())));
+        bundler.accept(new ClientboundSetEntityDataPacket(id, data));
+
+        bundler.accept(new ClientboundEntityPositionSyncPacket(id, new PositionMoveRotation(position, Vec3.ZERO, 0, 0), false));
+    }
 }

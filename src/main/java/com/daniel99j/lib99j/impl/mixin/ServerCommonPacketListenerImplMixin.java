@@ -8,8 +8,11 @@ import com.daniel99j.lib99j.impl.PlayerReconfigurator;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderMenu;
 import com.mojang.authlib.GameProfile;
+import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
 import eu.pb4.polymer.virtualentity.api.data.EntityData;
+import eu.pb4.polymer.virtualentity.mixin.accessors.BlockDisplayAccessor;
 import io.netty.channel.ChannelFutureListener;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -27,7 +30,9 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Guardian;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,6 +43,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Mixin(ServerCommonPacketListenerImpl.class)
@@ -53,6 +59,9 @@ public abstract class ServerCommonPacketListenerImplMixin implements PlayerRecon
 
     @Shadow
     protected abstract GameProfile playerProfile();
+
+    @Shadow
+    public abstract void send(Packet<?> packet);
 
     @Unique
     private ArrayList<Packet<?>> heldPackets = new ArrayList<>();
@@ -133,6 +142,23 @@ public abstract class ServerCommonPacketListenerImplMixin implements PlayerRecon
                 //The world reload fixes it automatically
                 if(packet instanceof ClientboundSetEntityDataPacket trackerUpdateS2CPacket && ((ServerPlayerConnection) this).getPlayer().level.getEntity(trackerUpdateS2CPacket.id()) instanceof Guardian) {
                     ci.cancel();
+                    return;
+                }
+            }
+
+            if(packet instanceof ClientboundBlockUpdatePacket blockUpdatePacket && !blockUpdatePacket.getBlockState().isAir()) {
+                if(blockUpdatePacket.getPos().closerThan(new BlockPos(100, 100, 100), 15)) {
+                    ci.cancel();
+                    int id = VirtualEntityUtils.requestEntityId();
+                    this.send(new ClientboundAddEntityPacket(id, UUID.randomUUID(), blockUpdatePacket.getPos().getX(), blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ(), 0, 0, EntityType.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
+                    this.send(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(BlockDisplayAccessor.getDATA_BLOCK_STATE_ID(), blockUpdatePacket.getBlockState()))));
+
+
+                    int id2 = VirtualEntityUtils.requestEntityId();
+                    this.send(new ClientboundAddEntityPacket(id2, UUID.randomUUID(), blockUpdatePacket.getPos().getX()+0.5f, blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ()+0.5f, 0, 0, EntityType.SHULKER, 0, Vec3.ZERO, 0));
+                    byte b = 0;
+                    b |= (byte) (1 << EntityData.INVISIBLE_FLAG_INDEX);
+                    this.send(new ClientboundSetEntityDataPacket(id2, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, b))));
                     return;
                 }
             }
