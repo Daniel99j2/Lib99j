@@ -53,7 +53,7 @@ public class PonderBuilder {
     protected int y = 60;
     protected ResourceKey<Biome> defaultBiome = Biomes.PLAINS;
     protected BlockState state1 = Blocks.SNOW_BLOCK.defaultBlockState();
-    protected BlockState state2 = Blocks.WHITE_CONCRETE.defaultBlockState();
+    protected BlockState state2 = Blocks.CONCRETE.white().defaultBlockState();
     protected boolean roof = true;
     protected boolean hideFromCommands = false;
     protected Item item;

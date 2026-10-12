@@ -31,6 +31,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Guardian;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
@@ -140,7 +141,7 @@ public abstract class ServerCommonPacketListenerImplMixin implements PlayerRecon
                 //It works because ponder guardians are in a different world
                 //This prevents extreme lag when guardian rays are being created
                 //The world reload fixes it automatically
-                if(packet instanceof ClientboundSetEntityDataPacket trackerUpdateS2CPacket && ((ServerPlayerConnection) this).getPlayer().level.getEntity(trackerUpdateS2CPacket.id()) instanceof Guardian) {
+                if(packet instanceof ClientboundSetEntityDataPacket trackerUpdateS2CPacket && ((ServerPlayerConnection) this).getPlayer().level().getEntity(trackerUpdateS2CPacket.id()) instanceof Guardian) {
                     ci.cancel();
                     return;
                 }
@@ -150,12 +151,12 @@ public abstract class ServerCommonPacketListenerImplMixin implements PlayerRecon
                 if(blockUpdatePacket.getPos().closerThan(new BlockPos(100, 100, 100), 15)) {
                     ci.cancel();
                     int id = VirtualEntityUtils.requestEntityId();
-                    this.send(new ClientboundAddEntityPacket(id, UUID.randomUUID(), blockUpdatePacket.getPos().getX(), blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ(), 0, 0, EntityType.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
+                    this.send(new ClientboundAddEntityPacket(id, UUID.randomUUID(), blockUpdatePacket.getPos().getX(), blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ(), 0, 0, EntityTypes.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
                     this.send(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(BlockDisplayAccessor.getDATA_BLOCK_STATE_ID(), blockUpdatePacket.getBlockState()))));
 
 
                     int id2 = VirtualEntityUtils.requestEntityId();
-                    this.send(new ClientboundAddEntityPacket(id2, UUID.randomUUID(), blockUpdatePacket.getPos().getX()+0.5f, blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ()+0.5f, 0, 0, EntityType.SHULKER, 0, Vec3.ZERO, 0));
+                    this.send(new ClientboundAddEntityPacket(id2, UUID.randomUUID(), blockUpdatePacket.getPos().getX()+0.5f, blockUpdatePacket.getPos().getY(), blockUpdatePacket.getPos().getZ()+0.5f, 0, 0, EntityTypes.SHULKER, 0, Vec3.ZERO, 0));
                     byte b = 0;
                     b |= (byte) (1 << EntityData.INVISIBLE_FLAG_INDEX);
                     this.send(new ClientboundSetEntityDataPacket(id2, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, b))));

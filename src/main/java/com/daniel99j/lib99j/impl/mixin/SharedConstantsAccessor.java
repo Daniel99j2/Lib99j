@@ -101,9 +101,6 @@ public interface SharedConstantsAccessor {
     @Mutable @Accessor("DEBUG_LARGE_DRIPSTONE")
     static void DEBUG_LARGE_DRIPSTONE(boolean value) { throw new AssertionError(); }
 
-    @Mutable @Accessor("DEBUG_CARVERS")
-    static void DEBUG_CARVERS(boolean value) { throw new AssertionError(); }
-
     @Mutable @Accessor("DEBUG_ORE_VEINS")
     static void DEBUG_ORE_VEINS(boolean value) { throw new AssertionError(); }
 
@@ -157,9 +154,6 @@ public interface SharedConstantsAccessor {
 
     @Mutable @Accessor("DEBUG_ACTIVE_TEXT_AREAS")
     static void DEBUG_ACTIVE_TEXT_AREAS(boolean value) { throw new AssertionError(); }
-
-    @Mutable @Accessor("DEBUG_PREFER_WAYLAND")
-    static void DEBUG_PREFER_WAYLAND(boolean value) { throw new AssertionError(); }
 
     @Mutable @Accessor("DEBUG_IGNORE_LOCAL_MOB_CAP")
     static void DEBUG_IGNORE_LOCAL_MOB_CAP(boolean value) { throw new AssertionError(); }
@@ -232,4 +226,19 @@ public interface SharedConstantsAccessor {
 
     @Mutable @Accessor("IS_RUNNING_IN_IDE")
     static void IS_RUNNING_IN_IDE(boolean value) { throw new AssertionError(); }
+
+    @Mutable @Accessor("DEBUG_ENABLE_FARLANDS")
+    static void DEBUG_ENABLE_FARLANDS(boolean value) { throw new AssertionError(); }
+
+    @Mutable @Accessor("DEBUG_CHAT_FRIENDS_ONLY")
+    static void DEBUG_CHAT_FRIENDS_ONLY(boolean value) { throw new AssertionError(); }
+
+    @Mutable @Accessor("DEBUG_SIMULATE_LIBRARY_LOAD_FAILURE")
+    static void DEBUG_SIMULATE_LIBRARY_LOAD_FAILURE(boolean value) { throw new AssertionError(); }
+
+    @Mutable @Accessor("DEBUG_PRINT_PROPERTIES")
+    static void DEBUG_PRINT_PROPERTIES(boolean value) { throw new AssertionError(); }
+
+    @Mutable @Accessor("DEBUG_CALCULATE_SOLID")
+    static void DEBUG_CALCULATE_SOLID(boolean value) { throw new AssertionError(); }
 }

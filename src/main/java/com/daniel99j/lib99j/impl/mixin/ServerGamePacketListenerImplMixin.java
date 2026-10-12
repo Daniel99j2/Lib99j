@@ -75,8 +75,8 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
 
     @Inject(method = "handleUseItemOn", at = @At("HEAD"), cancellable = true, order = 10000)
     private void addToBlockEdits(ServerboundUseItemOnPacket serverboundUseItemOnPacket, CallbackInfo ci) {
-        if (this.player.getItemInHand(serverboundUseItemOnPacket.getHand()).getItem() instanceof BlockItem blockItem) {
-            blockEdit(serverboundUseItemOnPacket.getHitResult().getBlockPos().relative(serverboundUseItemOnPacket.getHitResult().getDirection()), blockItem.getBlock(), ci);
+        if (this.player.getItemInHand(serverboundUseItemOnPacket.hand()).getItem() instanceof BlockItem blockItem) {
+            blockEdit(serverboundUseItemOnPacket.hitResult().getBlockPos().relative(serverboundUseItemOnPacket.hitResult().getDirection()), blockItem.getBlock(), ci);
         }
     }
 
@@ -193,23 +193,23 @@ public abstract class ServerGamePacketListenerImplMixin extends ServerCommonPack
 
     @Inject(method = "updateSignText", at = @At("HEAD"), cancellable = true)
     private void onSignUpdate(ServerboundSignUpdatePacket packet, List<FilteredText> signText, CallbackInfo ci) {
-        if (packet.getPos().getY() == 0) {
-            if ((Objects.equals(packet.getLines()[3], "lib99j$checker") || Objects.equals(packet.getLines()[3], "lib99j$final"))) {
+        if (packet.pos().getY() == 0) {
+            if ((Objects.equals(packet.lines().get(3), "lib99j$checker") || Objects.equals(packet.lines().get(3), "lib99j$final"))) {
                 for (int i = 0; i < 3; i++) {
                     if (((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning())
-                        ((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker().results().add(packet.getLines()[i]);
+                        ((Lib99jPlayerUtilController) player).lib99j$getActiveTranslationChecker().results().add(packet.lines().get(i));
                 }
                 ci.cancel();
 
                 //For the sneaky players doing random stuff...
                 //I can remove it if it actually causes problems
                 //But it's a good deterrent for silly players
-                if (player.level().getBlockEntity(packet.getPos()) instanceof SignBlockEntity && !((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning()) {
+                if (player.level().getBlockEntity(packet.pos()) instanceof SignBlockEntity && !((Lib99jPlayerUtilController) player).lib99j$isModCheckerRunning()) {
                     disconnect(Component.translatable("multiplayer.disconnect.spoof_mod_checker"));
                     Lib99j.LOGGER.warn(player.getName().getString() + " tried to spoof the mod checker!");
                 }
             }
-            if (Objects.equals(packet.getLines()[3], "lib99j$final")) {
+            if (Objects.equals(packet.lines().get(3), "lib99j$final")) {
                 ((Lib99jPlayerUtilController) player).lib99j$finishCurrentModChecker();
             }
         }

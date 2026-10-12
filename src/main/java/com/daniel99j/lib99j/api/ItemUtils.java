@@ -67,16 +67,16 @@ public class ItemUtils {
         return getBasicModelItem().getDefaultInstance();
     }
 
-    public static <T> ItemStackTemplate with(ItemStackTemplate other, DataComponentType<T> component, T value) {
-        DataComponentPatch components = other.components();
-        DataComponentPatch.Builder builder = DataComponentPatch.builder();
-
-        for (Map.Entry<DataComponentType<?>, Optional<?>> dataComponentTypeOptionalEntry : components.entrySet()) {
-            builder.map.put(dataComponentTypeOptionalEntry.getKey(), dataComponentTypeOptionalEntry.getValue());
-        }
-
-        builder.map.put(component, Optional.of(value));
-
-        return new ItemStackTemplate(other.item(), other.count(), builder.build());
-    }
+//    public static <T> ItemStackTemplate with(ItemStackTemplate other, DataComponentType<T> component, T value) {
+//        DataComponentPatch components = other.components();
+//        DataComponentPatch.Builder builder = DataComponentPatch.builder();
+//
+//        for (Map.Entry<DataComponentType<?>, Optional<?>> dataComponentTypeOptionalEntry : components.) {
+//            builder.map.put(dataComponentTypeOptionalEntry.getKey(), dataComponentTypeOptionalEntry.getValue());
+//        }
+//
+//        builder.map.put(component, Optional.of(value));
+//
+//        return new ItemStackTemplate(other.item(), other.count(), builder.build());
+//    }
 }

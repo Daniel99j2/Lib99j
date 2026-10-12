@@ -7,6 +7,7 @@ import eu.pb4.polymer.virtualentity.api.elements.VirtualElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Vector2i;
@@ -36,7 +37,7 @@ public class PonderItemDisplay extends GenericEntityElement {
 
     @Override
     protected EntityType<? extends Entity> getEntityType() {
-        return EntityType.MARKER;
+        return EntityTypes.MARKER;
     }
 
     @Override

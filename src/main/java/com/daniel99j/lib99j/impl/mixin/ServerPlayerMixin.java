@@ -30,11 +30,14 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.entity.SignText;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -95,14 +98,16 @@ public abstract class ServerPlayerMixin
         }
         if(lib99j$isModCheckerRunning()) {
             this.lib99j$modTranslationCheckerTimeout--;
-            if (this.lib99j$modTranslationCheckerTimeout == 0 && this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() <= 0) {
-                Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName() + " timed out too many times");
-                this.lib99j$getActiveTranslationChecker().output().accept(new GuiUtils.PlayerTranslationsResponse(false, true, new ArrayList<>(), new ArrayList<>()));
-                this.lib99j$activeTranslationCheckers.removeFirst();
-            } else {
-                Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName() + " timed out (tries remaining: " + this.lib99j$getActiveTranslationChecker().remainingTries().get() + ")");
-                this.lib99j$getActiveTranslationChecker().remainingTries().setValue(this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() - 1);
-                this.lib99j$modTranslationCheckerTimeout = 5;
+            if(this.lib99j$modTranslationCheckerTimeout <= 0) {
+                if (this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() <= 0) {
+                    Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName().getString() + " timed out too many times");
+                    this.lib99j$getActiveTranslationChecker().output().accept(new GuiUtils.PlayerTranslationsResponse(false, true, new ArrayList<>(), new ArrayList<>()));
+                    this.lib99j$activeTranslationCheckers.removeFirst();
+                } else {
+                    Lib99j.LOGGER.warn("Translation check for " + this.getPlayer().getName().getString() + " timed out (tries remaining: " + this.lib99j$getActiveTranslationChecker().remainingTries().get() + ")");
+                    this.lib99j$getActiveTranslationChecker().remainingTries().setValue(this.lib99j$getActiveTranslationChecker().remainingTries().get().intValue() - 1);
+                    this.lib99j$modTranslationCheckerTimeout = 60;
+                }
             }
         }
     }
@@ -227,7 +232,7 @@ public abstract class ServerPlayerMixin
     @Unique
     private void lib99j$checkMods(GuiUtils.PlayerTranslationCheckerData data) {
         ServerPlayer player = getPlayer();
-        if(data.remainingTries().intValue() == 5) this.lib99j$modTranslationCheckerTimeout = 5;
+        if(data.remainingTries().intValue() == 5) this.lib99j$modTranslationCheckerTimeout = 20;
 
         List<Map.Entry<String, String>> entries = data.translations();
         int total = entries.size();
@@ -237,27 +242,27 @@ public abstract class ServerPlayerMixin
 
         for (int i = 0; i < count; i++) {
             CompoundTag nbt = new CompoundTag();
-            SignText text = new SignText();
+            SignText.Mutable text = new SignText(List.of(), List.of(), DyeColor.RED, true).asMutable();
 
             for (int line = 0; line < lines; line++) {
                 int index = i * lines + line;
                 if (index < total) {
                     Map.Entry<String, String> entry = entries.get(index);
-                    text = text.setMessage(line, Component.translatable(entry.getValue()));
+                    text = text.setLine(line, Component.translatable(entry.getValue()));
                 }
             }
 
-            if (i == count - 1) text = text.setMessage(3, Component.literal("lib99j$final"));
-            else text = text.setMessage(3, Component.literal("lib99j$checker"));
+            if (i == count - 1) text = text.setLine(3, Component.literal("lib99j$final"));
+            else text = text.setLine(3, Component.literal("lib99j$checker"));
 
             DynamicOps<Tag> dynamicOps = player.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-            nbt.store("front_text", SignText.DIRECT_CODEC, dynamicOps, text);
-            nbt.store("back_text", SignText.DIRECT_CODEC, dynamicOps, new SignText());
+            nbt.store("front_text", SignText.CODEC, dynamicOps, text.asImmutable());
+            nbt.store("back_text", SignText.CODEC, dynamicOps, text.asImmutable());
             nbt.putBoolean("is_waxed", false);
 
             player.connection.send(new ClientboundBlockUpdatePacket(pos, Blocks.OAK_SIGN.defaultBlockState()));
-            player.connection.send(ClientboundBlockEntityDataPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityType.SIGN, nbt));
-            player.connection.send(new ClientboundOpenSignEditorPacket(pos, true));
+            player.connection.send(ClientboundBlockEntityDataPacketAccessor.createBlockEntityUpdateS2CPacket(pos, BlockEntityTypes.SIGN, nbt));
+            player.connection.send(new ClientboundOpenSignEditorPacket(pos, SignTextSlot.FRONT));
             player.connection.send(new ClientboundContainerClosePacket(0));
         }
         player.connection.send(new ClientboundBlockUpdatePacket(pos, player.level().getBlockState(pos)));

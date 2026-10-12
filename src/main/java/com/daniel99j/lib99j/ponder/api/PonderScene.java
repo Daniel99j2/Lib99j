@@ -5,10 +5,10 @@ import com.daniel99j.lib99j.api.*;
 import com.daniel99j.lib99j.api.gui.DefaultGuiTextures;
 import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.impl.*;
+import com.daniel99j.lib99j.impl.mixin.LevelAccessor;
 import com.daniel99j.lib99j.impl.mixin.PacketContextImplAccessor;
 import com.daniel99j.lib99j.ponder.api.instruction.PonderInstruction;
 import com.daniel99j.lib99j.ponder.impl.*;
-import eu.pb4.polymer.common.impl.CommonImplPacketKeys;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
@@ -18,11 +18,11 @@ import eu.pb4.polymer.virtualentity.api.elements.ItemDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.sidebars.api.Sidebar;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.impl.networking.context.PacketContextImpl;
+import net.fabricmc.fabric.api.networking.v1.context.PacketContext;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
-import net.minecraft.advancements.criterion.PlayerTrigger;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.core.SectionPos;
@@ -31,6 +31,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
@@ -64,8 +65,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
-import org.lwjgl.glfw.GLFW;
-import xyz.nucleoid.server.translations.impl.ServerTranslations;
+import org.lwjgl.sdl.SDLTimer;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -149,12 +149,12 @@ public class PonderScene {
             this.initialVelocity = oldAfterStep.initialVelocity;
         } else {
             this.initialVelocity = this.player.getDeltaMovement();
-            //this.player.level.getEntitie
+            //this.player.level().getEntitie
         }
 
         boolean checkTime = Lib99j.isDevelopmentEnvironment && FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
 
-        double time = GLFW.glfwGetTime();
+        double time = (SDLTimer.SDL_GetTicks() / 1000.0f);
 
         if (Lib99j.isDevelopmentEnvironment) {
             if (builder.y <= 2)
@@ -180,8 +180,8 @@ public class PonderScene {
         AdvancementProgress progress = new AdvancementProgress();
         progress.update(AdvancementRequirements.allOf(Set.of("yes")));
         progress.grantProgress("yes");
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(DefaultGuiTextures.INVISIBLE, Component.empty(), Component.empty(), Optional.of(new ClientAsset.ResourceTexture(Identifier.withDefaultNamespace("block/white_concrete"))), AdvancementType.TASK, false, false, false)), AdvancementRewards.EMPTY, Map.of("yes", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("yes")), false, Optional.of(Component.empty())))), Set.of(), Map.of(), true));
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), progress), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(new ClientboundUpdateAdvancementsPacket.PositionedAdvancement(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(DefaultGuiTextures.INVISIBLE, Component.empty(), Component.empty(), Optional.of(new ClientAsset.ResourceTexture(Identifier.withDefaultNamespace("block/white_concrete"))), AdvancementType.TASK, false, false, false)), AdvancementRewards.EMPTY, Map.of("yes", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("yes")), false, Optional.of(Component.empty()))), 0, 0)), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer"), progress), true));
 
         this.builder = builder;
         ArrayList<PonderStep> copiedSteps = new ArrayList<>();
@@ -193,8 +193,8 @@ public class PonderScene {
         this.uuid = UUID.randomUUID();
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Steps", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Steps", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         //START THE JANKFEST!
@@ -204,7 +204,7 @@ public class PonderScene {
 
         //this.player.connection.send(new ClientboundSetActionBarTextPacket(Component.translatable("lib99j.q_to_stop_pondering", Component.keybind("key.drop"))));
 
-        BlockPos farPos = EntityUtils.getFarPos(player, player.level.getWorldBorder());
+        BlockPos farPos = EntityUtils.getFarPos(player, player.level().getWorldBorder());
         this.origin = new BlockPos(farPos.getX(), builder.y, farPos.getZ());
         this.cameraPos = new Vec3(-builder.sizeX / 4.0f, builder.sizeY / 2.0f, -builder.sizeZ / 4.0f);
         VFXUtils.setCameraPos(player, this.cameraPos);
@@ -222,8 +222,8 @@ public class PonderScene {
         this.level.getGameRules().set(GameRules.SPECTATORS_GENERATE_CHUNKS, true, null);
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "World create", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "World create", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         Lib99j.getServerOrThrow().levels.put(this.levelKey, this.level);
@@ -237,11 +237,11 @@ public class PonderScene {
         this.packetRedirector.updateOptions(new ClientInformation("ponder", 32, ChatVisiblity.HIDDEN, false, 0, HumanoidArm.RIGHT, true, false, ParticleStatus.ALL));
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Player add", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Player add", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
-        int roof = player.level.getMaxY();
+        int roof = player.level().getMaxY();
 
         for (int x = 0; x < builder.sizeX; x++) {
             for (int z = 0; z < builder.sizeZ; z++) {
@@ -257,13 +257,13 @@ public class PonderScene {
         }
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Floor", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Floor", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         //player.connection.send(new ClientboundContainerClosePacket(-1));
 
-        this.titleTopBar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
+        this.titleTopBar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("ponder.scene.currently_pondering_about").withColor(TextColor.GRAY), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
         this.subtitleTopBar = new ServerBossEvent(UUID.randomUUID(), this.builder.title, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
 
         ((BossBarVisibility) this.titleTopBar).lib99j$setVisible(false);
@@ -273,8 +273,8 @@ public class PonderScene {
         this.elementHolder.setAttachment(ChunkAttachment.ofTicking(this.elementHolder, this.getLevel(), this.origin));
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Elements + effects", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Elements + effects", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         PonderManager.activeScenes.put(this.player, this);
@@ -335,16 +335,7 @@ public class PonderScene {
             }
         };
 
-        Map<Identifier, Object> playerContext = new HashMap<>();
-        ((PacketContextImplAccessor) this.player.connection.getPacketContext()).getMap().forEach((key, value) -> {
-            if(key instanceof PacketContextImpl.KeyImpl<?> key1) playerContext.put(key1.key(), value);
-        });
-        this.packetRedirector.getPacketContext().set(ServerTranslations.LANGUAGE_KEY, ((String) playerContext.get(Identifier.fromNamespaceAndPath("server_translations_api", "lang"))));
-        this.packetRedirector.getPacketContext().set(PacketContextImpl.GAME_PROFILE, this.player.getGameProfile());
-        this.packetRedirector.getPacketContext().set(PacketContextImpl.SERVER_INSTANCE, Lib99j.getServer());
-        this.packetRedirector.getPacketContext().set(PacketContextImpl.REGISTRY_ACCESS, this.player.registryAccess());
-        this.packetRedirector.getPacketContext().set(PacketContextImpl.CONNECTION, this.packetRedirector.connection.connection);
-        this.packetRedirector.getPacketContext().set(CommonImplPacketKeys.HOLDER_LOOKUP, this.player.registryAccess());
+        ((PacketContextImplAccessor) this.player.connection.getPacketContext()).getMap().forEach(this::set2Unsafe);
         level.addNewPlayer(this.packetRedirector);
 
         this.packetRedirector.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.blockToSectionCoord(this.origin.getX()), SectionPos.blockToSectionCoord(this.origin.getZ())));
@@ -354,14 +345,16 @@ public class PonderScene {
         this.titleTopBar.addPlayer(this.packetRedirector);
         this.subtitleTopBar.addPlayer(this.packetRedirector);
 
+        ExtraBiomeUtil.sendCustomBiomeTo(this.player, Identifier.fromNamespaceAndPath("ponder", "area"));
+
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Redirector init", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Redirector init", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Region", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Region", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         if (goTo <= 0) this.hideLoadingScreen(); //if were going to the first step then it wont ff
@@ -371,7 +364,7 @@ public class PonderScene {
         this.level.syncRain();
 
         ItemDisplayElement background = new ItemDisplayElement(GuiUtils.colourItemData(DefaultGuiTextures.SOLID_COLOUR_BOX.create(), 0x111111));
-        background.setOverridePos(origin.getBottomCenter());
+        background.setOverridePos(Vec3.atBottomCenterOf(origin));
         background.setScale(new Vector3f(-1000, -1000, -1000));
         background.setViewRange(100f);
 
@@ -388,19 +381,27 @@ public class PonderScene {
         };
 
         f5Hint.setTranslation(new Vector3f(0, 0, 1f));
-        f5Hint.setScale(new Vector3f(3, 3, 0));
+        f5Hint.setScale(new Vector3f(3, 3, 0.01f));
         f5Hint.setBillboardMode(Display.BillboardConstraints.CENTER);
         f5Hint.setBackground(0xff000000);
         this.elementHolder.addElement(f5Hint);
 
         if (checkTime) {
-            Lib99j.LOGGER.info("Stage {} took {}", "Finish", GLFW.glfwGetTime() - time);
-            time = GLFW.glfwGetTime();
+            Lib99j.LOGGER.info("Stage {} took {}", "Finish", (SDLTimer.SDL_GetTicks() / 1000.0f) - time);
+            time = (SDLTimer.SDL_GetTicks() / 1000.0f);
         }
 
         if (goTo != -1) this.fastForwardUntil(goTo);
 
         VFXUtils.clearParticles(this.player, Vec3.atCenterOf(this.getOrigin().below()));
+    }
+
+    private <T> void set2Unsafe(PacketContext.Key<?> k, T v) {
+        set2Unsafe2((PacketContext.Key<T>) k, v);
+    }
+
+    private <T> void set2Unsafe2(PacketContext.Key<T> k, T v) {
+        this.packetRedirector.getPacketContext().set(k, v);
     }
 
     public void tick() {
@@ -578,10 +579,10 @@ public class PonderScene {
 
             pos = pos.add(accelerationVector);
 
-            Vec3 pos1 = BlockPos.containing(pos).getCenter();
+            Vec3 pos1 = Vec3.atLowerCornerOf(BlockPos.containing(pos));
 
-            this.player.connection.send(new ClientboundEntityPositionSyncPacket(-8048054, new PositionMoveRotation(pos1.subtract(0, 0.2f, 0), Vec3.ZERO, 0, 0), false));
-            this.player.connection.send(new ClientboundSetEntityDataPacket(-8048054, List.of(SynchedEntityData.DataValue.create(EntityData.CUSTOM_NAME, Optional.of(Component.literal(pos1.subtract(this.origin.getBottomCenter().add(0, 0.5f, 0)).toString()))), SynchedEntityData.DataValue.create(EntityData.NAME_VISIBLE, true))));
+            this.player.connection.send(new ClientboundEntityPositionSyncPacket(-8048054, new PositionPath.Linear(pos1.subtract(0, 0.2f, 0)), 0, 0, false));
+            this.player.connection.send(new ClientboundSetEntityDataPacket(-8048054, List.of(SynchedEntityData.DataValue.create(EntityData.CUSTOM_NAME, Optional.of(Component.literal(pos1.subtract(Vec3.atBottomCenterOf(this.origin).add(0, 0.5f, 0)).toString()))), SynchedEntityData.DataValue.create(EntityData.NAME_VISIBLE, true))));
         }
     }
 
@@ -590,7 +591,7 @@ public class PonderScene {
             this.titleTopBar.setName(Component.empty());
             this.subtitleTopBar.setName(Component.empty());
         } else if(this.mode == PonderSceneMode.IDENTIFYING) {
-            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_looking_at").withColor(ChatFormatting.GRAY.getColor()));
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_looking_at").withColor(TextColor.GRAY));
 
             float max = 6;
             Vec3 vec3 = this.identifyPos;
@@ -598,7 +599,7 @@ public class PonderScene {
             Vec3 vec33 = vec3.add(vec32.x * max, vec32.y * max, vec32.z * max);
             HitResult result = this.level.clip(new ClipContext(vec3, vec33, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, this.packetRedirector));
 
-            Mannequin lookAngle = new Mannequin(EntityType.MANNEQUIN, this.level);
+            Mannequin lookAngle = new Mannequin(EntityTypes.MANNEQUIN, this.level);
             lookAngle.setPos(this.identifyPos.add(0, this.player.getEyeHeight(), 0));
             lookAngle.setYRot(this.identifyYaw);
             lookAngle.setXRot(this.identifyPitch);
@@ -619,7 +620,7 @@ public class PonderScene {
             float moveDistance = Math.max(this.builder.sizeX, Math.max(this.builder.sizeY, this.builder.sizeZ))*2+15;
             double distance = this.identifyPos.subtract(this.getBottomCenterPos()).length();
             if(distance > moveDistance*1.5) {
-                this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(this.getOrigin().above(1).getBottomCenter(), Vec3.ZERO, 0, 0), Set.of())));
+                this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(Vec3.atBottomCenterOf(this.getOrigin().above(1)), Vec3.ZERO, 0, 0), Set.of())));
             } else if(distance > moveDistance) {
                 Vec3 target = this.getBottomCenterPos();
                 Vec3 currentPos = this.identifyPos;
@@ -630,12 +631,12 @@ public class PonderScene {
             }
         } else {
             this.subtitleTopBar.setName(this.builder.title);
-            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()));
+            this.titleTopBar.setName(Component.translatable("ponder.scene.currently_pondering_about").withColor(TextColor.GRAY));
         }
     }
 
     public Vec3 getBottomCenterPos() {
-        return this.origin.getBottomCenter().add(this.builder.sizeX/2.0f, 0, this.builder.sizeZ/2.0f);
+        return Vec3.atBottomCenterOf(this.origin).add(this.builder.sizeX/2.0f, 0, this.builder.sizeZ/2.0f);
     }
 
     //Use this if you are for example, currently in a tick loop with entities to avoid ConcurrentModificationException
@@ -672,26 +673,26 @@ public class PonderScene {
 
             VFXUtils.removeGenericScreenEffect(this.player, Identifier.fromNamespaceAndPath("ponder", "ponder_lock"));
             this.player.connection.send(new ClientboundSetChunkCacheCenterPacket(SectionPos.posToSectionCoord(this.player.getX()), SectionPos.posToSectionCoord(this.player.getZ())));
-            PolymerUtils.reloadWorld(this.player);
+            PolymerUtils.reloadLevel(this.player);
             this.player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
             this.player.connection.teleport(new PositionMoveRotation(this.player.position(), initialVelocity, this.player.getYRot(), this.player.getXRot()), Set.of());
-            this.player.connection.send(ClientboundTickingStatePacket.from(this.player.level.tickRateManager()));
+            this.player.connection.send(ClientboundTickingStatePacket.from(this.player.level().tickRateManager()));
             this.player.connection.send(this.player.level().clockManager().createFullSyncPacket());
 
-            player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer")), Map.of(), false));
+            player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "ponder_advancement_forcer")), Map.of(), false));
 
             if(this.mode == PonderSceneMode.IN_MENU) player.connection.send(new ClientboundContainerClosePacket(-1));
 
             this.showShortLoadingScreen();
 
-            if (player.level.isRaining()) {
+            if (player.level().isRaining()) {
                 player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
             } else {
                 player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
             }
 
-            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, player.level.getRainLevel(1)));
-            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, player.level.getThunderLevel(1)));
+            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, player.level().getRainLevel(1)));
+            player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, player.level().getThunderLevel(1)));
 
         }
 
@@ -731,7 +732,7 @@ public class PonderScene {
         //noinspection DataFlowIssue
         this.packetRedirector.gameMode.setLevel(null);
         //noinspection DataFlowIssue
-        this.packetRedirector.level = null;
+        ((LevelAccessor) this.packetRedirector).setLevel(null);
 
         if(this.runOnceDone != null) this.runOnceDone.run();
         if(willNotContinuePondering && this.runOnceDone == null && this.customProperties.onClose != null) this.customProperties.onClose.run();
@@ -923,7 +924,7 @@ public class PonderScene {
         if(oldMode.locksCamera() && !newMode.locksCamera()) {
             this.showShortLoadingScreen();
             ((Lib99jPlayerUtilController) this.player).lib99j$unlockCamera();
-            this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(this.getOrigin().above(1).getBottomCenter(), Vec3.ZERO, 0, 0), Set.of())));
+            this.player.connection.send(new BypassPacket(new ClientboundPlayerPositionPacket(-100, new PositionMoveRotation(Vec3.atBottomCenterOf(this.getOrigin().above(1)), Vec3.ZERO, 0, 0), Set.of())));
         }
         //if camera is unlocked then the gamemode resets!
         if(oldMode.getGameType() != newMode.getGameType() || oldMode.locksCamera() != newMode.locksCamera()) {
@@ -937,7 +938,7 @@ public class PonderScene {
         }
 
         if(!oldMode.equals(PonderSceneMode.DEV_EDITING) && newMode.equals(PonderSceneMode.DEV_EDITING)) {
-            this.player.connection.send(new ClientboundAddEntityPacket(-8048054, UUID.randomUUID(), 0, 0, 0, 0, 0, EntityType.BEE, 0, Vec3.ZERO, 0));
+            this.player.connection.send(new ClientboundAddEntityPacket(-8048054, UUID.randomUUID(), 0, 0, 0, 0, 0, EntityTypes.BEE, 0, Vec3.ZERO, 0));
         }
         if(oldMode.equals(PonderSceneMode.DEV_EDITING) && !newMode.equals(PonderSceneMode.DEV_EDITING)) {
             this.player.connection.send(new ClientboundRemoveEntitiesPacket(-8048054));

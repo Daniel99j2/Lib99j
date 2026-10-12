@@ -24,11 +24,13 @@ import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class EmptyChunkGenerator extends ChunkGenerator {
@@ -42,21 +44,6 @@ public class EmptyChunkGenerator extends ChunkGenerator {
     @Override
     protected MapCodec<? extends ChunkGenerator> codec() {
         return null;
-    }
-
-    @Override
-    public WeightedList<MobSpawnSettings.SpawnerData> getMobsAt(Holder<Biome> biome, StructureManager accessor, MobCategory group, BlockPos pos) {
-        return WeightedList.of();
-    }
-
-    @Override
-    public void applyCarvers(WorldGenRegion chunkRegion, long seed, RandomState noiseConfig, BiomeManager biomeAccess, StructureManager structureAccessor, ChunkAccess chunk) {
-
-    }
-
-    @Override
-    public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState noiseConfig, ChunkAccess chunk) {
-
     }
 
     @Override
@@ -76,12 +63,7 @@ public class EmptyChunkGenerator extends ChunkGenerator {
 
     @Override
     public CompletableFuture<ChunkAccess> createBiomes(RandomState noiseConfig, Blender blender, StructureManager structureAccessor, ChunkAccess chunk) {
-        chunk.fillBiomesFromNoise((i, j, k, sampler) -> biomeHolder, noiseConfig.sampler());
-        return CompletableFuture.completedFuture(chunk);
-    }
-
-    @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState noiseConfig, StructureManager structureAccessor, ChunkAccess chunk) {
+        chunk.fillBiomesFromNoise((i, j, k) -> biomeHolder);
         return CompletableFuture.completedFuture(chunk);
     }
 
@@ -106,7 +88,7 @@ public class EmptyChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    public void addDebugScreenInfo(List<String> text, RandomState noiseConfig, BlockPos pos) {
+    public void addDebugScreenInfo(List<String> result, RandomState randomState, BlockPos feetPos, SamplerContext samplerContext) {
 
     }
 
@@ -121,5 +103,10 @@ public class EmptyChunkGenerator extends ChunkGenerator {
 
     @Override
     public void createReferences(WorldGenLevel worldGenLevel, StructureManager structureManager, ChunkAccess chunkAccess) {
+    }
+
+    @Override
+    public CompletableFuture<ChunkAccess> buildTerrain(ChunkAccess chunk, Blender blender, RandomState randomState, StructureManager structureManager, BiomeManager biomeManager, @Nullable WorldGenRegion carverBiomeRegion, Set<Holder<Biome>> possibleBiomes) {
+        return CompletableFuture.completedFuture(chunk);
     }
 }

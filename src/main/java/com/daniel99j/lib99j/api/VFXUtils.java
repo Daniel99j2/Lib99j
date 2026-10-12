@@ -20,6 +20,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -312,7 +313,7 @@ public class VFXUtils {
         for (ServerPlayer serverPlayerEntity : players) {
             if (serverPlayerEntity.distanceToSqr(vec3d) < 4096.0) {
                 Optional<Vec3> optional = Optional.ofNullable(explosionImpl.getHitPlayers().get(serverPlayerEntity));
-                serverPlayerEntity.connection.send(new ClientboundExplodePacket(vec3d, 1, 0, optional, particleEffect, soundEvent, WeightedList.of()));
+                serverPlayerEntity.connection.send(new ClientboundExplodePacket(vec3d, 1, 0, optional, particleEffect, soundEvent, WeightedList.of(), false));
             }
         }
     }
@@ -330,7 +331,7 @@ public class VFXUtils {
         int id = VirtualEntityUtils.requestEntityId();
         ClientboundBundlePacket bundle = new ClientboundBundlePacket(List.of(new ClientboundAddEntityPacket(id, UUID.randomUUID(),
                         pos.x, pos.y, pos.z, 0, 0,
-                        EntityType.FIREWORK_ROCKET, 0, velocity, 0d),
+                        EntityTypes.FIREWORK_ROCKET, 0, velocity, 0d),
                 new ClientboundSetEntityDataPacket(id, List.of(
                         SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, fireworkStack),
                         SynchedEntityData.DataValue.create(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, angle)
@@ -363,11 +364,11 @@ public class VFXUtils {
     }
 
     public static void clearParticles(ServerPlayer player) {
-        ParticleHelper.spawnParticlesAtPosition(player.level, player.position(), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
+        ParticleHelper.spawnParticlesAtPosition(player.level(), player.position(), ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
     }
 
     public static void clearParticles(ServerPlayer player, Vec3 pos) {
-        ParticleHelper.spawnParticlesAtPosition(player.level, pos, ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
+        ParticleHelper.spawnParticlesAtPosition(player.level(), pos, ParticleTypes.BUBBLE, 17000, 0, 0, 0, 0);
     }
 
     public static class CameraShakeInstance {

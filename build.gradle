@@ -20,7 +20,6 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
-	maven { url "https://maven.tomalbrc.de" }
 	maven { url 'https://maven.blamejared.com' }
 	maven { url 'https://maven.nucleoid.xyz' }
 	maven { url 'https://kneelawk.com/maven' }
@@ -65,22 +64,20 @@ dependencies {
 	implementation include ("eu.pb4:polymer-resource-pack-extras:${polymer_version}")
 	implementation include ("eu.pb4:polymer-autohost:${polymer_version}")
 	implementation include ("eu.pb4:polymer-virtual-entity:${polymer_version}")
-	implementation include("eu.pb4:map-canvas-api:0.8.0+26.1")
+	implementation include("eu.pb4:map-canvas-api:0.9.1+26.2")
 	implementation include("eu.pb4:sidebar-api:0.6.0+26.1")
-	implementation include("eu.pb4:sgui:2.0.0+26.1")
-	implementation include("eu.pb4:factorytools:0.10.0+26.1")
-	implementation include("eu.pb4:placeholder-api:3.0.0+26.1")
+	implementation include("eu.pb4:sgui:2.2.1+26.3")
+	implementation include("eu.pb4:factorytools:0.12.1+26.3")
+	implementation include("eu.pb4:placeholder-api:3.2.0+26.3")
 
-	compileOnly include("me.shedaniel.cloth:cloth-config-fabric:26.1.154")
+	compileOnly include("me.shedaniel.cloth:cloth-config-fabric:26.3.159")
 
-	compileOnly include("com.terraformersmc:modmenu:18.0.0-alpha.8")
+	compileOnly include("com.terraformersmc:modmenu:21.0.0")
 
-	compileOnly ("de.tomalbrc:blockbench-import-library:2.0.2+1.21.11")
+	implementation include("xyz.nucleoid:server-translations-api:3.2.0+26.3")
 
-	implementation include("xyz.nucleoid:server-translations-api:3.0.1+26.1")
-
-	compileOnly 'maven.modrinth:polydex:1.9.2+26.1-rc-3'
-	compileOnly 'eu.pb4:booklet:0.2.0+26.1'
+	compileOnly 'maven.modrinth:polydex:1.11.0+26.3-rc-1'
+	compileOnly 'eu.pb4:booklet:0.4.0+26.3'
 }
 
 processResources {
@@ -133,19 +130,3 @@ publishing {
 		}
 	}
 }
-
-tasks.register('bumpVersion') {
-	doFirst {
-		def scanner = new Scanner(System.in)
-		logger.lifecycle("====================================================")
-		logger.lifecycle("> Have you changed the version???? Current: '${project.version}'")
-		logger.lifecycle("> Y for yes, else no")
-		def input = scanner.nextLine().trim()
-		if (!input.toLowerCase().equals("y")) {
-			throw new IllegalStateException("Please update version");
-		}
-		logger.lifecycle("====================================================")
-	}
-}
-
-build.dependsOn(bumpVersion)

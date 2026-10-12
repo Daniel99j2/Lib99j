@@ -17,14 +17,11 @@ import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
-import net.minecraft.advancements.criterion.PlayerTrigger;
+import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 import net.minecraft.resources.Identifier;
@@ -50,7 +47,7 @@ import java.util.function.Consumer;
 
 @SuppressWarnings({"unused"})
 public class GuiUtils {
-    public static final Style GUI_FONT_STYLE = Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui"))).withoutShadow().withColor(ChatFormatting.WHITE.getColor());
+    public static final Style GUI_FONT_STYLE = Style.EMPTY.withFont(new FontDescription.Resource(Identifier.fromNamespaceAndPath("lib99j", "ui"))).withoutShadow().withColor(TextColor.WHITE);
     private static final int SPACES_RANGE = 256;
     protected static final List<FontTexture> FONT_TEXTURES = new ArrayList<>();
     private static final Map<Integer, Character> SPACES = new HashMap<>(); //this is faster than using a recursive function to find which char is valid
@@ -500,9 +497,9 @@ public class GuiUtils {
         AdvancementProgress progress = new AdvancementProgress();
         progress.update(AdvancementRequirements.allOf(Set.of("toast")));
         progress.grantProgress("toast");
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(ItemStackTemplate.fromNonEmptyStack(icon), title, Component.empty(), Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title)))), Set.of(), Map.of(), true));
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "toast"), progress), true));
-        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, Set.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "toast")), Map.of(), false));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(new ClientboundUpdateAdvancementsPacket.PositionedAdvancement(new AdvancementHolder(Identifier.fromNamespaceAndPath("lib99j", "toast"), new Advancement(Optional.empty(), Optional.of(new DisplayInfo(ItemStackTemplate.fromNonEmptyStack(icon), title, Component.empty(), Optional.of(new ClientAsset.ResourceTexture(background)), AdvancementType.TASK, true, false, false)), AdvancementRewards.EMPTY, Map.of("toast", PlayerTrigger.TriggerInstance.tick()), AdvancementRequirements.allOf(Set.of("toast")), false, Optional.of(title))), 0, 0)), Set.of(), Map.of(), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(), Set.of(), Map.of(Identifier.fromNamespaceAndPath("lib99j", "toast"), progress), true));
+        player.connection.send(new ClientboundUpdateAdvancementsPacket(false, List.of(), Set.of(Identifier.fromNamespaceAndPath("lib99j", "toast")), Map.of(), false));
     }
 
     public record PlayerTranslationsResponse(boolean translationCheckBlocked, boolean checkFailed, ArrayList<String> matches, ArrayList<String> misses) {

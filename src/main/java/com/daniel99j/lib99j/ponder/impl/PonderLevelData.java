@@ -68,6 +68,11 @@ public class PonderLevelData implements ServerLevelData, WorldData {
     }
 
     @Override
+    public void setAllowCommands(boolean allowCommands) {
+
+    }
+
+    @Override
     public boolean isInitialized() {
         return true;
     }

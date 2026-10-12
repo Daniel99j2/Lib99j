@@ -15,8 +15,7 @@ public class ClientGuiUtils {
 
     public static boolean shouldShowHungerLike() {
         return
-                Minecraft.renderNames()
-                        && Minecraft.getInstance().player != null
+                        Minecraft.getInstance().player != null
                         && !Minecraft.getInstance().player.isSpectator();
     }
 }

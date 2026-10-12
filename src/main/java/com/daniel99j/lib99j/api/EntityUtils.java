@@ -5,6 +5,7 @@ import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.impl.BypassPacket;
 import com.daniel99j.lib99j.impl.mixin.PlayerListAccessor;
 import com.mojang.authlib.GameProfile;
+import eu.pb4.polydex.impl.FakeWorld;
 import eu.pb4.polymer.common.api.PolymerCommonUtils;
 import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import eu.pb4.polymer.virtualentity.api.elements.GenericEntityElement;
@@ -75,7 +76,7 @@ public class EntityUtils {
      * <p>(For example), some packets require an entity, but virtual entities only have an id
      */
     public static Entity fakeEntityFromId(int id) {
-        Entity entity = new Entity(EntityType.PIG, null) {
+        Entity entity = new Entity(EntityTypes.PIG, PolymerCommonUtils.getFakeLevel()) {
             @Override
             protected void defineSynchedData(SynchedEntityData.Builder builder) {
 
@@ -160,7 +161,7 @@ public class EntityUtils {
      * <p>To do this, it creates a fake client-side explosion for the player
      */
     public static void sendVelocityDelta(@NotNull ServerPlayer player, Vec3 delta) {
-        player.connection.send(new BypassPacket(new ClientboundExplodePacket(new Vec3(player.getX(), player.getY() - 9999, player.getZ()), 1, 0, Optional.of(delta), ParticleTypes.BUBBLE, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY), WeightedList.of())));
+        player.connection.send(new BypassPacket(new ClientboundExplodePacket(new Vec3(player.getX(), player.getY() - 9999, player.getZ()), 1, 0, Optional.of(delta), ParticleTypes.BUBBLE, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY), WeightedList.of(), false)));
     }
 
     /**
@@ -412,7 +413,7 @@ public class EntityUtils {
     public static float getDistanceToGround(Entity e, int limit) {
         ValueHolder<Integer> i = new ValueHolder<>();
         i.object = 0;
-        getDistanceToGroundRec(i, e.blockPosition(), (ServerLevel) e.level, 0, limit);
+        getDistanceToGroundRec(i, e.blockPosition(), (ServerLevel) e.level(), 0, limit);
         return i.object;
     }
 

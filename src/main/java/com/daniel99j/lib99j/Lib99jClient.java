@@ -35,9 +35,10 @@ import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.level.storage.TagValueOutput;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLKeycode;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -49,6 +50,7 @@ public class Lib99jClient implements ClientModInitializer {
     private static final List<Identifier> ponderItems = new ArrayList<>();
     public static final List<ItemStack> storedItems = new ArrayList<>();
     public static KeyMapping ponderKey;
+    public static KeyMapping logPacketsKey;
     private static boolean ponderKeyWasHeld = false;
 
     @Override
@@ -56,9 +58,17 @@ public class Lib99jClient implements ClientModInitializer {
         ponderKey = KeyMappingHelper.registerKeyMapping(
                 new KeyMapping(
                         "key.lib99j.ponder",
-                        InputConstants.Type.KEYSYM,
-                        GLFW.GLFW_KEY_W,
+                        InputConstants.Type.KEYBOARD,
+                        InputConstants.KEY_W,
                         KeyMapping.Category.INVENTORY
+                ));
+
+        logPacketsKey = KeyMappingHelper.registerKeyMapping(
+                new KeyMapping(
+                        "key.lib99j.log_packets",
+                        InputConstants.Type.KEYBOARD,
+                        InputConstants.KEY_R,
+                        KeyMapping.Category.DEBUG
                 ));
 
         if(Lib99j.CONFIG.getClient().extraItemGroups) {
@@ -101,7 +111,7 @@ public class Lib99jClient implements ClientModInitializer {
                                 be.getCommandBlock().setCommand("setblock ~ ~ ~ " + block.properties().id.identifier());
                                 TagValueOutput view = TagValueOutput.createWithoutContext(null);
                                 be.saveWithFullMetadata(view);
-                                stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BlockEntityType.COMMAND_BLOCK, CustomData.of(view.buildResult()).copyTag()));
+                                stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BlockEntityTypes.COMMAND_BLOCK, CustomData.of(view.buildResult()).copyTag()));
                                 stack.set(DataComponents.ITEM_MODEL, Identifier.withDefaultNamespace("test_instance_block"));
                                 entries.accept(stack);
                             }
@@ -211,7 +221,7 @@ public class Lib99jClient implements ClientModInitializer {
     }
 
     public static void addItem(ItemStack stack) {
-        if(stack.isEmpty() || storedItems.contains(stack) || stack.getComponentsPatch().entrySet().isEmpty()) return;
+        if(stack.isEmpty() || storedItems.contains(stack) || stack.getComponentsPatch().isEmpty()) return;
         if(storedItems.size() > 100) storedItems.removeFirst();
         storedItems.add(stack);
     }

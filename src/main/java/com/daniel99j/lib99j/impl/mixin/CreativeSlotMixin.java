@@ -28,16 +28,16 @@ public class CreativeSlotMixin extends Slot {
     public void lib99j$reloadStorage(Player player, CallbackInfoReturnable<Boolean> cir) {
         if(this.getItem().has(DataComponents.CUSTOM_DATA) && this.getItem().get(DataComponents.CUSTOM_DATA).copyTag().getBooleanOr("lib99j$reloadStorage", false)) {
             cir.setReturnValue(false);
-            ((CreativeModeInventoryScreen) Minecraft.getInstance().screen).getSelectedTab().getDisplayItems().clear();
+            ((CreativeModeInventoryScreen) Minecraft.getInstance().gui.screen()).getSelectedTab().getDisplayItems().clear();
             ItemStack reload = Items.COMPASS.getDefaultInstance();
             reload.set(DataComponents.CREATIVE_SLOT_LOCK, Unit.INSTANCE);
             reload.set(DataComponents.ITEM_NAME, Component.literal("Reload list"));
             CompoundTag tag = new CompoundTag();
             tag.putBoolean("lib99j$reloadStorage", true);
             reload.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            ((CreativeModeInventoryScreen) Minecraft.getInstance().screen).getSelectedTab().getDisplayItems().add(reload);
+            ((CreativeModeInventoryScreen) Minecraft.getInstance().gui.screen()).getSelectedTab().getDisplayItems().add(reload);
 
-            ((CreativeModeInventoryScreen) Minecraft.getInstance().screen).getSelectedTab().getDisplayItems().addAll(Lib99jClient.storedItems);
+            ((CreativeModeInventoryScreen) Minecraft.getInstance().gui.screen()).getSelectedTab().getDisplayItems().addAll(Lib99jClient.storedItems);
         }
     }
 }

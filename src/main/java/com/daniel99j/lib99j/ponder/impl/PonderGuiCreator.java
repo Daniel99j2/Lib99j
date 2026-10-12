@@ -55,7 +55,7 @@ public class PonderGuiCreator extends PonderScene {
 
     protected PonderGuiCreator(ServerPlayer player, PonderBuilder builder, PonderScene oldAfterStep, int goTo) {
         super(player, builder, oldAfterStep, goTo);
-        this.screenSizeDisplay = new ItemDisplayElement(Items.LIME_STAINED_GLASS) {
+        this.screenSizeDisplay = new ItemDisplayElement(Items.STAINED_GLASS.lime()) {
             @Override
             public Vec3 getCurrentPos() {
                 BlockDisplayElement element = ((Lib99jPlayerUtilController) player).lib99j$getCamera();
@@ -65,7 +65,7 @@ public class PonderGuiCreator extends PonderScene {
         //The 'standard' monitor is 16:9
         //Size done at 70 fov
         float normalSize = 0.31f/10;
-        this.screenSizeDisplay.setScale(new Vector3f(normalSize*16, normalSize*9, 0));
+        this.screenSizeDisplay.setScale(new Vector3f(normalSize*16, normalSize*9, 0.01f));
         this.screenSizeDisplay.setTranslation(new Vector3f(0, 0, -0.2001f));
         this.screenSizeDisplay.setBillboardMode(Display.BillboardConstraints.CENTER);
         this.screenSizeDisplay.setViewRange(0.01f);
@@ -73,7 +73,7 @@ public class PonderGuiCreator extends PonderScene {
         this.getElementHolder().addElement(this.screenSizeDisplay);
 
 
-        this.positioningElement = new ItemDisplayElement(Items.WHITE_CONCRETE.getDefaultInstance()) {
+        this.positioningElement = new ItemDisplayElement(Items.CONCRETE.white().getDefaultInstance()) {
             @Override
             public Vec3 getCurrentPos() {
                 BlockDisplayElement element = ((Lib99jPlayerUtilController) player).lib99j$getCamera();
@@ -104,11 +104,11 @@ public class PonderGuiCreator extends PonderScene {
         }));
 
         body.add(action("Show safe area", () -> {
-            this.screenSizeDisplay.setItem(Items.LIME_STAINED_GLASS.getDefaultInstance());
+            this.screenSizeDisplay.setItem(Items.STAINED_GLASS.lime().getDefaultInstance());
         }));
 
         body.add(action("Show positioning element", () -> {
-            this.positioningElement.setItem(Items.WHITE_CONCRETE.getDefaultInstance());
+            this.positioningElement.setItem(Items.CONCRETE.white().getDefaultInstance());
         }));
 
         body.add(action("Hide positioning element", () -> {

@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.PlayerChunkSender;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.Block;
@@ -81,7 +82,7 @@ public abstract class ChunkSenderMixin {
 //                                    posList.add();
 
                                     BlockPos pos1 = new BlockPos(chunk.getPos().x()*16,  level.getMinY(), chunk.getPos().z()*16);
-                                    safeBundler.accept(new ClientboundAddEntityPacket(id, UUID.randomUUID(), pos1.getX(), pos1.getY()+100, pos1.getZ(), 0, 0, EntityType.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
+                                    safeBundler.accept(new ClientboundAddEntityPacket(id, UUID.randomUUID(), pos1.getX(), pos1.getY()+100, pos1.getZ(), 0, 0, EntityTypes.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
                                     //int brightness = level.getBrightness(LightLayer.BLOCK, pos);
                                     //brightness = Math.max(brightness, level.getEffectiveSkyBrightness(pos));
                                     //, SynchedEntityData.DataValue.create(DisplayEntityData.BRIGHTNESS, brightness)
@@ -197,14 +198,14 @@ public abstract class ChunkSenderMixin {
 
             int id = VirtualEntityUtils.requestEntityId();
             Vec3 offset = new Vec3(square.x()/16.0f+square.size()/16.0f/2, square.y()/16.0f, square.z()/16.0f+square.size()/16.0f/2);
-            safeBundler.accept(new ClientboundAddEntityPacket(id, UUID.randomUUID(), pos.getX()+offset.x, pos.getY()+offset.y, pos.getZ()+offset.z, 0, 0, EntityType.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
+            safeBundler.accept(new ClientboundAddEntityPacket(id, UUID.randomUUID(), pos.getX()+offset.x, pos.getY()+offset.y, pos.getZ()+offset.z, 0, 0, EntityTypes.BLOCK_DISPLAY, 0, Vec3.ZERO, 0));
             safeBundler.accept(new ClientboundSetEntityDataPacket(id, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, invisible), SynchedEntityData.DataValue.create(DisplayEntityData.HEIGHT, 0.0f), SynchedEntityData.DataValue.create(DisplayEntityData.VIEW_RANGE, 0.0f), SynchedEntityData.DataValue.create(DisplayEntityData.WIDTH, 0.0f))));
 
             ids.add(id);
             offsets.add(offset);
 
             int id2 = VirtualEntityUtils.requestEntityId();
-            safeBundler.accept(new ClientboundAddEntityPacket(id2, UUID.randomUUID(), 0, 0, 0, 0, 0, EntityType.SHULKER, 0, Vec3.ZERO, 0));
+            safeBundler.accept(new ClientboundAddEntityPacket(id2, UUID.randomUUID(), 0, 0, 0, 0, 0, EntityTypes.SHULKER, 0, Vec3.ZERO, 0));
             safeBundler.accept(new ClientboundSetEntityDataPacket(id2, List.of(SynchedEntityData.DataValue.create(EntityData.FLAGS, invisible))));
             AttributeInstance a = new AttributeInstance(Attributes.SCALE, (c) -> {});
             a.setBaseValue(square.size()/16.0f);

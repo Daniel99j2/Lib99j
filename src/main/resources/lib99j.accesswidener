@@ -1,7 +1,6 @@
 classTweaker v1 official
 accessible class net/minecraft/server/level/ChunkMap$TrackedEntity
 accessible class net/minecraft/world/entity/Entity
-accessible field net/minecraft/world/entity/Entity level Lnet/minecraft/world/level/Level;
 accessible field net/minecraft/world/entity/LivingEntity lastDamageSource Lnet/minecraft/world/damagesource/DamageSource;
 accessible field net/minecraft/world/entity/Entity deltaMovement Lnet/minecraft/world/phys/Vec3;
 accessible field net/minecraft/world/entity/projectile/FireworkRocketEntity DATA_ID_FIREWORKS_ITEM Lnet/minecraft/network/syncher/EntityDataAccessor;

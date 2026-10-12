@@ -8,8 +8,6 @@ import eu.pb4.polymer.core.api.item.PolymerBlockItem;
 import eu.pb4.polymer.core.api.item.PolymerSpawnEggItem;
 import eu.pb4.polymer.core.api.item.SimplePolymerItem;
 import eu.pb4.polymer.rsm.api.RegistrySyncUtils;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
-import net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -172,18 +170,18 @@ public class RegUtil {
     }
 
     // ENTITY TYPE
-    public static <T extends Entity> EntityType<T> register(String path, FabricEntityTypeBuilder<T> item) {
-        var x = Registry.register(BuiltInRegistries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), path), item.build(ResourceKey.create(BuiltInRegistries.ENTITY_TYPE.key(), Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), path))));
-        PolymerEntityUtils.registerType(x);
-        return x;
-    }
+//    public static <T extends Entity> EntityType<T> register(String path, FabricEntityTypeBuilder<T> item) {
+//        var x = Registry.register(BuiltInRegistries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), path), item.build(ResourceKey.create(BuiltInRegistries.ENTITY_TYPE.key(), Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), path))));
+//        PolymerEntityUtils.registerType(x);
+//        return x;
+//    }
 
     // POTIONS
-    public static <T extends Potion> Holder<T> registerPotion(String name, T out, Item in1, Holder<Potion> in2) {
-        Holder<T> registry = Registry.registerForHolder(BuiltInRegistries.POTION, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), out);
-        FabricPotionBrewingBuilder.BUILD.register(builder -> builder.addMix(in2, in1, (Holder<Potion>) registry));
-        return registry;
-    }
+//    public static <T extends Potion> Holder<T> registerPotion(String name, T out, Item in1, Holder<Potion> in2) {
+//        Holder<T> registry = Registry.registerForHolder(BuiltInRegistries.POTION, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), out);
+//        FabricPotionBrewingBuilder.BUILD.register(builder -> builder.addMix(in2, in1, (Holder<Potion>) registry));
+//        return registry;
+//    }
 
     public static <T extends MobEffect> Holder<T> registerEffect(String name, T effect) {
         return Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, Identifier.fromNamespaceAndPath(RegUtil.currentNamespaceSafe(), name), effect);

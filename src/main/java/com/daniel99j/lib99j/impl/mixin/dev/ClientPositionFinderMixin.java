@@ -62,7 +62,7 @@ public abstract class ClientPositionFinderMixin {
             Vector2i convertedPos = convertPos(pos);
             if(Minecraft.getInstance().hasAltDown()) convertedPos.x = PonderCoordUtil.SCREEN_SIZE.x-convertedPos.x;
             Minecraft.getInstance().keyboardHandler.setClipboard("new Vector2i("+convertedPos.x+", "+convertedPos.y+")");
-            Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(Minecraft.getInstance().hasAltDown() ? "Copied opposite pos" : "Copied pos"), null));
+            Minecraft.getInstance().gui.toastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION, Component.literal(Minecraft.getInstance().hasAltDown() ? "Copied opposite pos" : "Copied pos"), null));
         };
     }
 

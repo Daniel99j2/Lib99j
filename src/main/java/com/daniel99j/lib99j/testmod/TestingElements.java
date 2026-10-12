@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.chicken.Chicken;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
@@ -45,13 +46,13 @@ public class TestingElements {
     public static final Block TEST = RegUtil.registerBlock(
             "test_block",
             TestBlock::new,
-            BlockBehaviour.Properties.ofFullCopy(Blocks.WHITE_WOOL).pushReaction(PushReaction.DESTROY).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
+            BlockBehaviour.Properties.ofFullCopy(Blocks.WOOL.white()).pushReaction(PushReaction.POPPED).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
     );
 
     public static final Block TEST_POLYMER_ADVANCED_BVE = RegUtil.registerBlock(
             "blockbound_virtual_entity_test",
             PolymerTestPlanetsBlock::new,
-            BlockBehaviour.Properties.ofFullCopy(Blocks.WHITE_WOOL).pushReaction(PushReaction.DESTROY).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
+            BlockBehaviour.Properties.ofFullCopy(Blocks.WOOL.white()).pushReaction(PushReaction.POPPED).instabreak().noCollision().mapColor(MapColor.SNOW).sound(SoundType.WOOL)
     );
 
     public static final ItemStackTemplate TEST_UI_ITEM = GuiUtils.generateTexture(Identifier.fromNamespaceAndPath(Lib99j.MOD_ID, "ui/testing_element_item"));
@@ -71,7 +72,7 @@ public class TestingElements {
                                 scene.getLevel().setBlockAndUpdate(new BlockPos(4, 10, 4), Blocks.ANVIL.defaultBlockState());
 
                                 scene.getLevel().setBlockAndUpdate(new BlockPos(4, 1, 4), Blocks.REDSTONE_BLOCK.defaultBlockState());
-                                Creeper creeper = new Creeper(EntityType.CREEPER, scene.getLevel()) {
+                                Creeper creeper = new Creeper(EntityTypes.CREEPER, scene.getLevel()) {
                                     @Override
                                     public void tick() {
                                         super.tick();
@@ -84,9 +85,9 @@ public class TestingElements {
                                 creeper.ignite();
                                 scene.getLevel().addFreshEntity(creeper);
                                 //scene.fastForwardUntil(2);\
-                                scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 4), Blocks.COPPER_GOLEM_STATUE.defaultBlockState().setValue(CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.STAR));
-                                scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 6), Blocks.BLACK_BANNER.defaultBlockState());
-                                scene.getLevel().setBlockEntity(new BannerBlockEntity(new BlockPos(6, 1, 6).offset(scene.getOrigin()), Blocks.BLACK_BANNER.defaultBlockState(), DyeColor.BROWN));
+                                scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 4), Blocks.COPPER_GOLEM_STATUE.waxed().exposed().defaultBlockState().setValue(CopperGolemStatueBlock.POSE, CopperGolemStatueBlock.Pose.STAR));
+                                scene.getLevel().setBlockAndUpdate(new BlockPos(6, 1, 6), Blocks.BANNER.black().defaultBlockState());
+                                scene.getLevel().setBlockEntity(new BannerBlockEntity(new BlockPos(6, 1, 6).offset(scene.getOrigin()), Blocks.BANNER.black().defaultBlockState(), DyeColor.BROWN));
                             }))
                             .waitFor(1)
                             .instruction(new ShowItemInstruction(1, List.of(new ItemStackTemplate(Items.PISTON)), new Vector2i(790, 367), PonderLine.RIGHT))
@@ -98,7 +99,7 @@ public class TestingElements {
                             .instruction(new ExecuteCodeInstruction((scene) -> {
                                 scene.getLevel().removeBlockWithParticles(new BlockPos(4, 0, 4));
 
-                                Cow creeper = new Cow(EntityType.COW, scene.getLevel());
+                                Cow creeper = new Cow(EntityTypes.COW, scene.getLevel());
                                 //scene.getLevel().makeEntityDumb(creeper);
                                 creeper.setPosRaw(5, 10, 5);
                                 creeper.setPersistenceRequired();
@@ -112,7 +113,7 @@ public class TestingElements {
                             .finishStep()
                             .waitFor(1)
                             .instruction(new ExecuteCodeInstruction((scene) -> {
-                                Chicken creeper = new Chicken(EntityType.CHICKEN, scene.getLevel());
+                                Chicken creeper = new Chicken(EntityTypes.CHICKEN, scene.getLevel());
                                 creeper.setPosRaw(10, 5, 10);
                                 creeper.setPersistenceRequired();
                                 scene.getLevel().addFreshEntity(creeper);
@@ -129,7 +130,7 @@ public class TestingElements {
                             .build()
             );
 
-            r.registerBuilder(PonderBuilder.create(Identifier.withDefaultNamespace("icecream"), new ItemStackTemplate(Items.EXPOSED_CHISELED_COPPER), Component.literal("Vanilla"), Component.empty()).waitFor(10).finishStep().build());
+            r.registerBuilder(PonderBuilder.create(Identifier.withDefaultNamespace("icecream"), new ItemStackTemplate(Items.CHISELED_COPPER.weathering().exposed()), Component.literal("Vanilla"), Component.empty()).waitFor(10).finishStep().build());
 
             r.registerItemToBuilder(Items.STICK,
                     PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "animated_rebuild"), new ItemStackTemplate(Items.STICK), Component.literal("Animated rebuild"), Component.literal("")).size(5, 5, 5)
@@ -184,13 +185,13 @@ public class TestingElements {
             var END_CRYSTAL_PONDER2 = r.registerItemToBuilder(Items.END_CRYSTAL,
                     PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "end_crystals_explode"), new ItemStackTemplate(Items.END_CRYSTAL), Component.literal("End Crystals"), Component.literal("End crystals explode when punched or hit with a projectile")).defaultBiome(Biomes.END_BARRENS)
                             .instruction(new ExecuteCodeInstruction((scene) -> {
-                                EndCrystal crystal = EntityType.END_CRYSTAL.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
+                                EndCrystal crystal = EntityTypes.END_CRYSTAL.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
                                 crystal.setPos(new Vec3(2, 2, 2));
                                 scene.getLevel().addFreshEntity(crystal);
                             }))
                             .waitFor(3)
                             .instruction(new ExecuteCodeInstruction((scene) -> {
-                                Arrow crystal = EntityType.ARROW.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
+                                Arrow crystal = EntityTypes.ARROW.create(scene.getLevel(), EntitySpawnReason.SPAWN_ITEM_USE);
                                 crystal.setPos(new Vec3(2, 10, 2));
                                 scene.getLevel().addFreshEntity(crystal);
                             }))
@@ -211,7 +212,7 @@ public class TestingElements {
             );
 
             var LINES = r.registerBuilder(
-                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "lines"), new ItemStackTemplate(Items.WHITE_DYE), Component.literal("Lines"), Component.literal("UI Testing"))
+                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "lines"), new ItemStackTemplate(Items.DYE.white()), Component.literal("Lines"), Component.literal("UI Testing"))
                             .instruction(new ShowItemInstruction(1, List.of(new ItemStackTemplate(Items.DIRT)), new Vector2i(10), PonderLine.RIGHT))
                             .waitFor(1)
                             .instruction(new ShowItemInstruction(1, List.of(new ItemStackTemplate(Items.DIRT)), new Vector2i(20), PonderLine.RIGHT))
@@ -250,7 +251,7 @@ public class TestingElements {
             );
 
             var TEXT = r.registerBuilder(
-                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "text"), new ItemStackTemplate(Items.LIME_DYE), Component.literal("Text"), Component.literal("UI Testing"))
+                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "text"), new ItemStackTemplate(Items.DYE.lime()), Component.literal("Text"), Component.literal("UI Testing"))
                             .instruction(new ShowTextInstruction(5, Component.literal("hello left"), new Vector2i(400, 0), PonderLine.LEFT))
                             .instruction(new ShowTextInstruction(5, Component.literal("hello hi left\nmultiline"), new Vector2i(400, 30), PonderLine.LEFT))
 
@@ -287,7 +288,7 @@ public class TestingElements {
             );
 
             var RECURSIVE_LINE = r.registerBuilder(
-                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "recursive_line"), new ItemStackTemplate(Items.LIME_DYE), Component.literal("Recursive line"), Component.literal("UI Testing"))
+                    PonderBuilder.create(Identifier.fromNamespaceAndPath("lib99j_test", "recursive_line"), new ItemStackTemplate(Items.DYE.lime()), Component.literal("Recursive line"), Component.literal("UI Testing"))
                             .instruction(new ExecuteCodeInstruction((scene -> {
                                 scene.getElementHolder().addElement(new PonderLineDisplay(2, new Vector2i(0), Vec2.ONE, scene, 0, 0));
                             })))

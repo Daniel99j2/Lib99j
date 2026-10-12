@@ -9,7 +9,9 @@ import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.api.mixin.MixinTargetVerifier;
 import com.daniel99j.lib99j.impl.*;
 import com.daniel99j.lib99j.impl.datagen.AssetProvider;
+import com.daniel99j.lib99j.impl.mixin.MovingPistonAccessor;
 import com.daniel99j.lib99j.impl.mixin.SharedConstantsAccessor;
+import com.daniel99j.lib99j.impl.PacketLogger;
 import com.daniel99j.lib99j.impl.network.*;
 import com.daniel99j.lib99j.impl.sable.CustomSableDisplay;
 import com.daniel99j.lib99j.impl.sable.SableDisplayData;
@@ -17,14 +19,15 @@ import com.daniel99j.lib99j.ponder.api.PonderManager;
 import com.daniel99j.lib99j.ponder.impl.PonderCommand;
 import com.daniel99j.lib99j.testmod.TestingElements;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.math.MatrixUtil;
 import eu.pb4.polymer.core.api.item.PolymerItemUtils;
 import eu.pb4.polymer.core.api.utils.PolymerUtils;
+import eu.pb4.polymer.core.mixin.block.ClientboundBlockEntityDataPacketAccessor;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import eu.pb4.polymer.virtualentity.api.VirtualEntityUtils;
-import eu.pb4.polymer.virtualentity.api.data.DisplayEntityData;
 import eu.pb4.polymer.virtualentity.api.data.EntityData;
 import eu.pb4.polymer.virtualentity.impl.SafeBundler;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -41,13 +44,17 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.TextComponentTagVisitor;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.common.CommonPacketTypes;
 import net.minecraft.network.protocol.game.*;
@@ -57,22 +64,32 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.component.FireworkExplosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
@@ -81,6 +98,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,9 +122,9 @@ public class Lib99j implements ModInitializer {
 
     public static final List<String> SUPPORTED_LANGUAGES = List.of("en_us", "en_au", "en_ca", "en_gb", "en_nz", "en_pt", "en_ud", "en_us", "enws", "lol_us");
 
-    public static boolean isDevelopingLib99j = false;
-    public static boolean isDevelopmentEnvironment = FabricLoader.getInstance().isDevelopmentEnvironment() || Files.exists(FabricLoader.getInstance().getConfigDir().resolve("lib99j_force_dev.txt"));
-    public static boolean personalFeatures = System.getenv("DANIEL99J_MODE") != null;
+    public static boolean isDevelopingLib99j = LoadingBlastDoor.isDevelopingLib99j;
+    public static boolean isDevelopmentEnvironment = LoadingBlastDoor.isDevelopmentEnvironment;
+    public static boolean personalFeatures = LoadingBlastDoor.personalFeatures;
 
     private static boolean hasLoadedLib99j = false;
 
@@ -153,15 +171,9 @@ public class Lib99j implements ModInitializer {
                 if (list[i + 1].endsWith("\\build\\datagen")) {
                     GameProperties.markRunningDataGen();
                     break;
-
-                    //If it is running on my machine, I enable all features so I can develop Lib99j
-                    //If these were enabled in normal dev mode, it would mean other mods would sometimes only work in dev
-                    //If you want to work on Lib99j, feel free to edit this so it also works for you
                 }
             }
         }
-
-        isDevelopingLib99j = System.getenv("DEVELOPING_LIB99J") != null && isDevelopmentEnvironment && FabricLoader.getInstance().getConfigDir().toAbsolutePath().getParent().toString().contains("Lib99j");
 
         MixinTargetVerifier.verify(MOD_ID);
 
@@ -405,12 +417,12 @@ public class Lib99j implements ModInitializer {
                         .executes((context) -> {
                             int mount = VirtualEntityUtils.requestEntityId();
                             int shulker = VirtualEntityUtils.requestEntityId();
-                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.ARMOR_STAND, 0, Vec3.ZERO, 0));
-                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(shulker, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.SHULKER, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityTypes.ARMOR_STAND, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(shulker, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityTypes.SHULKER, 0, Vec3.ZERO, 0));
                             context.getSource().getPlayerOrException().connection.send(VirtualEntityUtils.createClientboundSetPassengersPacket(mount, IntList.of(shulker)));
                             context.getSource().getPlayerOrException().connection.send(VirtualEntityUtils.createClientboundSetPassengersPacket(shulker, IntList.of(mount)));
                             context.getSource().getPlayerOrException().connection.send(new ClientboundTeleportEntityPacket(mount, PositionMoveRotation.of(new TeleportTransition(null, context.getSource().getPosition(), Vec3.ZERO, 1, 1, false, false, Set.of(), TeleportTransition.DO_NOTHING)), Set.of(), false));
-                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityType.ARMADILLO, 0, Vec3.ZERO, 0));
+                            context.getSource().getPlayerOrException().connection.send(new ClientboundAddEntityPacket(mount, UUID.randomUUID(), context.getSource().getPosition().x, context.getSource().getPosition().y, context.getSource().getPosition().z, 0, 0, EntityTypes.ARMADILLO, 0, Vec3.ZERO, 0));
                             return 1;
                         })
                         .build());
@@ -467,7 +479,7 @@ public class Lib99j implements ModInitializer {
                         .executes((context) -> {
                             ArrayList<ServerPlayer> players = new ArrayList<>();
                             players.add(context.getSource().getPlayer());
-                            VFXUtils.sendFakeEntity(players, context.getSource().getPosition(), EntityType.LIGHTNING_BOLT);
+                            VFXUtils.sendFakeEntity(players, context.getSource().getPosition(), EntityTypes.LIGHTNING_BOLT);
                             return 1;
                         })
                         .build());
@@ -555,9 +567,67 @@ public class Lib99j implements ModInitializer {
                         })
                         .build());
 
+                builder.then(Commands.literal("transientblock")
+                        .executes((context) -> {
+                            BlockState state = Blocks.TNT.defaultBlockState();
+                            if(context.getSource().getPlayer().getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BlockItem bi) state = bi.getBlock().defaultBlockState();
+                            context.getSource().getPlayer().connection.send(new ClientboundAddTransientBlockPacket(BlockPos.containing(context.getSource().getPosition()), state));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("movingblock")
+                        .executes((context) -> {
+                            BlockPos pos = BlockPos.containing(context.getSource().getPosition()).offset(3, 0, 0).below();
+                            BlockState state = Blocks.TNT.defaultBlockState();
+                            if(context.getSource().getPlayer().getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BlockItem bi) state = bi.getBlock().defaultBlockState();
+                            SafeBundler bundler = new SafeBundler(context.getSource().getPlayer().connection::send);
+                            bundler.accept(new ClientboundBlockUpdatePacket(pos.above(), state));
+                            bundler.accept(new ClientboundBlockUpdatePacket(pos, Blocks.STICKY_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.UP)));
+                            bundler.accept(new ClientboundBlockEventPacket(pos, Blocks.STICKY_PISTON, 0, PistonBaseBlock.TRIGGER_EXTEND));
+                            bundler.accept(new ClientboundBlockUpdatePacket(pos, context.getSource().getLevel().getBlockState(pos)));
+                            bundler.accept(new ClientboundBlockUpdatePacket(pos.above(), context.getSource().getLevel().getBlockState(pos.above())));
+                            bundler.finish();
+                            return 1;
+                        })
+                        .build());
+
                 builder.then(Commands.literal("reloadworld")
                         .executes((context) -> {
-                            PolymerUtils.reloadWorld(context.getSource().getPlayer());
+                            PolymerUtils.reloadLevel(context.getSource().getPlayer());
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("singlebiomechunkdata")
+                        .executes((context) -> {
+                            ServerPlayer player =  context.getSource().getPlayer();
+                            assert player != null;
+                            player.setPos(160, 0, 160);
+                            player.connection.handleChatCommand(new ServerboundChatCommandPacket("fillbiome 156 -64 156 179 319 179 minecraft:desert"));
+                            int size = player.level().getChunk(player.blockPosition()).getSection(0).getBiomes().getSerializedSize();
+                            context.getSource().sendSystemMessage(Component.literal(String.valueOf(size)));
+                            byte[] data = new byte[size];
+                            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.wrappedBuffer(data));
+                            buf.writerIndex(0);
+                            player.level().getChunk(player.blockPosition()).getSection(0).getBiomes().write(buf);
+                            context.getSource().sendSystemMessage(Component.literal(Arrays.toString(data)));
+                            //context.getSource().sendSystemMessage(Component.literal(String.valueOf(player.level().registryAccess().getOrThrow(Registries.BIOME).value().getId(player.level.registryAccess().getOrThrow(Registries.BIOME).value().get(Identifier.withDefaultNamespace("desert")).get().value()))));
+                            var c = new ClientboundChunksBiomesPacket.ChunkBiomeData(player.level().getChunkAt(player.blockPosition()));
+                            context.getSource().sendSystemMessage(Component.literal(Arrays.toString(c.buffer())));
+                            var out = new byte[100];
+                            Arrays.fill(out, (byte) -128);
+                            FriendlyByteBuf buf2 = new FriendlyByteBuf(Unpooled.wrappedBuffer(out));
+                            buf2.writerIndex(0);
+                            ClientboundChunksBiomesPacket.STREAM_CODEC.encode(buf2, new ClientboundChunksBiomesPacket(List.of(c)));
+                            context.getSource().sendSystemMessage(Component.literal(Arrays.toString(out)));
+                            return 1;
+                        })
+                        .build());
+
+                builder.then(Commands.literal("custombiome")
+                        .executes((context) -> {
+                            ExtraBiomeUtil.sendCustomBiomeTo(context.getSource().getPlayer(), Identifier.fromNamespaceAndPath("ponder", "area"));
                             return 1;
                         })
                         .build());
@@ -567,6 +637,7 @@ public class Lib99j implements ModInitializer {
         });
 
         PonderManager.load();
+        PacketLogger.load();
 
         if(((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).getOrThrow()).debugArgumentOptions) {
             for (Method declaredMethod : SharedConstantsAccessor.class.getDeclaredMethods()) {
@@ -575,7 +646,7 @@ public class Lib99j implements ModInitializer {
 
                     String name = declaredMethod.getName().toLowerCase();
 
-                    if(!name.equals("debug_enabled") && (!name.equals("is_running_in_ide") || Lib99j.isDevelopmentEnvironment)) {
+                    if(!name.equals("debug_enabled") && (!name.equals("is_running_in_ide") || Lib99j.isDevelopmentEnvironment) && Modifier.isStatic(f.getModifiers()) && Modifier.isPublic(f.getModifiers())) {
                         debugArgForScreens.put(name, new DebugArg(name, (b) -> {
                             List<String> config = ((Lib99jCommonConfig) ConfigManager.getConfig("lib99j").get(ConfigContext.COMMON).getOrThrow()).enabledDebugArgs;
                             if (b && !config.contains(name)) config.add(name);
@@ -606,10 +677,22 @@ public class Lib99j implements ModInitializer {
             }
         }
 
+        if(Lib99j.isDevelopingLib99j) {
+            for (Field field : SharedConstants.class.getDeclaredFields()) {
+                if(field.getName().startsWith("DEBUG_")) {
+                    try {
+                        SharedConstantsAccessor.class.getDeclaredMethod(field.getName(), boolean.class);
+                    } catch (NoSuchMethodException e) {
+                        LOGGER.warn("No accessor for "+field.getName());
+                    }
+                }
+            }
+        }
+
         LOGGER.info("Ready to rumble!");
     }
 
-        public static void runOnMainThread(Runnable code) {
+    public static void runOnMainThread(Runnable code) {
         if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
             Minecraft.getInstance().execute(code);
         } else {
@@ -641,13 +724,14 @@ public class Lib99j implements ModInitializer {
         float f = 1.0F / matrix.m33();
         List<SynchedEntityData.DataValue<?>> data = new ArrayList<>();
 
-        var triple = MatrixUtil.svdDecompose(new Matrix3f(matrix).scale(f));
-        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.TRANSLATION, matrix.getTranslation(new Vector3f())));
-        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.LEFT_ROTATION, new Quaternionf(triple.getLeft())));
-        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.SCALE, new Vector3f(triple.getMiddle())));
-        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.RIGHT_ROTATION, new Quaternionf(triple.getRight())));
-        bundler.accept(new ClientboundSetEntityDataPacket(id, data));
-
-        bundler.accept(new ClientboundEntityPositionSyncPacket(id, new PositionMoveRotation(position, Vec3.ZERO, 0, 0), false));
+        //TODO: FIX
+//        var triple = MatrixUtil.svdDecompose(new Matrix3f(matrix).scale(f));
+//        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.TRANSLATION, matrix.getTranslation(new Vector3f())));
+//        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.LEFT_ROTATION, new Quaternionf(triple.getLeft())));
+//        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.SCALE, new Vector3f(triple.getMiddle())));
+//        data.add(SynchedEntityData.DataValue.create(DisplayEntityData.RIGHT_ROTATION, new Quaternionf(triple.getRight())));
+//        bundler.accept(new ClientboundSetEntityDataPacket(id, data));
+//
+//        bundler.accept(new ClientboundEntityPositionSyncPacket(id, new PositionMoveRotation(position, Vec3.ZERO, 0, 0), false));
     }
 }

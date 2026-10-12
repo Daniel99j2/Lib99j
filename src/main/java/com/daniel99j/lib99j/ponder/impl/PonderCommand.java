@@ -21,10 +21,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
@@ -195,10 +192,10 @@ public class PonderCommand {
                     context.getSource().sendSuccess(() -> Component.literal("You have no block edits. Use /ponder dev toggle_free_movement and place a block down to add to the list"), false);
                     return 1;
                 }
-                context.getSource().sendSuccess(() -> Component.literal("Current edits:").withColor(ChatFormatting.GRAY.getColor()), false);
+                context.getSource().sendSuccess(() -> Component.literal("Current edits:").withColor(TextColor.GRAY), false);
                 currentScene.ponderDevEdits.blockEdits.forEach((blockEdit -> {
                     String type = blockEdit.type() == PonderDevEdits.EditType.ADD ? "+ " : blockEdit.type() == PonderDevEdits.EditType.REMOVE ? "- " : "= ";
-                    int colour = blockEdit.type() == PonderDevEdits.EditType.ADD ? ChatFormatting.GREEN.getColor() : blockEdit.type() == PonderDevEdits.EditType.REMOVE ? ChatFormatting.RED.getColor() : ChatFormatting.AQUA.getColor();
+                    TextColor colour = blockEdit.type() == PonderDevEdits.EditType.ADD ? TextColor.GREEN : blockEdit.type() == PonderDevEdits.EditType.REMOVE ? TextColor.RED : TextColor.AQUA;
 
                     context.getSource().sendSuccess(() -> Component.literal(type).withStyle(Style.EMPTY.withClickEvent(
                             new ClickEvent.CopyToClipboard("scene.setBlockAndUpdate(new BlockPos(" + blockEdit.pos().getX() + ", " + blockEdit.pos().getY() + ", " + blockEdit.pos().getZ() + "), ModBlocks." + BuiltInRegistries.BLOCK.getKey(blockEdit.block()).getPath().toUpperCase() + ".defaultBlockState())")

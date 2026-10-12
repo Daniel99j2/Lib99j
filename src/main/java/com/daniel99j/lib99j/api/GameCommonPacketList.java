@@ -194,7 +194,6 @@ public class GameCommonPacketList {
         temp.add(new PacketInfo(ServerboundSetTestBlockPacket.class, PacketTag.WORLD, PacketTag.BLOCK, PacketTag.DEBUG));
         temp.add(new PacketInfo(ServerboundTestInstanceBlockActionPacket.class, PacketTag.WORLD, PacketTag.BLOCK, PacketTag.DEBUG));
         temp.add(new PacketInfo(ServerboundSignUpdatePacket.class, PacketTag.WORLD, PacketTag.BLOCK));
-        temp.add(new PacketInfo(ServerboundSwingPacket.class, PacketTag.PLAYER_CLIENT, PacketTag.WORLD, PacketTag.ENTITY));
         temp.add(new PacketInfo(ServerboundTeleportToEntityPacket.class, PacketTag.WORLD, PacketTag.ENTITY, PacketTag.MOVEMENT));
         temp.add(new PacketInfo(ServerboundUseItemOnPacket.class, PacketTag.WORLD, PacketTag.BLOCK, PacketTag.PLAYER_CLIENT, PacketTag.INVENTORY));
         temp.add(new PacketInfo(ServerboundUseItemPacket.class, PacketTag.WORLD, PacketTag.PLAYER_CLIENT, PacketTag.INVENTORY));
@@ -207,7 +206,11 @@ public class GameCommonPacketList {
         temp.add(new PacketInfo(ClientboundGameRuleValuesPacket.class, PacketTag.UI, PacketTag.PLAYER_CLIENT));
         temp.add(new PacketInfo(ServerboundAttackPacket.class, PacketTag.ENTITY, PacketTag.PLAYER_CLIENT));
         temp.add(new PacketInfo(ServerboundSetGameRulePacket.class, PacketTag.UI, PacketTag.PLAYER_CLIENT));
-        temp.add(new PacketInfo(ServerboundSpectateEntityPacket.class, PacketTag.ENTITY, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ClientboundAddTransientBlockPacket.class, PacketTag.BLOCK, PacketTag.CHUNK, PacketTag.WORLD, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ClientboundSwingAnimationPacket.class, PacketTag.PLAYER_ANY, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ServerboundPunchPacket.class, PacketTag.PLAYER_CLIENT, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ServerboundSpectatorActionPacket.class, PacketTag.PLAYER_CLIENT, PacketTag.PLAYER_CLIENT));
+        temp.add(new PacketInfo(ClientboundPostEffectsPacket.class, PacketTag.PLAYER_CLIENT, PacketTag.UI, PacketTag.PLAYER_CLIENT));
 
         temp.add(new PacketInfo(ClientboundCustomPayloadPacket.class, PacketTag.MANY_USES));
         temp.add(new PacketInfo(ServerboundCustomPayloadPacket.class, PacketTag.MANY_USES));

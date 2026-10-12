@@ -6,14 +6,10 @@ import com.daniel99j.lib99j.api.gui.GuiUtils;
 import com.daniel99j.lib99j.ponder.api.PonderBuilder;
 import com.daniel99j.lib99j.ponder.api.PonderGroup;
 import com.daniel99j.lib99j.ponder.api.PonderManager;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.*;
@@ -50,10 +46,10 @@ public class PonderMenu {
         if(title.getStyle().getHoverEvent() == null) GuiUtils.styleText(title, title.getStyle().withHoverEvent(new HoverEvent.ShowText(builder.description)), false);
 
         List<DialogBody> body = new ArrayList<>();
-        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(TextColor.GRAY), 200)), false, false, 16, 16));
         body.add(renderBuilder(builder, false));
         body.add(spacer());
-        if(!builder.getGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!builder.getGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(TextColor.GRAY), 200)), false, false, 16, 16));
 
         for (Identifier group : builder.getGroups()) {
             PonderGroup g = PonderManager.idToGroup.get(group);
@@ -76,16 +72,16 @@ public class PonderMenu {
         }
 
         List<DialogBody> body = new ArrayList<>();
-        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(PonderGuiTextures.PONDERING_ABOUT_ITEM.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.currently_pondering_about").withColor(TextColor.GRAY), 200)), false, false, 16, 16));
         body.add(new ItemBody(group.icon, Optional.of(new PlainMessage(title, 200)), false, false, 16, 16));
         body.add(spacer());
-        if(!group.builders.isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_scenes").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!group.builders.isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_scenes").withColor(TextColor.GRAY), 200)), false, false, 16, 16));
         for (PonderBuilder builder : group.builders) {
             body.add(renderBuilder(builder, true));
         }
 
         body.add(spacer());
-        if(!group.getRelatedGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(ChatFormatting.GRAY.getColor()), 200)), false, false, 16, 16));
+        if(!group.getRelatedGroups().isEmpty()) body.add(new ItemBody(ItemStackTemplate.fromNonEmptyStack(DefaultGuiTextures.INVISIBLE.create()), Optional.of(new PlainMessage(Component.translatable("ponder.scene.associated_groups").withColor(TextColor.GRAY), 200)), false, false, 16, 16));
         for (PonderGroup group1 : group.getRelatedGroups()) {
             body.add(renderGroup(group1));
         }

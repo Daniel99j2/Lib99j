@@ -28,11 +28,6 @@ public class TestBlock extends Block implements PolymerBlock, BlockWithElementHo
     }
 
     @Override
-    public MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
-    }
-
-    @Override
     public ElementHolder createElementHolder(ServerLevel world, BlockPos pos, BlockState initialBlockState) {
         return new Model(world, initialBlockState);
     }

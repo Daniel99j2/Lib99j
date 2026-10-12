@@ -2,7 +2,7 @@ package com.daniel99j.lib99j.impl.mixin.dev;
 
 import com.daniel99j.lib99j.api.ServerConfigCopy;
 import net.minecraft.client.gui.components.AbstractWidget;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLTimer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,14 +20,14 @@ public abstract class WavyUiMixin {
     @Inject(method = "getX", at = @At("HEAD"), cancellable = true)
     private void lib99j$wavyUi(CallbackInfoReturnable<Integer> cir) {
         if(ServerConfigCopy.getConfigOption("lib99j", "wavy_ui", Boolean.class, false)) {
-            cir.setReturnValue((int) (Math.sin(GLFW.glfwGetTime()+this.hashCode())*100)+this.x);
+            cir.setReturnValue((int) (Math.sin((SDLTimer.SDL_GetTicks() / 1000.0f)+this.hashCode())*100)+this.x);
         }
     }
 
     @Inject(method = "getY", at = @At("HEAD"), cancellable = true)
     private void lib99j$wavyUi1(CallbackInfoReturnable<Integer> cir) {
         if(ServerConfigCopy.getConfigOption("lib99j", "wavy_ui", Boolean.class, false)) {
-            cir.setReturnValue((int) (Math.cos(GLFW.glfwGetTime()+this.hashCode())*100)+this.y);
+            cir.setReturnValue((int) (Math.cos((SDLTimer.SDL_GetTicks() / 1000.0f)+this.hashCode())*100)+this.y);
         }
     }
 }

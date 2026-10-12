@@ -16,17 +16,20 @@
     "CommandSourceMixin",
     "CommandSourceStackMixin",
     "DamageSourceMixin",
+    "ExtraBiomesMixin",
     "FieldBuilderMixin",
     "FieldEntryMixin",
     "GoalSelectorAccessor",
     "ItemStackMixin",
     "LanguageReaderMixin",
+    "LevelAccessor",
     "LevelChunkMixin",
     "LivingEntityMixin",
     "LodDisplayAccessor",
     "LodDisplayMixin",
     "LodDisplayMixin2",
     "MinecraftServerMixin",
+    "MovingPistonAccessor",
     "NumberListEntryAccessor",
     "NumberListEntryAccessor2",
     "NumberListEntryAccessor3",
@@ -47,19 +50,23 @@
     "SystemLanguageMixin",
     "Vec2StringifierMixin",
     "dev.ChunkSenderMixin",
-    "dev.DogBoneMixin"
+    "dev.DogBoneMixin",
+    "dev.PacketLogger2Mixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
     "AbstractContainerScreenMixin",
+    "BiomeSyncMixin",
     "CommandExecutionScreenMixin",
     "CreativeInventoryScreenAccessor",
     "CreativeSlotMixin",
     "DebugScreenMixin",
     "GoAwayExperimentalWarningMixin",
     "dev.ClientPositionFinderMixin",
+    "dev.CustomDebugToggleKeysMixin",
+    "dev.PacketLoggerMixin",
     "dev.WavyUiMixin"
   ]
 }

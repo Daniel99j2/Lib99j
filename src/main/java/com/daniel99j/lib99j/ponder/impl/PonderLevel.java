@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.ponder.impl;
 
 import com.daniel99j.lib99j.Lib99j;
+import com.daniel99j.lib99j.api.EmptyChunkGenerator;
 import com.daniel99j.lib99j.api.GoToThenStopGoal;
 import com.daniel99j.lib99j.impl.LevelChunkAccessor;
 import com.daniel99j.lib99j.impl.mixin.GoalSelectorAccessor;
@@ -56,7 +57,7 @@ public class PonderLevel extends ServerLevel {
                         playerLevel.dimensionTypeRegistration().value().height(),
                         playerLevel.dimensionTypeRegistration().value().logicalHeight(),
                         Lib99j.getServerOrThrow().overworld().dimensionType().infiniburn(),
-                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, CardinalLighting.Type.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty(), Lib99j.getServerOrThrow().overworld().dimensionType().defaultClock())), new PonderChunkGenerator(biomeResourceKey, playerLevel.getMaxY())),
+                        1.0f, new DimensionType.MonsterSettings(ConstantInt.of(0), 0), DimensionType.Skybox.NONE, CardinalLighting.Type.DEFAULT, EnvironmentAttributeMap.EMPTY, HolderSet.empty(), Lib99j.getServerOrThrow().overworld().dimensionType().defaultClock())), new EmptyChunkGenerator(biomeResourceKey)),
                 false,
                 0,
                 List.of(),

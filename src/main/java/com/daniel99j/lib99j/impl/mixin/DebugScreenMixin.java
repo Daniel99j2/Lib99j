@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.debug.DebugOptionsScreen;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -32,7 +33,7 @@ public abstract class DebugScreenMixin extends ContainerObjectSelectionList<Debu
 
         if(!args.isEmpty()) this.addEntry(new DebugOptionsScreen.AbstractOptionEntry() {
             @Override
-            public List<? extends GuiEventListener> children() {
+            public @NonNull List<? extends GuiEventListener> children() {
                 return List.of();
             }
 
@@ -42,7 +43,7 @@ public abstract class DebugScreenMixin extends ContainerObjectSelectionList<Debu
             }
 
             @Override
-            public List<? extends NarratableEntry> narratables() {
+            public @NonNull List<? extends NarratableEntry> narratables() {
                 return List.of();
             }
 

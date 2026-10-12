@@ -57,5 +57,8 @@
   "debug.entry.off": "Off",
   "config.lib99j.debug_argument_options": "Debug argument toggles",
   "ponder.hold": "Hold [%1$s] to ponder",
-  "key.lib99j.ponder": "Ponder about item"
+  "key.lib99j.ponder": "Ponder about item",
+  "key.lib99j.log_packets": "Log packets",
+  "debug.log_packets.on": "Logging packets",
+  "debug.log_packets.off": "Stopped logging packets"
 }

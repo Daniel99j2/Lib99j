@@ -1,6 +1,7 @@
 package com.daniel99j.lib99j.ships;
 
 import eu.pb4.polymer.virtualentity.mixin.accessors.EntityAccessor;
+import eu.pb4.polymer.virtualentity.mixin.accessors.ServerLevelAccessor;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
@@ -18,7 +19,7 @@ public class ShipInstance {
     private final ArrayList<ShipDisplay> activeDisplays = new ArrayList<>();
 
     public ShipInstance() {
-        this.beginId = EntityAccessor.getENTITY_COUNTER().addAndGet(1000);
+        this.beginId = ServerLevelAccessor.polymer$getENTITY_COUNTER().addAndGet(1000);
         this.origin = BlockPos.ZERO;
     }
 

@@ -3,14 +3,21 @@ package com.daniel99j.lib99j.ponder.api;
 import com.daniel99j.djutil.SupplyingEvent;
 import com.daniel99j.lib99j.Lib99j;
 import com.daniel99j.lib99j.api.CustomEvents;
+import com.daniel99j.lib99j.api.ExtraBiomeUtil;
 import com.daniel99j.lib99j.api.ModInstallManager;
 import com.daniel99j.lib99j.api.VFXUtils;
 import com.daniel99j.lib99j.impl.network.ClientboundLib99jPonderItemsPacket;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
+import net.minecraft.world.level.biome.BiomeSpecialEffects;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -57,6 +64,7 @@ public class PonderManager {
         }));
 
         CustomEvents.GAME_LOADED.register(PonderManager::reload);
+        ExtraBiomeUtil.addNewBiome(Identifier.fromNamespaceAndPath("ponder", "area"), new Biome.BiomeBuilder().downfall(0).hasPrecipitation(false).mobSpawnSettings(MobSpawnSettings.NO_SPAWNS).generationSettings(BiomeGenerationSettings.EMPTY).temperature(0.8f).specialEffects(new BiomeSpecialEffects.Builder().waterColor(0x3F76E4).build()));
     }
 
     public static void reload() {

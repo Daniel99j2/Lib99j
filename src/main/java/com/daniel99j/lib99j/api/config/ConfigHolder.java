@@ -69,6 +69,7 @@ public class ConfigHolder<T> {
 
     public synchronized void reload() {
         this.instance = load();
+        this.markDirty();
     }
 
     public synchronized void unload() {

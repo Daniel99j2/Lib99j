@@ -75,7 +75,7 @@ public class PonderTextDisplay extends TextDisplayElement {
     }
 
     public void setSize(Vec2 size) {
-        Vector3f scale = new Vector3f(0.024f * size.x, 0.024f * size.y, 0);
+        Vector3f scale = new Vector3f(0.024f * size.x, 0.024f * size.y, 0.01f);
         this.setScale(scale);
     }
 
